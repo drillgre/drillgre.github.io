@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Your DrillGRE learner dashboard and adaptive mock history.">
+  <title>Learner Dashboard | DrillGRE</title>
+  <link rel="stylesheet" href="assets/css/lms.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="assets/js/learner-dashboard.js"></script>
+  <style>
+    .dash-shell{max-width:1120px;margin:0 auto;padding:28px 18px 60px}
+    .dash-hero{display:flex;justify-content:space-between;align-items:center;gap:22px;background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:18px;padding:26px}
+    .dash-hero h1{font-size:32px;letter-spacing:-1.2px;margin:6px 0}
+    .dash-hero p{color:var(--muted);margin:0;font-size:13px}
+    .dash-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--blue);color:#fff;padding:12px 17px;font-weight:800;white-space:nowrap}
+    .dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+    .dash-stat{background:white;border:1px solid var(--line);border-radius:14px;padding:18px}
+    .dash-stat strong{display:block;font-size:28px;color:var(--navy)}
+    .dash-stat span{font-size:12px;color:var(--muted)}
+    .dash-columns{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
+    .dash-panel{background:white;border:1px solid var(--line);border-radius:15px;padding:20px;margin:14px 0}
+    .dash-panel h2{font-size:18px;margin:0 0 14px}
+    .profile-list{display:grid;gap:11px}
+    .profile-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #eef0f5;padding-bottom:8px;font-size:13px}
+    .profile-row span:first-child{color:var(--muted)}
+    .profile-row strong{text-align:right}
+    .attempt-row{display:grid;grid-template-columns:1fr auto;gap:6px 14px;border:1px solid var(--line);border-radius:11px;padding:13px;margin:9px 0}
+    .attempt-row .attempt-meta{font-size:11px;color:var(--muted)}
+    .attempt-score{font-weight:850;color:var(--blue);font-size:18px}
+    .attempt-status{font-size:11px;font-weight:750;color:#4a5870}
+    .dash-status{padding:13px 15px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;margin:15px 0}
+    .dash-status.error{color:#9c3023;background:#fff4f2;border-color:#f0c9c3}
+    .dash-actions{display:flex;gap:9px;flex-wrap:wrap}
+    @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}}
+    @media(max-width:560px){.dash-grid{grid-template-columns:1fr}.dash-hero h1{font-size:27px}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">Drill<em>GRE</em></a>
+  <nav class="toplinks">
+    <a href="index.html">Home</a>
+    <a href="quant/index.html">Quant Academy</a>
+    <a href="quant/mock.html">Adaptive Mock</a>
+    <button id="signOut" type="button" style="border:0;background:transparent;color:#dbe3f8">Sign out</button>
+  </nav>
+</header>
+<main class="dash-shell">
+  <div class="crumb"><a href="index.html">Home</a> / Learner dashboard</div>
+  <div id="dashboardStatus" class="dash-status">Loading your dashboard…</div>
+  <section id="dashboardContent" hidden>
+    <div class="dash-hero">
+      <div>
+        <div class="eyebrow">Learner dashboard</div>
+        <h1>Welcome, <span id="learnerName">Learner</span></h1>
+        <p id="learnerEmail"></p>
+      </div>
+      <div class="dash-actions">
+        <a class="dash-button" href="quant/mock.html">Create a new mock</a>
+        <a class="btn" href="quant/index.html">Continue learning</a>
+      </div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-stat"><strong id="mocksStarted">0</strong><span>Mocks started</span></div>
+      <div class="dash-stat"><strong id="mocksCompleted">0</strong><span>Mocks completed</span></div>
+      <div class="dash-stat"><strong>Unlimited</strong><span>Mock attempts for registered learners</span></div>
+    </div>
+    <div class="dash-columns">
+      <section class="dash-panel">
+        <h2>Profile</h2>
+        <div id="profileDetails" class="profile-list"></div>
+      </section>
+      <section class="dash-panel">
+        <h2>Mock history</h2>
+        <p class="account-muted" style="margin-top:-6px">Your 20 most recent mock attempts are shown below.</p>
+        <div id="mockHistory"></div>
+      </section>
+    </div>
+  </section>
+</main>
+<footer style="max-width:1120px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Learner dashboard</footer>
+</body>
+</html>
