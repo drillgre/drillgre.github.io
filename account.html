@@ -40,7 +40,7 @@
   <section class="account-card">
     <div class="eyebrow">Your learning space</div>
     <h1>Learner account</h1>
-    <p class="account-muted">Sign in with your email and password. New learners verify their email address with a one-time code during registration.</p>
+    <p class="account-muted">Sign in with your email and password. New learners confirm their email address using a link sent to their inbox during registration.</p>
     <div id="accountMessage" class="account-message" hidden role="status"></div>
 
     <div id="accountForms">
@@ -140,22 +140,19 @@
             </select>
           </label>
           <div class="full">
-            <button class="account-primary" type="submit">Create account and send verification code</button>
+            <button class="account-primary" type="submit">Create account and send confirmation email</button>
           </div>
         </div>
       </form>
     </div>
 
-    <form id="otpForm" hidden>
-      <h2 style="margin:8px 0">Verify your email</h2>
-      <p class="account-muted">Enter the six-digit verification code sent to <strong id="otpEmail"></strong>.</p>
-      <label>6-digit email code
-        <input id="otpCode" class="otp-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
-      </label>
-      <button class="account-primary" type="submit">Verify email and continue</button>
-      <button id="resendOtp" class="account-secondary" type="button" style="margin-left:8px">Resend code</button>
-      <button id="changeEmail" class="account-secondary" type="button" style="margin-left:8px">Change email</button>
-    </form>
+    <section id="confirmationPanel" hidden>
+      <h2 style="margin:8px 0">Check your email</h2>
+      <p class="account-muted">We sent a confirmation link to <strong id="confirmationEmail"></strong>.</p>
+      <p class="account-muted">Open that link to confirm your email address and activate your DrillGRE account. You will then be redirected to your learner dashboard.</p>
+      <button id="resendConfirmation" class="account-primary" type="button">Resend confirmation email</button>
+      <button id="changeRegistrationEmail" class="account-secondary" type="button" style="margin-left:8px">Change email</button>
+    </section>
 
     <form id="resetPasswordForm" hidden>
       <h2 style="margin:8px 0">Set a new password</h2>
