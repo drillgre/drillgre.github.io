@@ -132,16 +132,16 @@
     return String(correct ?? "");
   }
 
-  function explanationMarkup(question) {
-    const type = question.explanation_type || "text";
+  function explanationMarkup(grade) {
+    const type = grade?.explanation_type || "text";
     const pieces = [];
 
-    if ((type === "text" || type === "both") && question.explanation) {
-      pieces.push(`<div class="explanation-text">${esc(question.explanation)}</div>`);
+    if ((type === "text" || type === "both") && grade?.explanation) {
+      pieces.push(`<div class="explanation-text">${esc(grade.explanation)}</div>`);
     }
 
-    if ((type === "video" || type === "both") && question.explanation_video_url) {
-      const embed = videoEmbed(question.explanation_video_url);
+    if ((type === "video" || type === "both") && grade?.explanation_video_url) {
+      const embed = videoEmbed(grade.explanation_video_url);
       if (embed) {
         pieces.push(`<div class="question-video"><iframe src="${esc(embed)}" title="Question explanation video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
       }
@@ -239,7 +239,7 @@
         feedback.innerHTML =
           `<strong>${correct ? "Correct!" : "Not quite."}</strong>` +
           `<div>Correct answer: ${esc(answerLabel(grade?.correct_answer))}</div>` +
-          explanationMarkup(question);
+          explanationMarkup(grade);
       });
     });
   }
@@ -270,7 +270,7 @@
     const [{data:siblings,error:siblingError},{data:questions,error:questionError}] = await Promise.all([
       db.from("lessons").select("id,title,slug,sort_order").eq("module_id",lesson.module_id).eq("published",true).order("sort_order"),
       db.from("questions")
-        .select("id,topic,question_type,difficulty,question_text,options,figure_url,explanation,explanation_type,explanation_video_url")
+        .select("id,topic,question_type,difficulty,question_text,options,figure_url")
         .eq("lesson_id",lesson.id)
         .eq("published",true)
         .order("created_at")
