@@ -284,6 +284,7 @@ begin
     where q.stimulus_id = s.id
       and q.published = true
       and q.topic_category = 'data_analysis'
+      and q.subtopic = 'data_interpretation'
       and not exists (
         select 1
         from public.gre_mock_attempt_questions used
