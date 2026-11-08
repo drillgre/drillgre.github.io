@@ -53,6 +53,8 @@ grant select on public.questions to authenticated;
 
 -- Grade answers inside PostgreSQL. The answer and explanation are returned
 -- only after the learner submits a response.
+drop function if exists public.grade_gre_question(uuid, jsonb);
+
 create or replace function public.grade_gre_question(
   p_question_id text,
   p_response jsonb
@@ -143,7 +145,7 @@ end;
 $$;
 
 revoke all on function public.grade_gre_question(text, jsonb) from public;
-grant execute on function public.grade_gre_question(uuid, jsonb) to anon, authenticated;
+grant execute on function public.grade_gre_question(text, jsonb) to anon, authenticated;
 
 -- Security note:
 -- This RPC protects answer and explanation columns from ordinary anonymous
