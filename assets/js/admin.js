@@ -1011,7 +1011,7 @@ async function loadStimulusGroups(selectedId = "") {
     db.from("question_stimuli")
       .select("id,title,stimulus_text,figure_url")
       .order("created_at", { ascending: false }),
-    db.from("questions").select("stimulus_id").not("stimulus_id", "is", null)
+    db.from("questions").select("stimulus_id,published").not("stimulus_id", "is", null)
   ]);
 
   if (groupsResult.error) {
@@ -1021,15 +1021,19 @@ async function loadStimulusGroups(selectedId = "") {
   }
 
   const counts = {};
+  const publishedCounts = {};
   (linksResult.data || []).forEach(row => {
-    if (row.stimulus_id) counts[row.stimulus_id] = (counts[row.stimulus_id] || 0) + 1;
+    if (row.stimulus_id) {
+      counts[row.stimulus_id] = (counts[row.stimulus_id] || 0) + 1;
+      if (row.published) publishedCounts[row.stimulus_id] = (publishedCounts[row.stimulus_id] || 0) + 1;
+    }
   });
 
   stimulusGroupsCache = groupsResult.data || [];
   select.innerHTML = '<option value="">No shared stimulus (standalone question)</option>' +
     stimulusGroupsCache.map(group => {
       const count = counts[group.id] || 0;
-      return `<option value="${esc(group.id)}">${esc(group.title)} · ${count}/3 questions linked</option>`;
+      return `<option value="${esc(group.id)}">${esc(group.title)} · ${count}/3 linked, ${publishedCounts[group.id] || 0}/3 published</option>`;
     }).join("");
 
   if (selectedId) select.value = selectedId;
