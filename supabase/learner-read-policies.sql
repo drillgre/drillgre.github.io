@@ -44,12 +44,33 @@ grant select (
   question_text,
   options,
   figure_url,
+  topic_category,
+  subtopic,
+  stimulus_id,
   published,
   created_at
 ) on public.questions to anon;
 -- The authenticated role retains the full select permission used by the admin
 -- dashboard. The published-question RLS policy still filters non-admin rows.
 grant select on public.questions to authenticated;
+
+-- Read only stimulus groups associated with published lesson questions.
+grant select on public.question_stimuli to anon, authenticated;
+drop policy if exists "Public can read stimuli for published lessons" on public.question_stimuli;
+create policy "Public can read stimuli for published lessons"
+on public.question_stimuli
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1
+    from public.questions q
+    join public.lessons l on l.id = q.lesson_id
+    where q.stimulus_id = question_stimuli.id
+      and q.published = true
+      and l.published = true
+  )
+);
 
 -- Grade answers inside PostgreSQL. The answer and explanation are returned
 -- only after the learner submits a response.
