@@ -96,8 +96,8 @@ begin
     return new;
   end if;
 
-  if new.topic_category <> 'data_analysis' then
-    raise exception 'A shared stimulus can only be linked to Data Analysis questions.';
+  if new.topic_category <> 'data_analysis' or new.subtopic <> 'data_interpretation' then
+    raise exception 'A shared stimulus can only be linked to Data Interpretation questions.';
   end if;
 
   select count(*) into v_count
@@ -309,6 +309,7 @@ begin
     where q.stimulus_id = v_stimulus.id
       and q.published = true
       and q.topic_category = 'data_analysis'
+      and q.subtopic = 'data_interpretation'
     order by q.difficulty, q.created_at
   loop
     v_position := v_position + 1;
@@ -517,20 +518,6 @@ begin
         and q.subtopic = v_target.subtopic
         and q.stimulus_id is null
         and q.difficulty = v_target.difficulty
-        and (
-          v_target.topic_category <> 'arithmetic'
-          or v_target.subtopic <> 'arithmetic_other'
-          or not exists (
-            select 1 from public.gre_mock_attempt_questions prior
-            where prior.attempt_id = p_attempt_id
-              and prior.question_snapshot ->> 'topic_category' = 'arithmetic'
-              and (prior.question_snapshot ->> 'difficulty')::integer = v_target.difficulty
-              and prior.question_snapshot ->> 'subtopic' in (
-                'fractions_decimals','percentages','ratios_proportions',
-                'exponents_roots','absolute_values','arithmetic_other'
-              )
-          )
-        )
         and not exists (
           select 1 from public.gre_mock_attempt_questions aq
           where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
@@ -594,6 +581,20 @@ begin
             )
           )
           and q.difficulty = v_target.difficulty
+          and (
+            v_target.topic_category <> 'arithmetic'
+            or v_target.subtopic <> 'arithmetic_other'
+            or not exists (
+              select 1 from public.gre_mock_attempt_questions prior
+              where prior.attempt_id = p_attempt_id
+                and prior.question_snapshot ->> 'topic_category' = 'arithmetic'
+                and (prior.question_snapshot ->> 'difficulty')::integer = v_target.difficulty
+                and prior.question_snapshot ->> 'subtopic' in (
+                  'fractions_decimals','percentages','ratios_proportions',
+                  'exponents_roots','absolute_values','arithmetic_other'
+                )
+            )
+          )
           and not exists (
             select 1 from public.gre_mock_attempt_questions aq
             where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
@@ -654,6 +655,20 @@ begin
             )
           )
           and q.difficulty = v_target.difficulty
+          and (
+            v_target.topic_category <> 'arithmetic'
+            or v_target.subtopic <> 'arithmetic_other'
+            or not exists (
+              select 1 from public.gre_mock_attempt_questions prior
+              where prior.attempt_id = p_attempt_id
+                and prior.question_snapshot ->> 'topic_category' = 'arithmetic'
+                and (prior.question_snapshot ->> 'difficulty')::integer = v_target.difficulty
+                and prior.question_snapshot ->> 'subtopic' in (
+                  'fractions_decimals','percentages','ratios_proportions',
+                  'exponents_roots','absolute_values','arithmetic_other'
+                )
+            )
+          )
           and not exists (
             select 1 from public.gre_mock_attempt_questions aq
             where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
