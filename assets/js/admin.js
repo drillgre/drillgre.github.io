@@ -1122,6 +1122,7 @@ $("newQuestion").onclick = async () => {
   $("questionId").value = "";
 
   $("topicCategory").value = "arithmetic";
+  $("questionUsage").value = "both";
   fillSubtopicOptions("number_properties");
   updateStimulusPanel();
   await loadStimulusGroups();
@@ -1205,7 +1206,7 @@ $("figure").onchange = async () => {
 async function loadQuestions() {
   const { data, error } = await db
     .from("questions")
-    .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,published")
+    .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_usage,question_text,published")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -1237,6 +1238,7 @@ async function loadQuestions() {
           <div class="meta">
             ${esc(typeNames[x.question_type] || x.question_type)}
             · ${x.stimulus_id ? "Shared stimulus group" : "Standalone"}
+            · ${x.question_usage === "mock" ? "Mock only" : x.question_usage === "practice" ? "Practice only" : "Mock + practice"}
             · ${x.published ? "Published" : "Draft"}
             · ${esc(x.question_text.slice(0, 130))}
           </div>
@@ -1288,14 +1290,12 @@ async function loadQuestions() {
 // ============================================================
 
 async function editQuestion(id) {
-  const { data, error } = await db
-    .from("questions")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data, error } = await db.rpc("admin_get_question", {
+    p_question_id: String(id)
+  });
 
-  if (error) {
-    alert(error.message);
+  if (error || !data) {
+    alert(error?.message || "Question details could not be loaded.");
     return;
   }
 
@@ -1309,6 +1309,7 @@ async function editQuestion(id) {
   $("stimulusEditor").hidden = true;
 
   $("topic").value = data.topic;
+  $("questionUsage").value = data.question_usage || "both";
   $("qType").value = data.question_type;
   $("difficulty").value = data.difficulty;
   $("linkedLesson").value = data.lesson_id || "";
@@ -1505,6 +1506,7 @@ $("questionForm").onsubmit = async e => {
     topic_category: topicCategory,
     subtopic,
     stimulus_id: stimulusId,
+    question_usage: $("questionUsage").value,
 
     question_type: type,
 
