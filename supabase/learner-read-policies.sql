@@ -182,7 +182,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_question jsonb;
 begin
@@ -203,7 +203,7 @@ begin
 
   return v_question;
 end;
-$;
+$$;
 
 revoke all on function public.admin_get_question(text) from public;
 grant execute on function public.admin_get_question(text) to authenticated;
