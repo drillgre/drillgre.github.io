@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="DrillGRE: focused GRE Quant, Verbal, vocabulary, and mock test practice." />
-  <title>DrillGRE | Practice. Drill. Master.</title>
+  <title>DrillGRE | FREE GRE Practice</title>
+  <link rel="canonical" href="https://drillgre.github.io/">
   <style>
     :root {
       --navy: #101b35;
@@ -146,36 +147,39 @@
       .footer-inner { flex-direction: column; align-items: flex-start; }
     }
   </style>
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/assets/js/site-nav.js"></script>
 </head>
 <body>
-  <header>
-    <div class="container nav">
-      <a class="brand" href="#home" aria-label="DrillGRE home">
-        <span class="brand-mark">D</span><span style="color:var(--navy)">Drill<span>GRE</span></span>
-      </a>
-      <button class="menu-btn" id="menuBtn" aria-label="Open navigation" aria-expanded="false">☰</button>
-      <nav class="nav-links" id="navLinks">
-        <a href="#practice">Practice</a>
-        <a href="https://drillgre.github.io/vocab.html">Vocab Mountain</a>
-        <a href="account.html">Sign in</a>
-        <a href="dashboard.html">Learner dashboard</a>
-        <a href="quant/mock.html">Mock Tests</a>
-        <a href="#how">How it works</a>
-      </nav>
-      <div class="nav-actions">
-        <a class="btn btn-outline" href="#practice">Explore practice</a>
-        <a class="btn btn-primary" href="#practice">Start drilling <span aria-hidden="true">→</span></a>
-      </div>
+  <header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span>
+      <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      <span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <a href="/#practice">Practice</a>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions">
+      <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+      <a class="drillgre-start-link" href="/#practice">Start drilling <span aria-hidden="true">→</span></a>
     </div>
-  </header>
+  </div>
+</header>
 
   <main>
     <section class="hero" id="home">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow"><span class="dot"></span> Your GRE practice space</div>
+          <div class="eyebrow"><span class="dot"></span> Your FREE GRE practice space</div>
           <h1>Make every practice question <em>count.</em></h1>
-          <p class="hero-copy">Build confidence for the GRE with focused practice, smart vocabulary review, and mock tests designed to help you improve one question at a time.</p>
+          <p class="hero-copy">DrillGRE is a FREE GRE preparation initiative. Build confidence with focused practice, vocabulary review, and mock tests designed to help you improve one question at a time.</p>
           <div class="hero-buttons">
             <a class="btn btn-primary" href="#practice">Start practicing <span aria-hidden="true">→</span></a>
             <a class="btn btn-outline" href="#vocab">Explore Vocab Mountain</a>
@@ -275,22 +279,12 @@
   <footer>
     <div class="container footer-inner">
       <a class="brand" href="#home"><span class="brand-mark">D</span><span style="color:var(--navy)">Drill<span>GRE</span></span></a>
-      <span>© <span id="year"></span> DrillGRE. Practice. Drill. Master.</span>
+      <span>© <span id="year"></span> DrillGRE. A FREE GRE preparation initiative.</span>
       <div class="footer-links"><a href="#practice">Practice</a><a href="#vocab">Vocab Mountain</a><a href="quant/mock.html">Mock Tests</a></div>
     </div>
   </footer>
 
   <script>
-    const menuBtn = document.getElementById('menuBtn');
-    const navLinks = document.getElementById('navLinks');
-    menuBtn.addEventListener('click', () => {
-      const isOpen = navLinks.classList.toggle('open');
-      menuBtn.setAttribute('aria-expanded', String(isOpen));
-    });
-    navLinks.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-      navLinks.classList.remove('open');
-      menuBtn.setAttribute('aria-expanded', 'false');
-    }));
     document.getElementById('year').textContent = new Date().getFullYear();
     document.querySelectorAll('[data-notice]').forEach(link => {
       link.addEventListener('click', event => {
