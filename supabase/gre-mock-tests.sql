@@ -270,8 +270,6 @@ $$;
 revoke all on function private.gre_mock_answer_is_correct(jsonb, jsonb) from public, anon, authenticated;
 
 
-drop function if exists private.gre_mock_select_section(uuid, integer, text, text);
-
 create or replace function private.gre_mock_select_section(
   p_attempt_id uuid,
   p_section_number integer,
@@ -811,6 +809,8 @@ begin
 end;
 $$;
 
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text)
+  from public, anon, authenticated;
 revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text)
   from public, anon, authenticated;
 
