@@ -270,6 +270,8 @@ $$;
 revoke all on function private.gre_mock_answer_is_correct(jsonb, jsonb) from public, anon, authenticated;
 
 
+drop function if exists private.gre_mock_select_section(uuid, integer, text, text);
+
 create or replace function private.gre_mock_select_section(
   p_attempt_id uuid,
   p_section_number integer,
@@ -632,8 +634,8 @@ begin
           (4,'arithmetic','number_properties'),
           (4,'algebra','inequalities'),
           (4,'geometry','coordinate_geometry'),
-          (5,'arithmetic','arithmetic_other'),
-          (5,'arithmetic','arithmetic_other'),
+          (5,'arithmetic','percentages'),
+          (5,'arithmetic','ratios_proportions'),
           (5,'algebra','algebra_core'),
           (5,'geometry','geometry')
         ) as m(difficulty, topic_category, subtopic)
@@ -809,7 +811,7 @@ begin
 end;
 $$;
 
-revoke all on function private.gre_mock_select_section(uuid, integer, text, text)
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text)
   from public, anon, authenticated;
 
 create or replace function public.start_gre_mock(p_session_token text)
