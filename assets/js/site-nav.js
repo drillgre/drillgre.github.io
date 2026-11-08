@@ -50,7 +50,6 @@
 
   function displaySignedIn(name) {
     accountLink.textContent = name;
-    accountLink.href = "/dashboard.html";
     accountLink.dataset.signedIn = "true";
     accountLink.setAttribute("aria-label", name + "'s learner dashboard");
     accountLink.title = "Open learner dashboard";
@@ -75,10 +74,11 @@
       try {
         const { data } = await db
           .from("profiles")
-          .select("name")
+          .select("name, role")
           .eq("id", user.id)
           .maybeSingle();
         if (data?.name) name = data.name;
+        accountLink.href = data?.role === "admin" ? "/admin.html" : "/dashboard.html";
       } catch (_) {
         // Metadata or email provides a useful fallback if the profile query
         // is unavailable on a page or before the profile migration is run.
