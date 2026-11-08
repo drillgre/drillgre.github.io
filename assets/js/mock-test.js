@@ -35,6 +35,36 @@
     return [];
   }
 
+  const categoryLabels = {
+    arithmetic: "Arithmetic",
+    data_analysis: "Data Analysis",
+    algebra: "Algebra",
+    geometry: "Geometry"
+  };
+
+  function topicLabel(q) {
+    const broad = categoryLabels[q.topic_category] || q.topic || "Quantitative Reasoning";
+    const sub = String(q.subtopic || "").replaceAll("_", " ");
+    return sub ? broad + " · " + sub : broad;
+  }
+
+  function sharedStimulusMarkup(q) {
+    const figure = q.stimulus_figure_url
+      ? `<img class="question-figure" src="${esc(q.stimulus_figure_url)}" alt="${esc(q.stimulus_title || "Shared Data Analysis figure")}" loading="lazy">`
+      : "";
+    const context = q.stimulus_text
+      ? `<p class="stimulus-context">${esc(q.stimulus_text)}</p>`
+      : "";
+    return `
+      <section class="shared-stimulus">
+        <div class="stimulus-label">Shared Data Analysis stimulus</div>
+        <h3>${esc(q.stimulus_title || "Data set")}</h3>
+        ${context}
+        ${figure}
+        <p class="stimulus-instruction">Use this same figure or data set to answer Questions 1–3 below.</p>
+      </section>`;
+  }
+
   function questionAnswerMarkup(q) {
     if (q.question_type === "quantitative_comparison") {
       const opts = parseOptions(q.options);
@@ -131,17 +161,32 @@
 
   function renderQuestions(questions) {
     currentQuestions = questions || [];
-    $("questionStack").innerHTML = currentQuestions.map((q,index) => `
-      <article class="mock-question" data-qid="${esc(q.id)}">
-        <div class="question-head">
-          <span class="question-number">Question ${index+1} of ${currentQuestions.length}</span>
-          <span class="difficulty">Level ${esc(q.difficulty)}</span>
-          <span class="topic">${esc(q.topic || "Quantitative Reasoning")}</span>
-        </div>
-        <div class="question-prompt">${esc(q.question_text || "")}</div>
-        ${q.figure_url ? `<img class="question-figure" src="${esc(q.figure_url)}" alt="Question figure" loading="lazy">` : ""}
-        <div class="answer-area">${questionAnswerMarkup(q)}</div>
-      </article>`).join("");
+    const seenStimuli = new Set();
+
+    $("questionStack").innerHTML = currentQuestions.map((q,index) => {
+      let stimulus = "";
+      if (q.stimulus_id && !seenStimuli.has(String(q.stimulus_id))) {
+        seenStimuli.add(String(q.stimulus_id));
+        stimulus = sharedStimulusMarkup(q);
+      }
+
+      const individualFigure = !q.stimulus_id && q.figure_url
+        ? `<img class="question-figure" src="${esc(q.figure_url)}" alt="Question figure" loading="lazy">`
+        : "";
+
+      return `
+        ${stimulus}
+        <article class="mock-question" data-qid="${esc(q.id)}">
+          <div class="question-head">
+            <span class="question-number">Question ${index+1} of ${currentQuestions.length}</span>
+            <span class="difficulty">Level ${esc(q.difficulty)}</span>
+            <span class="topic">${esc(topicLabel(q))}</span>
+          </div>
+          <div class="question-prompt">${esc(q.question_text || "")}</div>
+          ${individualFigure}
+          <div class="answer-area">${questionAnswerMarkup(q)}</div>
+        </article>`;
+    }).join("");
 
     $("questionStack").querySelectorAll(".mock-question").forEach(card => {
       card.querySelectorAll("input").forEach(input => {
@@ -173,10 +218,10 @@
     $("sectionLabel").textContent = data.section_number === 1 ? "Section 1 of 2" : "Section 2 of 2";
     $("sectionTitle").textContent = data.section_number === 1 ? "Adaptive foundation" : "Adaptive challenge";
     $("sectionDescription").textContent = data.section_number === 1
-      ? "12 questions · 2 Level 1, 3 Level 2, 4 Level 3, 3 Level 4."
+      ? "12 questions · Arithmetic 3, Data Analysis 4, Algebra 3, Geometry 2. Difficulty: 2 Level 1, 3 Level 2, 4 Level 3, 3 Level 4."
       : data.route === "harder"
-        ? "15 questions · 5 Level 3, 5 Level 4, 5 Level 5. Your Section 1 result placed you on the harder route."
-        : "15 questions · 3 Level 1, 5 Level 2, 5 Level 3, 2 Level 4. Your Section 1 result placed you on the foundation route.";
+        ? "15 questions · Arithmetic 4, Data Analysis 5, Algebra 3, Geometry 3. Difficulty: 5 Level 3, 5 Level 4, 5 Level 5. Harder route."
+        : "15 questions · Arithmetic 4, Data Analysis 5, Algebra 3, Geometry 3. Difficulty: 3 Level 1, 5 Level 2, 5 Level 3, 2 Level 4. Foundation route.";
     $("submitSection").textContent = data.section_number === 1 ? "Submit Section 1" : "Finish mock test";
     renderQuestions(data.questions || []);
     setStatus("");
@@ -311,6 +356,7 @@
   }
 
   function renderReview(items) {
+    const seenStimuli = new Set();
     $("reviewList").innerHTML=(items||[]).map((item,index)=>{
       const q=item.question||{};
       const embed=videoEmbed(item.explanation_video_url);
@@ -321,11 +367,18 @@
       if((item.explanation_type==="video"||item.explanation_type==="both")&&embed) {
         explanation+=`<div class="review-video"><iframe src="${esc(embed)}" title="Question ${index+1} explanation" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
+      const stimulus = q.stimulus_id && !seenStimuli.has(String(q.stimulus_id))
+        ? (seenStimuli.add(String(q.stimulus_id)), sharedStimulusMarkup(q))
+        : "";
+      const individualFigure = !q.stimulus_id && q.figure_url
+        ? `<img class="question-figure" src="${esc(q.figure_url)}" alt="Question figure">`
+        : "";
       return `
+        ${stimulus}
         <article class="review-question ${item.is_correct?"right":"wrong"}">
-          <div class="question-head"><b>Q${index+1} · Section ${item.section_number}</b><span>Level ${esc(q.difficulty)}</span><strong>${item.is_correct?"Correct":"Incorrect / blank"}</strong></div>
+          <div class="question-head"><b>Q${index+1} · Section ${item.section_number}</b><span>Level ${esc(q.difficulty)}</span><span>${esc(topicLabel(q))}</span><strong>${item.is_correct?"Correct":"Incorrect / blank"}</strong></div>
           <p class="question-prompt">${esc(q.question_text||"")}</p>
-          ${q.figure_url?`<img class="question-figure" src="${esc(q.figure_url)}" alt="Question figure">`:""}
+          ${individualFigure}
           ${reviewOptionMarkup(q)}
           <div class="review-answer"><b>Your answer:</b> ${esc(answerDisplay(item))}<br><b>Correct answer:</b> ${esc(correctAnswerText(item))}</div>
           ${explanation}
