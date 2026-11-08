@@ -23,11 +23,67 @@ async function editLesson(id){let {data,error}=await db.from("lessons").select("
 $("lessonForm").onsubmit=async e=>{e.preventDefault();message("lessonMsg","Saving…");let mslug=slug($("moduleSlug").value),{data:mod,error}=await db.from("modules").select("id").eq("slug",mslug).maybeSingle();if(error)return message("lessonMsg",error.message);if(!mod){let r=await db.from("modules").insert({title:$("moduleTitle").value.trim(),slug:mslug,sort_order:+$("order").value||0,published:$("lessonPublished").checked}).select("id").single();if(r.error)return message("lessonMsg",r.error.message);mod=r.data;}else{let r=await db.from("modules").update({title:$("moduleTitle").value.trim(),sort_order:+$("order").value||0}).eq("id",mod.id);if(r.error)return message("lessonMsg",r.error.message);}let body={module_id:mod.id,title:$("title").value.trim(),slug:slug($("slug").value),sort_order:+$("order").value||0,published:$("lessonPublished").checked,content:{markdown:$("content").value},updated_at:new Date().toISOString()};let id=$("lessonId").value;let r=id?await db.from("lessons").update(body).eq("id",id):await db.from("lessons").insert(body);if(r.error)return message("lessonMsg",r.error.message);$("lessonDialog").close();await loadLessons();await loadLessonOptions();};
 async function toggleLesson(id){let l=lessonsCache.find(x=>x.id===id),r=await db.from("lessons").update({published:!l.published,updated_at:new Date().toISOString()}).eq("id",id);if(r.error)alert(r.error.message);else loadLessons();}
 async function deleteLesson(id){if(!confirm("Delete this lesson?"))return;let r=await db.from("lessons").delete().eq("id",id);if(r.error)alert(r.error.message);else{loadLessons();loadLessonOptions();}}
-$("newQuestion").onclick=()=>{$("questionForm").reset();$("questionId").value="";figureUrl=null;figurePath=null;$("preview").innerHTML="";$("questionFormTitle").textContent="New question";message("questionMsg","");$("questionDialog").showModal();};
-$("figure").onchange=async()=>{let file=$("figure").files[0];if(!file)return;if(file.size>5*1024*1024){message("questionMsg","Figure must be smaller than 5 MB.");$("figure").value="";return;}$("preview").textContent="Uploading…";let ext=(file.name.split(".").pop()||"png").toLowerCase().replace(/[^a-z0-9]/g,""),path=`${user.id}/${crypto.randomUUID()}.${ext}`;let {error}=await db.storage.from("question-figures").upload(path,file,{contentType:file.type});if(error){$("preview").textContent="Upload failed: "+error.message;return;}let {data}=db.storage.from("question-figures").getPublicUrl(path);figureUrl=data.publicUrl;figurePath=path;$("preview").innerHTML=`<img src="${esc(figureUrl)}" alt="Figure preview">`;};
-async function loadQuestions(){let {data,error}=await db.from("questions").select("id,topic,question_type,difficulty,question_text,published").order("created_at",{ascending:false});if(error){$("questionList").textContent=error.message;return;}let q=$("search").value.toLowerCase(),t=$("typeFilter").value,l=$("levelFilter").value;let rows=(data||[]).filter(x=>(!q||(x.topic+" "+x.question_text).toLowerCase().includes(q))&&(!t||x.question_type===t)&&(!l||String(x.difficulty)===l));$("questionList").innerHTML=rows.length?rows.map(x=>`<div class="entry"><div><strong>${esc(x.topic)} · Level ${x.difficulty}</strong><div class="meta">${esc(typeNames[x.question_type]||x.question_type)} · ${x.published?"Published":"Draft"} · ${esc(x.question_text.slice(0,130))}</div></div><div class="buttons"><button data-qedit="${x.id}">Edit</button><button data-qpub="${x.id}" data-published="${x.published}">${x.published?"Unpublish":"Publish"}</button><button class="del" data-qdel="${x.id}">Delete</button></div></div>`).join():"<p>No matching questions.</p>";$("questionList").querySelectorAll("[data-qedit]").forEach(b=>b.onclick=()=>editQuestion(b.dataset.qedit));$("questionList").querySelectorAll("[data-qpub]").forEach(b=>b.onclick=()=>toggleQuestion(b.dataset.qpub,b.dataset.published==="true"));$("questionList").querySelectorAll("[data-qdel]").forEach(b=>b.onclick=()=>deleteQuestion(b.dataset.qdel));}
-["search","typeFilter","levelFilter"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",loadQuestions));
-async function editQuestion(id){let {data,error}=await db.from("questions").select("*").eq("id",id).single();if(error)return alert(error.message);$("questionId").value=data.id;$("topic").value=data.topic;$("qType").value=data.question_type;$("difficulty").value=data.difficulty;$("linkedLesson").value=data.lesson_id||"";$("qText").value=data.question_text;$("options").value=(data.options||[]).join("\n");$("answer").value=Array.isArray(data.correct_answer)?data.correct_answer.join(","):String(data.correct_answer?.answer??data.correct_answer??"");$("explanation").value=data.explanation||"";$("qPublished").checked=data.published;figureUrl=data.figure_url||null;figurePath=null;$("preview").innerHTML=figureUrl?`<img src="${esc(figureUrl)}" alt="Figure preview">`:"";$("figure").value="";$("questionFormTitle").textContent="Edit question";message("questionMsg","");$("questionDialog").showModal();}
-$("questionForm").onsubmit=async e=>{e.preventDefault();message("questionMsg","Saving…");let type=$("qType").value,answer=$("answer").value.trim(),correct=type==="multiple_choice_multiple"?answer.split(",").map(s=>s.trim()).filter(Boolean):{answer};let body={topic:$("topic").value.trim(),question_type:type,difficulty:+$("difficulty").value,lesson_id:$("linkedLesson").value||null,question_text:$("qText").value.trim(),options:$("options").value.split("\n").map(s=>s.trim()).filter(Boolean),correct_answer:correct,figure_url:figureUrl,explanation:$("explanation").value,published:$("qPublished").checked,updated_at:new Date().toISOString()};let id=$("questionId").value,r=id?await db.from("questions").update(body).eq("id",id):await db.from("questions").insert(body);if(r.error)return message("questionMsg",r.error.message);$("questionDialog").close();await loadQuestions();};
-async function toggleQuestion(id,pub){let r=await db.from("questions").update({published:!pub,updated_at:new Date().toISOString()}).eq("id",id);if(r.error)alert(r.error.message);else loadQuestions();}
-async function deleteQuestion(id){if(!confirm("Delete this question?"))return;let r=await db.from("questions").delete().eq("id",id);if(r.error)alert(r.error.message);else loadQuestions();}
+
+function parseOptions(raw){
+  if(Array.isArray(raw)) return raw.map((x,i)=>typeof x==="string"?{label:String.fromCharCode(65+i),text:x}:x);
+  if(typeof raw==="string"){try{return parseOptions(JSON.parse(raw));}catch(e){return raw.split("\n").filter(Boolean).map((text,i)=>({label:String.fromCharCode(65+i),text}));}}
+  return [];
+}
+function answerString(raw){
+  if(Array.isArray(raw)) return raw;
+  if(raw && typeof raw==="object") return raw.answer ?? raw.value ?? raw.selected ?? "";
+  return raw ?? "";
+}
+function renderDynamicFields(existingOptions=[], existingAnswer="", extra={}){
+  const type=$("qType").value;
+  const opts=parseOptions(existingOptions);
+  const ans=answerString(existingAnswer);
+  const answerList=Array.isArray(ans)?ans.map(String):String(ans).split(",").map(s=>s.trim()).filter(Boolean);
+  let out="";
+  if(type==="quantitative_comparison"){
+    const qa=extra.quantity_a ?? opts[0]?.text ?? "";
+    const qb=extra.quantity_b ?? opts[1]?.text ?? "";
+    out=`<div class="dynamic-card"><h3>Quantitative Comparison</h3>
+      <label>Quantity A<textarea id="quantityA" rows="2" placeholder="Enter Quantity A">${esc(qa)}</textarea></label>
+      <label>Quantity B<textarea id="quantityB" rows="2" placeholder="Enter Quantity B">${esc(qb)}</textarea></label>
+      <label>Correct answer</label><div class="answer-choices">
+      ${[["A","Quantity A is greater"],["B","Quantity B is greater"],["C","The two quantities are equal"],["D","The relationship cannot be determined"]].map(([v,t])=>`<label class="choice"><input type="radio" name="dynamicAnswer" value="${v}" ${String(ans)===v?"checked":""} required><span><b>${v}.</b> ${t}</span></label>`).join("")}
+      </div></div>`;
+  } else if(type==="numeric_entry"){
+    const numeric=extra.numeric_answer ?? (typeof ans==="object"?ans.value:ans) ?? "";
+    const tolerance=extra.tolerance ?? "";
+    out=`<div class="dynamic-card"><h3>Numeric Entry</h3><label>Correct numerical answer<input id="numericAnswer" type="text" inputmode="decimal" value="${esc(numeric)}" placeholder="e.g. 12.5" required></label><label>Optional tolerance<input id="numericTolerance" type="number" min="0" step="any" value="${esc(tolerance)}" placeholder="e.g. 0.01"></label><p class="field-note">If tolerance is provided, answers within that distance of the correct value may be accepted by the learner-side checker.</p></div>`;
+  } else {
+    const multiple=type==="multiple_choice_multiple";
+    const defaultOptions=opts.length?opts:[{label:"A",text:""},{label:"B",text:""},{label:"C",text:""},{label:"D",text:""}];
+    out=`<div class="dynamic-card"><h3>${type==="data_interpretation"?"Data Interpretation question options":"Answer options"}</h3>
+      <p class="field-note">${type==="data_interpretation"?"Put the shared table, chart, or data context in Question text or upload it as a figure. This editor records one DI question at a time.":"Add, remove, or edit the answer options below."}</p>
+      <div id="optionRows">${defaultOptions.map((o,i)=>optionRow(o,i,multiple,answerList)).join("")}</div>
+      <button type="button" class="secondary add-option" id="addOption">+ Add option</button>
+      <label>Correct answer${multiple?"s":""}</label><div class="answer-choices" id="correctChoices">
+      ${defaultOptions.map((o,i)=>{const v=o.label||String.fromCharCode(65+i);return `<label class="choice"><input type="${multiple?"checkbox":"radio"}" name="dynamicAnswer" value="${esc(v)}" ${answerList.includes(v)?"checked":""} ${!multiple?"required":""}><span><b>${esc(v)}.</b> ${esc(o.text||"Option "+v)}</span></label>`}).join("")}
+      </div></div>`;
+  }
+  $("dynamicFields").innerHTML=out;
+  if(type!=="quantitative_comparison"&&type!=="numeric_entry"){
+    $("addOption")?.addEventListener("click",()=>{const rows=$("optionRows");const n=rows.querySelectorAll(".option-row").length;const row=document.createElement("div");row.innerHTML=optionRow({label:String.fromCharCode(65+n),text:""},n,type==="multiple_choice_multiple",[]);rows.appendChild(row.firstElementChild);syncCorrectChoices();});
+    $("optionRows")?.addEventListener("input",syncCorrectChoices);
+    $("optionRows")?.addEventListener("click",e=>{if(e.target.matches("[data-remove-option]")){e.preventDefault();e.target.closest(".option-row").remove();renumberOptions();syncCorrectChoices();}});
+  }
+}
+function optionRow(o,i,multiple,answers){
+  const label=o.label||String.fromCharCode(65+i);
+  return `<div class="option-row"><span class="option-label">${esc(label)}.</span><input class="option-text" aria-label="Option ${esc(label)}" value="${esc(o.text??"")}" placeholder="Enter option ${esc(label)}"><button type="button" class="secondary remove-option" data-remove-option>Remove</button></div>`;
+}
+function collectOptions(){
+  return [...document.querySelectorAll("#optionRows .option-row")].map((row,i)=>({label:String.fromCharCode(65+i),text:row.querySelector(".option-text").value.trim()})).filter(o=>o.text);
+}
+function renumberOptions(){
+  document.querySelectorAll("#optionRows .option-row").forEach((row,i)=>row.querySelector(".option-label").textContent=String.fromCharCode(65+i)+".");
+}
+function syncCorrectChoices(){
+  const type=$("qType").value, multiple=type==="multiple_choice_multiple";
+  const prior=[...document.querySelectorAll("#correctChoices input:checked")].map(x=>x.value);
+  const opts=collectOptions();
+  $("correctChoices").innerHTML=opts.map(o=>`<label class="choice"><input type="${multiple?"checkbox":"radio"}" name="dynamicAnswer" value="${esc(o.label)}" ${prior.includes(o.label)?"checked":""} ${!multiple?"required":""}><span><b>${esc(o.label)}.</b> ${esc(o.text)}</span></label>`).join("");
+}
