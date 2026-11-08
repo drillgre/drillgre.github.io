@@ -984,7 +984,23 @@ function updateStimulusPanel() {
   if (!isDataAnalysis) {
     $("stimulusGroup").value = "";
     $("stimulusEditor").hidden = true;
+    renderSelectedStimulusPreview();
   }
+}
+
+function renderSelectedStimulusPreview() {
+  const id = $("stimulusGroup").value;
+  const group = stimulusGroupsCache.find(item => item.id === id);
+  const target = $("stimulusSelectedPreview");
+  if (!target || !group) {
+    if (target) target.innerHTML = "";
+    return;
+  }
+  target.innerHTML = `
+    <div class="field-note"><b>${esc(group.title)}</b></div>
+    ${group.stimulus_text ? `<p>${esc(group.stimulus_text)}</p>` : ""}
+    ${group.figure_url ? `<img src="${esc(group.figure_url)}" alt="Shared stimulus figure preview">` : ""}
+  `;
 }
 
 async function loadStimulusGroups(selectedId = "") {
@@ -1017,7 +1033,10 @@ async function loadStimulusGroups(selectedId = "") {
     }).join("");
 
   if (selectedId) select.value = selectedId;
+  renderSelectedStimulusPreview();
 }
+
+$("stimulusGroup").addEventListener("change", renderSelectedStimulusPreview);
 
 $("topicCategory").addEventListener("change", () => {
   fillSubtopicOptions();
@@ -1522,7 +1541,10 @@ $("questionForm").onsubmit = async e => {
 
   $("questionDialog").close();
 
-  await loadQuestions();
+  await Promise.all([
+    loadQuestions(),
+    loadStimulusGroups(stimulusId || "")
+  ]);
 };
 
 
@@ -1557,7 +1579,7 @@ async function deleteQuestion(id) {
   if (result.error) {
     alert(result.error.message);
   } else {
-    await loadQuestions();
+    await Promise.all([loadQuestions(), loadStimulusGroups()]);
   }
 }
 
