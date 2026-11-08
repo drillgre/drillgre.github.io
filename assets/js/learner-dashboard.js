@@ -31,7 +31,7 @@
       ["Country", profile.country || "Not provided"],
       ["Academic background", pretty(profile.academic_background)],
       ["Further study", pretty(profile.further_study)],
-      ["Intended field of study", pretty(profile.further_study_field)]
+      ["Field of study", pretty(profile.further_study_field)]
     ];
     $("profileDetails").innerHTML = fields.map(([label,value]) => `
       <div class="profile-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
