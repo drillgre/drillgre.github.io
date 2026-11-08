@@ -7,7 +7,6 @@
   const $ = id => document.getElementById(id);
 
   let pendingEmail = "";
-  let passwordToSetAfterOtp = "";
 
   function accountPageUrl() {
     return new URL("account.html", window.location.href).toString();
@@ -26,7 +25,7 @@
     $("loginTab").classList.toggle("active", mode === "login");
     $("registerTab").classList.toggle("active", mode === "register");
     $("accountForms").hidden = false;
-    $("otpForm").hidden = true;
+    $("confirmationPanel").hidden = true;
     $("resetPasswordForm").hidden = true;
     showMessage("");
   }
@@ -49,30 +48,36 @@
     return profile;
   }
 
-  function showSignupOtp(email) {
+  function showConfirmationPending(email, message = "") {
     pendingEmail = email;
-    $("otpEmail").textContent = email;
-    $("otpCode").value = "";
+    $("confirmationEmail").textContent = email;
     $("accountForms").hidden = true;
     $("resetPasswordForm").hidden = true;
-    $("otpForm").hidden = false;
-    showMessage("A six-digit email verification code has been sent. Enter it below to activate your account.");
-    $("otpCode").focus();
+    $("confirmationPanel").hidden = false;
+    showMessage(message || "Your account has been created. Open the confirmation link sent to your email address to activate your account.");
   }
 
-  async function resendSignupOtp() {
+  async function resendConfirmationEmail() {
     if (!pendingEmail) return;
-    showMessage("Sending another verification code to " + pendingEmail + "…");
+    const button = $("resendConfirmation");
+    button.disabled = true;
+    button.textContent = "Sending…";
+    showMessage("Sending another confirmation email to " + pendingEmail + "…");
+
     const { error } = await db.auth.resend({
       type: "signup",
       email: pendingEmail,
       options: { emailRedirectTo: accountPageUrl() }
     });
+
+    button.disabled = false;
+    button.textContent = "Resend confirmation email";
+
     if (error) {
       showMessage(error.message, true);
       return;
     }
-    showMessage("A new six-digit verification code has been sent. Check your inbox and spam folder.");
+    showMessage("A new confirmation email has been sent. Check your inbox and spam folder.");
   }
 
   async function claimGuestAttemptsAndContinue() {
@@ -111,18 +116,7 @@
 
     if (error) {
       if (/email not confirmed/i.test(error.message)) {
-        pendingEmail = email;
-        showMessage("Your email address has not been verified. Sending a verification code…");
-        const { error: resendError } = await db.auth.resend({
-          type: "signup",
-          email,
-          options: { emailRedirectTo: accountPageUrl() }
-        });
-        if (resendError) {
-          showMessage(error.message + " " + resendError.message, true);
-        } else {
-          showSignupOtp(email);
-        }
+        showConfirmationPending(email, "Your email address has not been confirmed. Use the button below to resend the confirmation link.");
         return;
       }
       showMessage(error.message, true);
@@ -150,7 +144,7 @@
       const button = $("registerForm").querySelector('button[type="submit"]');
       button.disabled = true;
       button.textContent = "Creating account…";
-      showMessage("Creating your account and sending an email verification code…");
+      showMessage("Creating your account and sending a confirmation email…");
 
       const { data, error } = await db.auth.signUp({
         email,
@@ -162,7 +156,7 @@
       });
 
       button.disabled = false;
-      button.textContent = "Create account and send verification code";
+      button.textContent = "Create account and send confirmation email";
 
       if (error) {
         showMessage(error.message, true);
@@ -179,83 +173,24 @@
         return;
       }
 
-      // Older test registrations may already have created an Auth user
-      // through the previous OTP-only flow. Resend its signup code and set
-      // the password after verification so the learner can use password login.
       if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        pendingEmail = email;
-        passwordToSetAfterOtp = password;
-        const { error: resendError } = await db.auth.resend({
-          type: "signup",
-          email,
-          options: { emailRedirectTo: accountPageUrl() }
-        });
-        if (resendError) {
-          showMessage("An account with this email may already exist. Try Sign in and use Forgot password to set a password. " + resendError.message, true);
-          return;
-        }
-        showSignupOtp(email);
+        showMessage("An account with this email may already exist. Sign in instead, or use Forgot password if you need to set or reset its password.", true);
         return;
       }
 
-      passwordToSetAfterOtp = "";
-      showSignupOtp(email);
+      showConfirmationPending(email);
     } catch (error) {
       showMessage(error.message || "Please check the registration form.", true);
     }
   });
 
-  $("otpForm").addEventListener("submit", async event => {
-    event.preventDefault();
-    const code = $("otpCode").value.trim();
-    if (!/^[0-9]{6}$/.test(code)) {
-      showMessage("Enter the six-digit code from your email.", true);
-      return;
-    }
+  $("resendConfirmation").addEventListener("click", resendConfirmationEmail);
 
-    const button = $("otpForm").querySelector('button[type="submit"]');
-    button.disabled = true;
-    button.textContent = "Verifying…";
-    showMessage("Verifying your email address…");
-
-    const { data, error } = await db.auth.verifyOtp({
-      email: pendingEmail,
-      token: code,
-      type: "email"
-    });
-
-    button.disabled = false;
-    button.textContent = "Verify email and continue";
-
-    if (error) {
-      showMessage(error.message, true);
-      return;
-    }
-
-    if (!data.session || !data.user) {
-      showMessage("Email verification did not create a signed-in session. Request another code and try again.", true);
-      return;
-    }
-
-    if (passwordToSetAfterOtp) {
-      const { error: passwordError } = await db.auth.updateUser({ password: passwordToSetAfterOtp });
-      passwordToSetAfterOtp = "";
-      if (passwordError) {
-        showMessage("Your email is verified, but the password could not be saved. Use Forgot password to set it. " + passwordError.message, true);
-        return;
-      }
-    }
-
-    await claimGuestAttemptsAndContinue();
-  });
-
-  $("resendOtp").addEventListener("click", resendSignupOtp);
-
-  $("changeEmail").addEventListener("click", () => {
-    $("otpForm").hidden = true;
+  $("changeRegistrationEmail").addEventListener("click", () => {
+    $("confirmationPanel").hidden = true;
     $("accountForms").hidden = false;
     setMode("register");
-    showMessage("Return to registration to change the email address.");
+    showMessage("You can change the email address in the registration form.");
   });
 
   $("forgotPassword").addEventListener("click", async () => {
@@ -304,7 +239,7 @@
   db.auth.onAuthStateChange(async event => {
     if (event === "PASSWORD_RECOVERY") {
       $("accountForms").hidden = true;
-      $("otpForm").hidden = true;
+      $("confirmationPanel").hidden = true;
       $("resetPasswordForm").hidden = false;
       showMessage("Choose a new password for your DrillGRE account.");
     }
@@ -316,9 +251,16 @@
     const isRecovery = queryParams.get("type") === "recovery"
       || hashParams.get("type") === "recovery"
       || queryParams.has("code");
+    const authError = hashParams.get("error_description") || queryParams.get("error_description");
+
+    if (authError) {
+      showMessage(authError, true);
+      return;
+    }
+
     const { data } = await db.auth.getSession();
     if (data.session && !isRecovery) {
-      window.location.replace("dashboard.html");
+      await claimGuestAttemptsAndContinue();
     }
   });
 })();
