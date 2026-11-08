@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Opt-in DrillGRE learner leaderboard.">
+  <title>Leaderboard | DrillGRE</title>
+  <link rel="stylesheet" href="/assets/css/lms.css">
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/assets/js/site-nav.js"></script>
+  <script defer src="/assets/js/leaderboard.js"></script>
+  <style>
+    .leader-shell{max-width:1040px;margin:0 auto;padding:42px 20px 72px}
+    .leader-hero{background:linear-gradient(125deg,#fff 15%,#edf2ff);border:1px solid var(--line);border-radius:20px;padding:30px;margin-bottom:20px}
+    .leader-hero h1{font-size:clamp(30px,4vw,42px);margin:9px 0}
+    .leader-hero p{max-width:720px;color:var(--muted);line-height:1.65;margin:0}
+    .leader-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:18px 0}
+    .leader-opt{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px;flex:1;min-width:260px}
+    .leader-opt strong{display:block;margin-bottom:5px}
+    .leader-opt p{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 12px}
+    .leader-button{border:0;border-radius:9px;background:var(--blue);color:#fff;padding:10px 14px;font-weight:800;cursor:pointer}
+    .leader-button.secondary{background:#fff;color:#30405f;border:1px solid var(--line)}
+    .leader-status{font-size:13px;color:var(--muted);padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:15px 0}
+    .leader-status.error{color:#9a2e20;border-color:#f3d0cb;background:#fff5f4}
+    .leader-board{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+    .leader-board-head{display:grid;grid-template-columns:75px 1fr 140px 160px;gap:12px;padding:14px 20px;background:#f7f9fd;color:#66738c;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850}
+    .leader-row{display:grid;grid-template-columns:75px 1fr 140px 160px;gap:12px;align-items:center;padding:17px 20px;border-top:1px solid #edf0f5;font-size:14px}
+    .leader-rank{font-weight:850;color:#365fca}
+    .leader-name{font-weight:800;color:#1a2740}
+    .leader-score{font-weight:900;color:#2454d7;font-size:17px}
+    .leader-sub{font-size:11px;color:var(--muted)}
+    .leader-empty{padding:36px 20px;text-align:center;color:var(--muted);font-size:14px}
+    .leader-privacy{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.65}
+    @media(max-width:650px){
+      .leader-board-head{display:none}
+      .leader-row{grid-template-columns:42px 1fr auto;gap:8px;padding:14px}
+      .leader-attempts{grid-column:2/4}
+      .leader-hero{padding:23px}
+    }
+  </style>
+</head>
+<body>
+<header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span>
+      <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      <span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <a href="/quant/index.html">Practice Quant</a>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions">
+      <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+      <a class="drillgre-start-link" href="/quant/mock.html">Start drilling <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</header>
+<main class="leader-shell">
+  <div class="crumb"><a href="/">Home</a> / Leaderboard</div>
+  <section class="leader-hero">
+    <div class="eyebrow">FREE GRE preparation initiative</div>
+    <h1>DrillGRE leaderboard</h1>
+    <p>Recognising consistent progress in GRE Quant practice. Rankings are based on each learner's best completed mock score. Participation is voluntary.</p>
+  </section>
+  <div class="leader-toolbar">
+    <section id="leaderOptIn" class="leader-opt" hidden>
+      <strong id="leaderOptTitle">Join the leaderboard</strong>
+      <p id="leaderOptCopy">Choose whether to display your first name and best completed mock score publicly. Your email address is never shown.</p>
+      <button id="leaderOptButton" class="leader-button" type="button">Join leaderboard</button>
+    </section>
+    <div class="leader-sub" id="leaderSignInNote">Sign in to manage your leaderboard participation.</div>
+  </div>
+  <div id="leaderStatus" class="leader-status" role="status">Loading leaderboard…</div>
+  <section class="leader-board" aria-label="DrillGRE leaderboard">
+    <div class="leader-board-head"><span>Rank</span><span>Learner</span><span>Best score</span><span>Mocks completed</span></div>
+    <div id="leaderRows"><div class="leader-empty">Loading rankings…</div></div>
+  </section>
+  <p class="leader-privacy">Privacy: learners must opt in before appearing here. Only first name, best completed DrillGRE mock score and completed mock count are displayed. You can remove yourself from the leaderboard at any time. Scores are provisional DrillGRE practice scores, not official ETS scores.</p>
+</main>
+<footer style="max-width:1040px;margin:auto;padding:22px 20px;color:#69758b;font-size:12px">DrillGRE · A FREE GRE preparation initiative</footer>
+</body>
+</html>
