@@ -445,36 +445,6 @@
           </div>
         </div>
 
-        <div id="stimulusPanel" class="full" hidden>
-          <h3>Shared Data Analysis stimulus</h3>
-          <p class="field-note">
-            Create one shared chart, table, graph, or data context, then link exactly three Data Analysis questions to it.
-            The mock test presents the stimulus once and keeps the three questions together.
-          </p>
-          <label>
-            Existing stimulus group
-            <select id="stimulusGroup">
-              <option value="">No shared stimulus (standalone question)</option>
-            </select>
-          </label>
-          <div class="actions" style="justify-content:flex-start">
-            <button type="button" class="secondary" id="newStimulusGroup">+ Create shared stimulus</button>
-          </div>
-          <div id="stimulusEditor" class="dynamic-card" hidden>
-            <label>Stimulus title
-              <input id="stimulusTitle" placeholder="e.g. Annual sales by product category">
-            </label>
-            <label>Shared context or instructions
-              <textarea id="stimulusText" rows="3" placeholder="Provide the instructions or context shared by the three questions."></textarea>
-            </label>
-            <label>Shared chart / table / figure
-              <input id="stimulusFigure" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
-            </label>
-            <div id="stimulusFigurePreview" class="preview"></div>
-            <button type="button" id="saveStimulusGroup">Save shared stimulus group</button>
-            <p class="field-note">After saving, select this group for each of its three questions. A group becomes eligible for mocks only when all three questions are published and their difficulty levels match the mock blueprint.</p>
-            <p id="stimulusMsg" class="msg"></p>
-          </div>
         </div>
 
         <!-- Question text -->
