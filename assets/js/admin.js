@@ -188,7 +188,13 @@ async function enter(u) {
 
   $("login").hidden = true;
   $("dashboard").hidden = false;
-  $("who").textContent = u.email || "Admin";
+  const { data: adminProfile } = await db
+    .from("profiles")
+    .select("name")
+    .eq("id", u.id)
+    .maybeSingle();
+  const adminFirstName = String(adminProfile?.name || u.user_metadata?.name || u.email || "Admin").trim().split(/\s+/)[0];
+  $("who").textContent = adminFirstName + " · Admin workspace";
 
   await Promise.all([
     loadLessons(),
