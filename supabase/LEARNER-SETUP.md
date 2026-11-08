@@ -23,11 +23,11 @@ The account page uses Supabase email OTP, not passwords.
 In Supabase Authentication settings:
 
 - Enable email sign-in and email confirmations.
-- Configure the email OTP template to display the one-time token using the Supabase template variable `{{ .Token }}`. The learner enters the six-digit code on `account.html`.
+- Open the **Magic Link or OTP** email template. Replace the confirmation-link variable `{{ .ConfirmationURL }}` with the OTP variable `{{ .Token }}`, and include that token in the email body. This makes Supabase send a six-digit code instead of a magic link.
 - Set the site URL to `https://drillgre.github.io`.
 - Add the deployed site and any local development URL to the allowed redirect URLs if you use redirect-based email flows elsewhere.
 
-The app calls `signInWithOtp` and then `verifyOtp` with `type: "email"`.
+The app calls `signInWithOtp` and then `verifyOtp` with `type: "email"`. Supabase's default email OTP limit is one request per 60 seconds, and codes expire after one hour unless those project settings are changed.
 
 ## Learner registration fields
 
