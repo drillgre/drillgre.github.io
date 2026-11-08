@@ -304,6 +304,13 @@ async function editLesson(id) {
     return;
   }
 
+  // Rich-text lessons are edited in lessons.html to preserve HTML and video data.
+  if (data.content?.html || data.content?.video_url) {
+    alert("This lesson uses the rich-text editor. Please edit it from the Lesson Editor page.");
+    window.location.href = "lessons.html";
+    return;
+  }
+
   $("lessonId").value = data.id;
   $("moduleTitle").value = data.modules?.title || "";
   $("moduleSlug").value = data.modules?.slug || "";
