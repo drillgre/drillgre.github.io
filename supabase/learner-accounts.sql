@@ -20,6 +20,11 @@ alter table public.profiles add column if not exists academic_background text;
 alter table public.profiles add column if not exists further_study text;
 alter table public.profiles add column if not exists further_study_fields text[] not null default '{}';
 alter table public.profiles add column if not exists further_study_field text;
+alter table public.profiles add column if not exists leaderboard_opt_in boolean not null default false;
+
+-- Per-question active screen time, in seconds, saved with each submitted answer.
+alter table public.gre_mock_attempt_answers
+  add column if not exists time_spent_seconds integer not null default 0;
 
 -- Preserve the first legacy selection when migrating from the old multi-select field.
 update public.profiles
@@ -256,24 +261,27 @@ begin
 end;
 $$;
 
+drop function if exists public.submit_gre_mock_section1(uuid, text, jsonb, text);
 drop function if exists public.submit_gre_mock_section1(uuid, text, jsonb);
 
 create or replace function public.submit_gre_mock_section1(
   p_attempt_id uuid,
   p_session_token text,
   p_responses jsonb,
-  p_visitor_key text default null
+  p_visitor_key text default null,
+  p_question_times jsonb default '[]'::jsonb
 )
 returns jsonb
 language plpgsql
 security definer
 set search_path = public, private, pg_temp
-as $$
+as $
 declare
   v_attempt public.gre_mock_attempts%rowtype;
   v_item record;
   v_response jsonb;
   v_is_correct boolean;
+  v_time_spent integer := 0;
   v_correct_count integer := 0;
   v_route text;
   v_selection jsonb;
@@ -297,10 +305,450 @@ begin
   if p_responses is not null and jsonb_typeof(p_responses) <> 'array' then
     raise exception 'Responses must be supplied as a JSON array.';
   end if;
+  if p_question_times is not null and jsonb_typeof(p_question_times) <> 'array' then
+    raise exception 'Question timings must be supplied as a JSON array.';
+  end if;
 
   for v_item in
     select * from public.gre_mock_attempt_questions
     where attempt_id = p_attempt_id and section_number = 1 order by position
+  loop
+    v_response := null;
+    select item -> 'response' into v_response
+    from jsonb_array_elements(coalesce(p_responses, '[]'::jsonb)) as t(item)
+    where item ->> 'question_id' = v_item.question_id
+    limit 1;
+
+    v_time_spent := 0;
+    select case
+      when coalesce(item ->> 'seconds','') ~ '^[0-9]+
+
+    if v_is_correct then v_correct_count := v_correct_count + 1; end if;
+  end loop;
+
+  v_route := case when v_correct_count >= 8 then 'harder' else 'easier' end;
+
+  v_selection := private.gre_mock_select_section(
+    p_attempt_id, 2, v_route, v_attempt.section1_da_subtopic, v_attempt.visitor_key
+  );
+  v_questions := v_selection -> 'questions';
+
+  update public.gre_mock_attempts
+  set status = 'section2', section1_correct = v_correct_count, route = v_route
+  where id = p_attempt_id;
+
+  return jsonb_build_object(
+    'attempt_id', p_attempt_id,
+    'status', 'section2',
+    'section_number', 2,
+    'section1_correct', v_correct_count,
+    'route', v_route,
+    'question_count', 15,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+drop function if exists public.finish_gre_mock(uuid, text, jsonb, text);
+drop function if exists public.finish_gre_mock(uuid, text, jsonb);
+
+create or replace function public.finish_gre_mock(
+  p_attempt_id uuid,
+  p_session_token text,
+  p_responses jsonb,
+  p_visitor_key text default null,
+  p_question_times jsonb default '[]'::jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $
+declare
+  v_attempt public.gre_mock_attempts%rowtype;
+  v_item record;
+  v_response jsonb;
+  v_is_correct boolean;
+  v_time_spent integer := 0;
+  v_total_correct integer;
+  v_section2_correct integer;
+  v_weighted_points numeric(10,2);
+  v_max_points numeric(10,2);
+  v_scaled_score integer;
+  v_review jsonb;
+begin
+  select * into v_attempt
+  from public.gre_mock_attempts
+  where id = p_attempt_id
+    and session_token = p_session_token
+    and status = 'section2'
+    and (
+      (learner_id is not null and learner_id = auth.uid())
+      or (learner_id is null and visitor_key = p_visitor_key)
+    )
+  for update;
+
+  if not found then
+    raise exception 'Section 2 is not available for this learner or browser session.';
+  end if;
+
+  if p_responses is not null and jsonb_typeof(p_responses) <> 'array' then
+    raise exception 'Responses must be supplied as a JSON array.';
+  end if;
+  if p_question_times is not null and jsonb_typeof(p_question_times) <> 'array' then
+    raise exception 'Question timings must be supplied as a JSON array.';
+  end if;
+
+  for v_item in
+    select * from public.gre_mock_attempt_questions
+    where attempt_id = p_attempt_id and section_number = 2 order by position
+  loop
+    v_response := null;
+    select item -> 'response' into v_response
+    from jsonb_array_elements(coalesce(p_responses, '[]'::jsonb)) as t(item)
+    where item ->> 'question_id' = v_item.question_id
+    limit 1;
+
+    v_time_spent := 0;
+    select case
+      when coalesce(item ->> 'seconds','') ~ '^[0-9]+
+  end loop;
+
+  select
+    count(*) filter (where a.is_correct),
+    coalesce(sum(case when a.is_correct then (aq.question_snapshot ->> 'difficulty')::numeric else 0 end),0),
+    coalesce(sum((aq.question_snapshot ->> 'difficulty')::numeric),0)
+  into v_total_correct, v_weighted_points, v_max_points
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id;
+
+  select count(*) filter (where a.is_correct)
+  into v_section2_correct
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id and aq.section_number = 2;
+
+  v_scaled_score := case
+    when v_max_points <= 0 then 130
+    else greatest(130, least(170, round(130 + 40 * v_weighted_points / v_max_points)::integer))
+  end;
+
+  select jsonb_agg(
+    jsonb_build_object(
+      'section_number', aq.section_number,
+      'position', aq.position,
+      'question', aq.question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url',
+      'response', a.response,
+      'is_correct', coalesce(a.is_correct,false),
+      'time_spent_seconds', coalesce(a.time_spent_seconds,0),
+      'correct_answer', aq.question_snapshot -> 'correct_answer',
+      'explanation', aq.question_snapshot -> 'explanation',
+      'explanation_type', coalesce(aq.question_snapshot ->> 'explanation_type','text'),
+      'explanation_video_url', aq.question_snapshot -> 'explanation_video_url'
+    )
+    order by aq.section_number, aq.position
+  ) into v_review
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id;
+
+  update public.gre_mock_attempts
+  set status = 'completed', total_correct = v_total_correct,
+      weighted_points = v_weighted_points, max_weighted_points = v_max_points,
+      scaled_score = v_scaled_score, completed_at = now()
+  where id = p_attempt_id;
+
+  return jsonb_build_object(
+    'attempt_id', p_attempt_id,
+    'status', 'completed',
+    'route', v_attempt.route,
+    'section1_correct', v_attempt.section1_correct,
+    'section2_correct', v_section2_correct,
+    'total_correct', v_total_correct,
+    'total_questions', 27,
+    'weighted_points', v_weighted_points,
+    'max_weighted_points', v_max_points,
+    'weighted_accuracy', case when v_max_points > 0 then round(100 * v_weighted_points / v_max_points,2) else 0 end,
+    'scaled_score', v_scaled_score,
+    'review', coalesce(v_review,'[]'::jsonb)
+  );
+end;
+$$;
+
+-- ============================================================
+-- Authenticated learner dashboard data
+-- ============================================================
+
+create or replace function public.claim_guest_mock_attempts(p_visitor_key text)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_claimed integer := 0;
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in before claiming guest mock attempts.';
+  end if;
+  if p_visitor_key is null or length(p_visitor_key) < 32 then
+    return 0;
+  end if;
+
+  update public.gre_mock_attempts
+  set learner_id = v_user_id
+  where visitor_key = p_visitor_key
+    and learner_id is null;
+
+  get diagnostics v_claimed = row_count;
+  return v_claimed;
+end;
+$$;
+
+create or replace function public.get_learner_dashboard()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_profile jsonb;
+  v_attempts jsonb;
+  v_total integer;
+  v_completed integer;
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in to view your learner dashboard.';
+  end if;
+
+  select jsonb_build_object(
+    'name', p.name,
+    'email', p.email,
+    'education', p.education,
+    'age_range', p.age_range,
+    'country', p.country,
+    'academic_background', p.academic_background,
+    'further_study', p.further_study,
+    'further_study_field', p.further_study_field
+  ) into v_profile
+  from public.profiles p
+  where p.id = v_user_id;
+
+  if v_profile is null then
+    raise exception 'Your learner profile is not available. Please contact support.';
+  end if;
+
+  select count(*)::integer,
+         count(*) filter (where status = 'completed')::integer
+  into v_total, v_completed
+  from public.gre_mock_attempts
+  where learner_id = v_user_id;
+
+  select coalesce(jsonb_agg(to_jsonb(recent) order by recent.created_at desc),'[]'::jsonb)
+  into v_attempts
+  from (
+    select id, status, created_at, completed_at, scaled_score,
+           total_correct, route, section1_correct
+    from public.gre_mock_attempts
+    where learner_id = v_user_id
+    order by created_at desc
+    limit 20
+  ) recent;
+
+  return jsonb_build_object(
+    'profile', v_profile,
+    'mocks_started', coalesce(v_total,0),
+    'mocks_completed', coalesce(v_completed,0),
+    'recent_attempts', coalesce(v_attempts,'[]'::jsonb)
+  );
+end;
+$$;
+
+
+-- ============================================================
+-- Privacy-first public leaderboard
+-- Learners must explicitly opt in before their first name and
+-- best completed mock score appear on the public leaderboard.
+-- ============================================================
+
+create or replace function public.set_leaderboard_opt_in(p_opt_in boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path = pg_catalog, public, auth, pg_temp
+as $
+declare
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in to change your leaderboard setting.';
+  end if;
+
+  update public.profiles
+  set leaderboard_opt_in = coalesce(p_opt_in, false)
+  where id = v_user_id and role = 'learner';
+
+  if not found then
+    raise exception 'Learner profile not found.';
+  end if;
+
+  return coalesce(p_opt_in, false);
+end;
+$;
+
+create or replace function public.get_public_leaderboard(p_limit integer default 50)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $
+  select coalesce(jsonb_agg(to_jsonb(r) order by r.rank), '[]'::jsonb)
+  from (
+    select
+      row_number() over (
+        order by max(a.scaled_score) desc,
+                 count(*) desc,
+                 min(a.completed_at) asc
+      )::integer as rank,
+      split_part(coalesce(nullif(trim(p.name), ''), 'Learner'), ' ', 1) as first_name,
+      max(a.scaled_score)::integer as best_score,
+      count(*)::integer as mocks_completed
+    from public.profiles p
+    join public.gre_mock_attempts a
+      on a.learner_id = p.id
+     and a.status = 'completed'
+    where p.role = 'learner'
+      and p.leaderboard_opt_in = true
+    group by p.id, p.name
+    having count(*) > 0
+    order by max(a.scaled_score) desc,
+             count(*) desc,
+             min(a.completed_at) asc
+    limit greatest(1, least(coalesce(p_limit, 50), 100))
+  ) r;
+$;
+
+revoke all on function public.set_leaderboard_opt_in(boolean) from public, anon;
+revoke all on function public.get_public_leaderboard(integer) from public;
+grant execute on function public.set_leaderboard_opt_in(boolean) to authenticated;
+grant execute on function public.get_public_leaderboard(integer) to anon, authenticated;
+
+-- Revoke old function signatures and expose only the owner-aware RPCs.
+revoke all on function public.start_gre_mock(text, text) from public;
+revoke all on function public.resume_gre_mock(uuid, text, text) from public;
+revoke all on function public.submit_gre_mock_section1(uuid, text, jsonb, text, jsonb) from public;
+revoke all on function public.finish_gre_mock(uuid, text, jsonb, text, jsonb) from public;
+revoke all on function public.get_learner_dashboard() from public;
+revoke all on function public.claim_guest_mock_attempts(text) from public;
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text) from public, anon, authenticated;
+
+grant execute on function public.start_gre_mock(text, text) to anon, authenticated;
+grant execute on function public.resume_gre_mock(uuid, text, text) to anon, authenticated;
+grant execute on function public.submit_gre_mock_section1(uuid, text, jsonb, text, jsonb) to anon, authenticated;
+grant execute on function public.finish_gre_mock(uuid, text, jsonb, text, jsonb) to anon, authenticated;
+grant execute on function public.get_learner_dashboard() to authenticated;
+grant execute on function public.claim_guest_mock_attempts(text) to authenticated;
+
+        then least(86400, (item ->> 'seconds')::integer)
+      else 0
+    end
+    into v_time_spent
+    from jsonb_array_elements(coalesce(p_question_times, '[]'::jsonb)) as t(item)
+    where item ->> 'question_id' = v_item.question_id
+    limit 1;
+    v_time_spent := coalesce(v_time_spent, 0);
+
+    v_is_correct := private.gre_mock_answer_is_correct(v_item.question_snapshot, v_response);
+
+    insert into public.gre_mock_attempt_answers(
+      attempt_id, question_id, response, is_correct, time_spent_seconds
+    )
+    values (p_attempt_id, v_item.question_id, v_response, v_is_correct, v_time_spent)
+    on conflict (attempt_id, question_id)
+    do update set response = excluded.response,
+                  is_correct = excluded.is_correct,
+                  time_spent_seconds = excluded.time_spent_seconds;
+
+    if v_is_correct then v_correct_count := v_correct_count + 1; end if;
+  end loop;
+
+  v_route := case when v_correct_count >= 8 then 'harder' else 'easier' end;
+
+  v_selection := private.gre_mock_select_section(
+    p_attempt_id, 2, v_route, v_attempt.section1_da_subtopic, v_attempt.visitor_key
+  );
+  v_questions := v_selection -> 'questions';
+
+  update public.gre_mock_attempts
+  set status = 'section2', section1_correct = v_correct_count, route = v_route
+  where id = p_attempt_id;
+
+  return jsonb_build_object(
+    'attempt_id', p_attempt_id,
+    'status', 'section2',
+    'section_number', 2,
+    'section1_correct', v_correct_count,
+    'route', v_route,
+    'question_count', 15,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+drop function if exists public.finish_gre_mock(uuid, text, jsonb);
+
+create or replace function public.finish_gre_mock(
+  p_attempt_id uuid,
+  p_session_token text,
+  p_responses jsonb,
+  p_visitor_key text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+declare
+  v_attempt public.gre_mock_attempts%rowtype;
+  v_item record;
+  v_response jsonb;
+  v_is_correct boolean;
+  v_total_correct integer;
+  v_section2_correct integer;
+  v_weighted_points numeric(10,2);
+  v_max_points numeric(10,2);
+  v_scaled_score integer;
+  v_review jsonb;
+begin
+  select * into v_attempt
+  from public.gre_mock_attempts
+  where id = p_attempt_id
+    and session_token = p_session_token
+    and status = 'section2'
+    and (
+      (learner_id is not null and learner_id = auth.uid())
+      or (learner_id is null and visitor_key = p_visitor_key)
+    )
+  for update;
+
+  if not found then
+    raise exception 'Section 2 is not available for this learner or browser session.';
+  end if;
+
+  if p_responses is not null and jsonb_typeof(p_responses) <> 'array' then
+    raise exception 'Responses must be supplied as a JSON array.';
+  end if;
+
+  for v_item in
+    select * from public.gre_mock_attempt_questions
+    where attempt_id = p_attempt_id and section_number = 2 order by position
   loop
     v_response := null;
     select item -> 'response' into v_response
@@ -314,6 +762,390 @@ begin
     values (p_attempt_id, v_item.question_id, v_response, v_is_correct)
     on conflict (attempt_id, question_id)
     do update set response = excluded.response, is_correct = excluded.is_correct;
+  end loop;
+
+  select
+    count(*) filter (where a.is_correct),
+    coalesce(sum(case when a.is_correct then (aq.question_snapshot ->> 'difficulty')::numeric else 0 end),0),
+    coalesce(sum((aq.question_snapshot ->> 'difficulty')::numeric),0)
+  into v_total_correct, v_weighted_points, v_max_points
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id;
+
+  select count(*) filter (where a.is_correct)
+  into v_section2_correct
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id and aq.section_number = 2;
+
+  v_scaled_score := case
+    when v_max_points <= 0 then 130
+    else greatest(130, least(170, round(130 + 40 * v_weighted_points / v_max_points)::integer))
+  end;
+
+  select jsonb_agg(
+    jsonb_build_object(
+      'section_number', aq.section_number,
+      'position', aq.position,
+      'question', aq.question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url',
+      'response', a.response,
+      'is_correct', coalesce(a.is_correct,false),
+      'correct_answer', aq.question_snapshot -> 'correct_answer',
+      'explanation', aq.question_snapshot -> 'explanation',
+      'explanation_type', coalesce(aq.question_snapshot ->> 'explanation_type','text'),
+      'explanation_video_url', aq.question_snapshot -> 'explanation_video_url'
+    )
+    order by aq.section_number, aq.position
+  ) into v_review
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id;
+
+  update public.gre_mock_attempts
+  set status = 'completed', total_correct = v_total_correct,
+      weighted_points = v_weighted_points, max_weighted_points = v_max_points,
+      scaled_score = v_scaled_score, completed_at = now()
+  where id = p_attempt_id;
+
+  return jsonb_build_object(
+    'attempt_id', p_attempt_id,
+    'status', 'completed',
+    'route', v_attempt.route,
+    'section1_correct', v_attempt.section1_correct,
+    'section2_correct', v_section2_correct,
+    'total_correct', v_total_correct,
+    'total_questions', 27,
+    'weighted_points', v_weighted_points,
+    'max_weighted_points', v_max_points,
+    'weighted_accuracy', case when v_max_points > 0 then round(100 * v_weighted_points / v_max_points,2) else 0 end,
+    'scaled_score', v_scaled_score,
+    'review', coalesce(v_review,'[]'::jsonb)
+  );
+end;
+$$;
+
+-- ============================================================
+-- Authenticated learner dashboard data
+-- ============================================================
+
+create or replace function public.claim_guest_mock_attempts(p_visitor_key text)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_claimed integer := 0;
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in before claiming guest mock attempts.';
+  end if;
+  if p_visitor_key is null or length(p_visitor_key) < 32 then
+    return 0;
+  end if;
+
+  update public.gre_mock_attempts
+  set learner_id = v_user_id
+  where visitor_key = p_visitor_key
+    and learner_id is null;
+
+  get diagnostics v_claimed = row_count;
+  return v_claimed;
+end;
+$$;
+
+create or replace function public.get_learner_dashboard()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_profile jsonb;
+  v_attempts jsonb;
+  v_total integer;
+  v_completed integer;
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in to view your learner dashboard.';
+  end if;
+
+  select jsonb_build_object(
+    'name', p.name,
+    'email', p.email,
+    'education', p.education,
+    'age_range', p.age_range,
+    'country', p.country,
+    'academic_background', p.academic_background,
+    'further_study', p.further_study,
+    'further_study_field', p.further_study_field
+  ) into v_profile
+  from public.profiles p
+  where p.id = v_user_id;
+
+  if v_profile is null then
+    raise exception 'Your learner profile is not available. Please contact support.';
+  end if;
+
+  select count(*)::integer,
+         count(*) filter (where status = 'completed')::integer
+  into v_total, v_completed
+  from public.gre_mock_attempts
+  where learner_id = v_user_id;
+
+  select coalesce(jsonb_agg(to_jsonb(recent) order by recent.created_at desc),'[]'::jsonb)
+  into v_attempts
+  from (
+    select id, status, created_at, completed_at, scaled_score,
+           total_correct, route, section1_correct
+    from public.gre_mock_attempts
+    where learner_id = v_user_id
+    order by created_at desc
+    limit 20
+  ) recent;
+
+  return jsonb_build_object(
+    'profile', v_profile,
+    'mocks_started', coalesce(v_total,0),
+    'mocks_completed', coalesce(v_completed,0),
+    'recent_attempts', coalesce(v_attempts,'[]'::jsonb)
+  );
+end;
+$$;
+
+-- Revoke old function signatures and expose only the owner-aware RPCs.
+revoke all on function public.start_gre_mock(text, text) from public;
+revoke all on function public.resume_gre_mock(uuid, text, text) from public;
+revoke all on function public.submit_gre_mock_section1(uuid, text, jsonb, text) from public;
+revoke all on function public.finish_gre_mock(uuid, text, jsonb, text) from public;
+revoke all on function public.get_learner_dashboard() from public;
+revoke all on function public.claim_guest_mock_attempts(text) from public;
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text) from public, anon, authenticated;
+
+grant execute on function public.start_gre_mock(text, text) to anon, authenticated;
+grant execute on function public.resume_gre_mock(uuid, text, text) to anon, authenticated;
+grant execute on function public.submit_gre_mock_section1(uuid, text, jsonb, text) to anon, authenticated;
+grant execute on function public.finish_gre_mock(uuid, text, jsonb, text) to anon, authenticated;
+grant execute on function public.get_learner_dashboard() to authenticated;
+grant execute on function public.claim_guest_mock_attempts(text) to authenticated;
+
+        then least(86400, (item ->> 'seconds')::integer)
+      else 0
+    end
+    into v_time_spent
+    from jsonb_array_elements(coalesce(p_question_times, '[]'::jsonb)) as t(item)
+    where item ->> 'question_id' = v_item.question_id
+    limit 1;
+    v_time_spent := coalesce(v_time_spent, 0);
+
+    v_is_correct := private.gre_mock_answer_is_correct(v_item.question_snapshot, v_response);
+
+    insert into public.gre_mock_attempt_answers(
+      attempt_id, question_id, response, is_correct, time_spent_seconds
+    )
+    values (p_attempt_id, v_item.question_id, v_response, v_is_correct, v_time_spent)
+    on conflict (attempt_id, question_id)
+    do update set response = excluded.response,
+                  is_correct = excluded.is_correct,
+                  time_spent_seconds = excluded.time_spent_seconds;
+  end loop;
+
+  select
+    count(*) filter (where a.is_correct),
+    coalesce(sum(case when a.is_correct then (aq.question_snapshot ->> 'difficulty')::numeric else 0 end),0),
+    coalesce(sum((aq.question_snapshot ->> 'difficulty')::numeric),0)
+  into v_total_correct, v_weighted_points, v_max_points
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id;
+
+  select count(*) filter (where a.is_correct)
+  into v_section2_correct
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id and aq.section_number = 2;
+
+  v_scaled_score := case
+    when v_max_points <= 0 then 130
+    else greatest(130, least(170, round(130 + 40 * v_weighted_points / v_max_points)::integer))
+  end;
+
+  select jsonb_agg(
+    jsonb_build_object(
+      'section_number', aq.section_number,
+      'position', aq.position,
+      'question', aq.question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url',
+      'response', a.response,
+      'is_correct', coalesce(a.is_correct,false),
+      'correct_answer', aq.question_snapshot -> 'correct_answer',
+      'explanation', aq.question_snapshot -> 'explanation',
+      'explanation_type', coalesce(aq.question_snapshot ->> 'explanation_type','text'),
+      'explanation_video_url', aq.question_snapshot -> 'explanation_video_url'
+    )
+    order by aq.section_number, aq.position
+  ) into v_review
+  from public.gre_mock_attempt_questions aq
+  left join public.gre_mock_attempt_answers a
+    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
+  where aq.attempt_id = p_attempt_id;
+
+  update public.gre_mock_attempts
+  set status = 'completed', total_correct = v_total_correct,
+      weighted_points = v_weighted_points, max_weighted_points = v_max_points,
+      scaled_score = v_scaled_score, completed_at = now()
+  where id = p_attempt_id;
+
+  return jsonb_build_object(
+    'attempt_id', p_attempt_id,
+    'status', 'completed',
+    'route', v_attempt.route,
+    'section1_correct', v_attempt.section1_correct,
+    'section2_correct', v_section2_correct,
+    'total_correct', v_total_correct,
+    'total_questions', 27,
+    'weighted_points', v_weighted_points,
+    'max_weighted_points', v_max_points,
+    'weighted_accuracy', case when v_max_points > 0 then round(100 * v_weighted_points / v_max_points,2) else 0 end,
+    'scaled_score', v_scaled_score,
+    'review', coalesce(v_review,'[]'::jsonb)
+  );
+end;
+$$;
+
+-- ============================================================
+-- Authenticated learner dashboard data
+-- ============================================================
+
+create or replace function public.claim_guest_mock_attempts(p_visitor_key text)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_claimed integer := 0;
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in before claiming guest mock attempts.';
+  end if;
+  if p_visitor_key is null or length(p_visitor_key) < 32 then
+    return 0;
+  end if;
+
+  update public.gre_mock_attempts
+  set learner_id = v_user_id
+  where visitor_key = p_visitor_key
+    and learner_id is null;
+
+  get diagnostics v_claimed = row_count;
+  return v_claimed;
+end;
+$$;
+
+create or replace function public.get_learner_dashboard()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_profile jsonb;
+  v_attempts jsonb;
+  v_total integer;
+  v_completed integer;
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in to view your learner dashboard.';
+  end if;
+
+  select jsonb_build_object(
+    'name', p.name,
+    'email', p.email,
+    'education', p.education,
+    'age_range', p.age_range,
+    'country', p.country,
+    'academic_background', p.academic_background,
+    'further_study', p.further_study,
+    'further_study_field', p.further_study_field
+  ) into v_profile
+  from public.profiles p
+  where p.id = v_user_id;
+
+  if v_profile is null then
+    raise exception 'Your learner profile is not available. Please contact support.';
+  end if;
+
+  select count(*)::integer,
+         count(*) filter (where status = 'completed')::integer
+  into v_total, v_completed
+  from public.gre_mock_attempts
+  where learner_id = v_user_id;
+
+  select coalesce(jsonb_agg(to_jsonb(recent) order by recent.created_at desc),'[]'::jsonb)
+  into v_attempts
+  from (
+    select id, status, created_at, completed_at, scaled_score,
+           total_correct, route, section1_correct
+    from public.gre_mock_attempts
+    where learner_id = v_user_id
+    order by created_at desc
+    limit 20
+  ) recent;
+
+  return jsonb_build_object(
+    'profile', v_profile,
+    'mocks_started', coalesce(v_total,0),
+    'mocks_completed', coalesce(v_completed,0),
+    'recent_attempts', coalesce(v_attempts,'[]'::jsonb)
+  );
+end;
+$$;
+
+-- Revoke old function signatures and expose only the owner-aware RPCs.
+revoke all on function public.start_gre_mock(text, text) from public;
+revoke all on function public.resume_gre_mock(uuid, text, text) from public;
+revoke all on function public.submit_gre_mock_section1(uuid, text, jsonb, text) from public;
+revoke all on function public.finish_gre_mock(uuid, text, jsonb, text) from public;
+revoke all on function public.get_learner_dashboard() from public;
+revoke all on function public.claim_guest_mock_attempts(text) from public;
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text) from public, anon, authenticated;
+
+grant execute on function public.start_gre_mock(text, text) to anon, authenticated;
+grant execute on function public.resume_gre_mock(uuid, text, text) to anon, authenticated;
+grant execute on function public.submit_gre_mock_section1(uuid, text, jsonb, text) to anon, authenticated;
+grant execute on function public.finish_gre_mock(uuid, text, jsonb, text) to anon, authenticated;
+grant execute on function public.get_learner_dashboard() to authenticated;
+grant execute on function public.claim_guest_mock_attempts(text) to authenticated;
+
+        then least(86400, (item ->> 'seconds')::integer)
+      else 0
+    end
+    into v_time_spent
+    from jsonb_array_elements(coalesce(p_question_times, '[]'::jsonb)) as t(item)
+    where item ->> 'question_id' = v_item.question_id
+    limit 1;
+    v_time_spent := coalesce(v_time_spent, 0);
+
+    v_is_correct := private.gre_mock_answer_is_correct(v_item.question_snapshot, v_response);
+
+    insert into public.gre_mock_attempt_answers(
+      attempt_id, question_id, response, is_correct, time_spent_seconds
+    )
+    values (p_attempt_id, v_item.question_id, v_response, v_is_correct, v_time_spent)
+    on conflict (attempt_id, question_id)
+    do update set response = excluded.response,
+                  is_correct = excluded.is_correct,
+                  time_spent_seconds = excluded.time_spent_seconds;
 
     if v_is_correct then v_correct_count := v_correct_count + 1; end if;
   end loop;
