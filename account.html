@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Create a DrillGRE learner account or sign in with an email verification code.">
+  <meta name="description" content="Create a DrillGRE learner account or sign in with your email and password.">
   <title>Learner Account | DrillGRE</title>
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -19,11 +19,10 @@
     .account-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .account-card label{display:block;font-size:12px;font-weight:750;color:#38445a;margin:11px 0}
     .account-card input,.account-card select{display:block;width:100%;margin-top:6px;border:1px solid #cbd5e1;border-radius:9px;padding:11px 12px;font:inherit;font-size:14px;background:white;color:var(--ink)}
-    .account-card input[type=checkbox]{display:inline-block;width:auto;margin:0 7px 0 0}
-    .account-checks{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0 14px}
-    .account-checks label{font-weight:600;margin:0}
     .account-primary{border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 18px;font-weight:800}
+    .account-primary:disabled{opacity:.65;cursor:wait}
     .account-secondary{border:1px solid var(--line);border-radius:10px;background:white;padding:11px 15px;font-weight:700}
+    .account-link{border:0;background:transparent;color:var(--blue);padding:10px 0;font:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer}
     .account-message{padding:12px;border-radius:10px;background:#f3f6ff;color:#33466f;font-size:13px;line-height:1.6;margin:14px 0}
     .account-message.error{background:#fff4f2;color:#9c3023}
     .otp-input{max-width:260px;font-size:24px!important;letter-spacing:8px;text-align:center;font-weight:850}
@@ -41,7 +40,7 @@
   <section class="account-card">
     <div class="eyebrow">Your learning space</div>
     <h1>Learner account</h1>
-    <p class="account-muted">Sign in using a one-time code sent to your email. Registered learners can create unlimited adaptive mocks and view their mock history.</p>
+    <p class="account-muted">Sign in with your email and password. New learners verify their email address with a one-time code during registration.</p>
     <div id="accountMessage" class="account-message" hidden role="status"></div>
 
     <div id="accountForms">
@@ -54,7 +53,11 @@
         <label>Email address
           <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
         </label>
-        <button class="account-primary" type="submit">Send sign-in code</button>
+        <label>Password
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="account-primary" type="submit">Sign in</button>
+        <button id="forgotPassword" class="account-link" type="button">Forgot password?</button>
       </form>
 
       <form id="registerForm" hidden>
@@ -64,6 +67,12 @@
           </label>
           <label>Email address
             <input id="regEmail" type="email" required maxlength="254" autocomplete="email">
+          </label>
+          <label>Password
+            <input id="regPassword" type="password" autocomplete="new-password" minlength="8" required>
+          </label>
+          <label>Confirm password
+            <input id="regPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required>
           </label>
           <label>Education
             <select id="regEducation" required>
@@ -93,11 +102,18 @@
           </label>
           <label>Academic background
             <select id="regBackground" required>
-              <option value="">Select your background</option>
+              <option value="">Select your academic background</option>
               <option value="engineering">Engineering</option>
-              <option value="commerce">Commerce</option>
+              <option value="commerce_business">Commerce and Business</option>
               <option value="economics">Economics</option>
-              <option value="mathematics">Mathematics</option>
+              <option value="mathematics_statistics">Mathematics and Statistics</option>
+              <option value="computer_science_it">Computer Science and IT</option>
+              <option value="natural_sciences">Natural Sciences</option>
+              <option value="social_sciences">Social Sciences</option>
+              <option value="humanities_arts">Humanities and Arts</option>
+              <option value="law">Law</option>
+              <option value="medicine_health">Medicine and Health Sciences</option>
+              <option value="other">Other</option>
             </select>
           </label>
           <label>Further study goal
@@ -107,15 +123,24 @@
               <option value="masters">Master's</option>
             </select>
           </label>
+          <label class="full">Intended field of study
+            <select id="regStudyField" required>
+              <option value="">Select your intended field of study</option>
+              <option value="economics">Economics</option>
+              <option value="mathematics">Mathematics</option>
+              <option value="statistics">Statistics</option>
+              <option value="finance">Finance</option>
+              <option value="business_administration">Business Administration</option>
+              <option value="public_policy">Public Policy</option>
+              <option value="development_studies">Development Studies</option>
+              <option value="computer_science">Computer Science</option>
+              <option value="data_science">Data Science</option>
+              <option value="engineering">Engineering</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
           <div class="full">
-            <div style="font-size:12px;font-weight:750;color:#38445a;margin:8px 0">Fields of further study</div>
-            <div class="account-checks">
-              <label><input type="checkbox" name="studyField" value="economics"> Economics</label>
-              <label><input type="checkbox" name="studyField" value="mathematics"> Mathematics</label>
-            </div>
-          </div>
-          <div class="full">
-            <button class="account-primary" type="submit">Create account and send code</button>
+            <button class="account-primary" type="submit">Create account and send verification code</button>
           </div>
         </div>
       </form>
@@ -123,13 +148,24 @@
 
     <form id="otpForm" hidden>
       <h2 style="margin:8px 0">Verify your email</h2>
-      <p class="account-muted">Enter the one-time code sent to <strong id="otpEmail"></strong>.</p>
+      <p class="account-muted">Enter the six-digit verification code sent to <strong id="otpEmail"></strong>.</p>
       <label>6-digit email code
         <input id="otpCode" class="otp-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
       </label>
-      <button class="account-primary" type="submit">Verify and continue</button>
+      <button class="account-primary" type="submit">Verify email and continue</button>
       <button id="resendOtp" class="account-secondary" type="button" style="margin-left:8px">Resend code</button>
       <button id="changeEmail" class="account-secondary" type="button" style="margin-left:8px">Change email</button>
+    </form>
+
+    <form id="resetPasswordForm" hidden>
+      <h2 style="margin:8px 0">Set a new password</h2>
+      <label>New password
+        <input id="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+      </label>
+      <label>Confirm new password
+        <input id="newPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required>
+      </label>
+      <button class="account-primary" type="submit">Update password</button>
     </form>
   </section>
 </main>
