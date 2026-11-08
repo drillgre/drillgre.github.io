@@ -126,6 +126,16 @@ begin
   where id = new.stimulus_id
   for update;
 
+  if exists (
+    select 1
+    from public.questions q
+    where q.stimulus_id = new.stimulus_id
+      and q.id is distinct from new.id
+      and q.lesson_id is distinct from new.lesson_id
+  ) then
+    raise exception 'All three questions in a shared stimulus group must belong to the same lesson, or all remain unassigned.';
+  end if;
+
   select count(*) into v_count
   from public.questions q
   where q.stimulus_id = new.stimulus_id
