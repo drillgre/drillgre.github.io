@@ -55,7 +55,10 @@
 
     showMessage("Sending a one-time code to " + pendingEmail + "…");
     const options = {
-      shouldCreateUser: mode === "register"
+      shouldCreateUser: mode === "register",
+      // Keep any confirmation-link fallback on the deployed account page.
+      // On local development this naturally uses the local account page.
+      emailRedirectTo: new URL("account.html", window.location.href).toString()
     };
     if (metadata) options.data = metadata;
 
