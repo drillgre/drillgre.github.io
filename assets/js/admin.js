@@ -1,3 +1,7 @@
+import { Editor } from "https://cdn.jsdelivr.net/npm/@tiptap/core@3.31.3/+esm";
+import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@3.31.3/+esm";
+import { Mathematics } from "https://cdn.jsdelivr.net/npm/@tiptap/extension-mathematics@3.31.3/+esm";
+
 // ============================================================
 // DrillGRE Admin
 // Supabase configuration
@@ -14,6 +18,7 @@ let user = null;
 let lessonsCache = [];
 let figureUrl = null;
 let figurePath = null;
+let lessonEditor = null;
 
 const typeNames = {
   quantitative_comparison: "Quantitative Comparison",
@@ -196,6 +201,175 @@ $("logout").onclick = async () => {
 // Lessons
 // ============================================================
 
+function escapeLessonHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+// Convert legacy Markdown lesson content to safe, editable HTML.
+function legacyMarkdownToHtml(markdown) {
+  const lines = String(markdown || "").split(/\r?\n/);
+  const out = [];
+  let listType = null;
+
+  const closeList = () => {
+    if (listType) out.push(listType === "ul" ? "</ul>" : "</ol>");
+    listType = null;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) { closeList(); continue; }
+
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      closeList();
+      const level = heading[1].length;
+      out.push(`<h${level}>${escapeLessonHtml(heading[2])}</h${level}>`);
+      continue;
+    }
+
+    const bullet = line.match(/^[-*+]\s+(.+)$/);
+    const numbered = line.match(/^\d+[.)]\s+(.+)$/);
+    if (bullet || numbered) {
+      const wanted = bullet ? "ul" : "ol";
+      if (listType !== wanted) {
+        closeList();
+        out.push(wanted === "ul" ? "<ul>" : "<ol>");
+        listType = wanted;
+      }
+      out.push(`<li>${escapeLessonHtml((bullet || numbered)[1])}</li>`);
+      continue;
+    }
+
+    closeList();
+    out.push(`<p>${escapeLessonHtml(line)}</p>`);
+  }
+
+  closeList();
+  return out.join("") || "<p></p>";
+}
+
+function initLessonEditor() {
+  if (lessonEditor) return;
+
+  lessonEditor = new Editor({
+    element: $("lessonEditor"),
+    extensions: [
+      StarterKit,
+      Mathematics.configure({
+        katexOptions: { throwOnError: false }
+      })
+    ],
+    content: "<h2>Lesson introduction</h2><p>Start writing your lesson here.</p>",
+    onSelectionUpdate: updateLessonToolbar,
+    onTransaction: updateLessonToolbar
+  });
+
+  $("lessonToolbar").querySelectorAll("[data-editor-command]").forEach(button => {
+    button.addEventListener("click", () => {
+      if (!lessonEditor) return;
+
+      const command = button.dataset.editorCommand;
+      let chain = lessonEditor.chain().focus();
+
+      if (command === "heading") {
+        chain.toggleHeading({ level: Number(button.dataset.level) }).run();
+      } else if (command === "undo" || command === "redo") {
+        chain[command]().run();
+      } else {
+        const method = "toggle" + command.charAt(0).toUpperCase() + command.slice(1);
+        if (typeof chain[method] === "function") chain[method]().run();
+      }
+
+      updateLessonToolbar();
+    });
+  });
+
+  $("insertInlineMath").addEventListener("click", () => {
+    const latex = window.prompt("Enter the LaTeX formula (without dollar signs):", "\\frac{a}{b}");
+    if (latex && latex.trim()) {
+      lessonEditor.chain().focus().insertInlineMath({ latex: latex.trim() }).run();
+    }
+  });
+
+  $("insertBlockMath").addEventListener("click", () => {
+    const latex = window.prompt("Enter the LaTeX equation (without dollar signs):", "\\frac{a}{b}");
+    if (latex && latex.trim()) {
+      lessonEditor.chain().focus().insertBlockMath({ latex: latex.trim() }).run();
+    }
+  });
+}
+
+function updateLessonToolbar() {
+  if (!lessonEditor) return;
+
+  $("lessonToolbar").querySelectorAll("[data-editor-command]").forEach(button => {
+    const command = button.dataset.editorCommand;
+    let active = false;
+
+    if (command === "bold" || command === "italic" || command === "blockquote" ||
+        command === "bulletList" || command === "orderedList" || command === "codeBlock") {
+      const name = command === "bold" ? "bold"
+        : command === "italic" ? "italic"
+        : command === "blockquote" ? "blockquote"
+        : command === "bulletList" ? "bulletList"
+        : command === "orderedList" ? "orderedList"
+        : "codeBlock";
+      active = lessonEditor.isActive(name);
+    } else if (command === "heading") {
+      active = lessonEditor.isActive("heading", { level: Number(button.dataset.level) });
+    }
+
+    button.classList.toggle("active", active);
+  });
+}
+
+function setLessonEditorContent(content) {
+  initLessonEditor();
+
+  let html = "<p></p>";
+  if (content && typeof content === "object" && typeof content.html === "string") {
+    html = content.html;
+  } else if (content && typeof content === "object" && typeof content.markdown === "string") {
+    html = legacyMarkdownToHtml(content.markdown);
+  } else if (typeof content === "string") {
+    html = legacyMarkdownToHtml(content);
+  }
+
+  lessonEditor.commands.setContent(html);
+  updateLessonToolbar();
+}
+
+function updateLessonVideoPreview() {
+  const input = $("lessonVideo").value.trim();
+  const embedUrl = input ? getYouTubeEmbedUrl(input) : "";
+
+  if (!input) {
+    $("lessonVideoPreview").innerHTML = "";
+    return;
+  }
+
+  if (!embedUrl) {
+    $("lessonVideoPreview").innerHTML =
+      '<p class="field-note">Enter a valid YouTube video URL to preview it.</p>';
+    return;
+  }
+
+  $("lessonVideoPreview").innerHTML = `
+    <div class="lesson-video-preview-wrap">
+      <iframe
+        class="lesson-video-preview"
+        src="${esc(embedUrl)}"
+        title="Lesson teaching video preview"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen></iframe>
+    </div>
+  `;
+}
+
 async function loadLessons() {
   const { data, error } = await db
     .from("lessons")
@@ -218,30 +392,28 @@ async function loadLessons() {
             ${esc(l.modules?.title || "Module")}
             · ${l.published ? "Published" : "Draft"}
             · order ${l.sort_order}
+            ${l.content?.video_url ? " · YouTube video" : ""}
           </div>
         </div>
-
         <div class="buttons">
-          <button data-edit="${l.id}">Edit</button>
-          <button data-pub="${l.id}">
+          <button type="button" data-edit="${l.id}">Edit</button>
+          <button type="button" data-pub="${l.id}">
             ${l.published ? "Unpublish" : "Publish"}
           </button>
-          <button class="del" data-del="${l.id}">Delete</button>
+          <button type="button" class="del" data-del="${l.id}">Delete</button>
         </div>
       </div>
     `).join("")
     : "<p>No lessons yet. Create your first lesson.</p>";
 
-  $("lessonList").querySelectorAll("[data-edit]").forEach(b => {
-    b.onclick = () => editLesson(b.dataset.edit);
+  $("lessonList").querySelectorAll("[data-edit]").forEach(button => {
+    button.onclick = () => editLesson(button.dataset.edit);
   });
-
-  $("lessonList").querySelectorAll("[data-pub]").forEach(b => {
-    b.onclick = () => toggleLesson(b.dataset.pub);
+  $("lessonList").querySelectorAll("[data-pub]").forEach(button => {
+    button.onclick = () => toggleLesson(button.dataset.pub);
   });
-
-  $("lessonList").querySelectorAll("[data-del]").forEach(b => {
-    b.onclick = () => deleteLesson(b.dataset.del);
+  $("lessonList").querySelectorAll("[data-del]").forEach(button => {
+    button.onclick = () => deleteLesson(button.dataset.del);
   });
 }
 
@@ -256,19 +428,20 @@ async function loadLessonOptions() {
   $("linkedLesson").innerHTML =
     '<option value="">None</option>' +
     (data || []).map(l =>
-      `<option value="${l.id}">${esc(l.title)}</option>`
+      `<option value="${esc(l.id)}">${esc(l.title)}</option>`
     ).join("");
 }
 
 $("newLesson").onclick = () => {
   $("lessonForm").reset();
-
   $("lessonId").value = "";
   $("lessonFormTitle").textContent = "New lesson";
   $("order").value = 0;
-
+  $("moduleSlug").dataset.manual = "";
+  $("slug").dataset.manual = "";
+  $("lessonVideoPreview").innerHTML = "";
+  setLessonEditorContent({ html: "<h2>Lesson introduction</h2><p></p>" });
   message("lessonMsg", "");
-
   $("lessonDialog").showModal();
 };
 
@@ -277,20 +450,16 @@ $("moduleTitle").oninput = () => {
     $("moduleSlug").value = slug($("moduleTitle").value);
   }
 };
-
-$("moduleSlug").oninput = () => {
-  $("moduleSlug").dataset.manual = "1";
-};
+$("moduleSlug").oninput = () => { $("moduleSlug").dataset.manual = "1"; };
 
 $("title").oninput = () => {
   if (!$("slug").dataset.manual) {
     $("slug").value = slug($("title").value);
   }
 };
+$("slug").oninput = () => { $("slug").dataset.manual = "1"; };
 
-$("slug").oninput = () => {
-  $("slug").dataset.manual = "1";
-};
+$("lessonVideo").addEventListener("input", updateLessonVideoPreview);
 
 async function editLesson(id) {
   const { data, error } = await db
@@ -304,38 +473,53 @@ async function editLesson(id) {
     return;
   }
 
-  // Rich-text lessons are edited in lessons.html to preserve HTML and video data.
-  if (data.content?.html || data.content?.video_url) {
-    alert("This lesson uses the rich-text editor. Please edit it from the Lesson Editor page.");
-    window.location.href = "lessons.html";
-    return;
-  }
-
   $("lessonId").value = data.id;
   $("moduleTitle").value = data.modules?.title || "";
   $("moduleSlug").value = data.modules?.slug || "";
-  $("title").value = data.title;
-  $("slug").value = data.slug;
-  $("order").value = data.sort_order;
-  $("lessonPublished").checked = data.published;
-
-  $("content").value =
-    data.content?.markdown ||
-    JSON.stringify(data.content || {}, null, 2);
-
+  $("title").value = data.title || "";
+  $("slug").value = data.slug || "";
+  $("order").value = data.sort_order ?? 0;
+  $("lessonPublished").checked = !!data.published;
+  $("lessonVideo").value = data.content?.video_url || "";
   $("lessonFormTitle").textContent = "Edit lesson";
 
+  setLessonEditorContent(data.content);
+  updateLessonVideoPreview();
   message("lessonMsg", "");
-
   $("lessonDialog").showModal();
 }
 
 $("lessonForm").onsubmit = async e => {
   e.preventDefault();
-
   message("lessonMsg", "Saving…");
 
+  if (!lessonEditor) {
+    message("lessonMsg", "The lesson editor has not loaded. Refresh and try again.");
+    return;
+  }
+
+  const moduleTitle = $("moduleTitle").value.trim();
   const moduleSlug = slug($("moduleSlug").value);
+  const lessonTitle = $("title").value.trim();
+  const lessonSlug = slug($("slug").value);
+  const videoInput = $("lessonVideo").value.trim();
+  const videoUrl = videoInput ? getYouTubeEmbedUrl(videoInput) : null;
+
+  if (!moduleTitle || !moduleSlug || !lessonTitle || !lessonSlug) {
+    message("lessonMsg", "Complete the module and lesson titles.");
+    return;
+  }
+  if (videoInput && !videoUrl) {
+    message("lessonMsg", "Please enter a valid YouTube URL.");
+    return;
+  }
+
+  const html = lessonEditor.getHTML();
+  const textContent = lessonEditor.getText().trim();
+  if (!textContent && !html.includes("data-type=\"block-math\"")) {
+    message("lessonMsg", "Please write some lesson content before saving.");
+    return;
+  }
 
   let { data: mod, error } = await db
     .from("modules")
@@ -352,7 +536,7 @@ $("lessonForm").onsubmit = async e => {
     const result = await db
       .from("modules")
       .insert({
-        title: $("moduleTitle").value.trim(),
+        title: moduleTitle,
         slug: moduleSlug,
         sort_order: +$("order").value || 0,
         published: $("lessonPublished").checked
@@ -364,14 +548,12 @@ $("lessonForm").onsubmit = async e => {
       message("lessonMsg", result.error.message);
       return;
     }
-
     mod = result.data;
-
   } else {
     const result = await db
       .from("modules")
       .update({
-        title: $("moduleTitle").value.trim(),
+        title: moduleTitle,
         sort_order: +$("order").value || 0
       })
       .eq("id", mod.id);
@@ -384,18 +566,18 @@ $("lessonForm").onsubmit = async e => {
 
   const body = {
     module_id: mod.id,
-    title: $("title").value.trim(),
-    slug: slug($("slug").value),
+    title: lessonTitle,
+    slug: lessonSlug,
     sort_order: +$("order").value || 0,
     published: $("lessonPublished").checked,
     content: {
-      markdown: $("content").value
+      html,
+      video_url: videoUrl
     },
     updated_at: new Date().toISOString()
   };
 
   const id = $("lessonId").value;
-
   const result = id
     ? await db.from("lessons").update(body).eq("id", id)
     : await db.from("lessons").insert(body);
@@ -406,14 +588,12 @@ $("lessonForm").onsubmit = async e => {
   }
 
   $("lessonDialog").close();
-
   await loadLessons();
   await loadLessonOptions();
 };
 
 async function toggleLesson(id) {
-  const lesson = lessonsCache.find(x => x.id === id);
-
+  const lesson = lessonsCache.find(x => String(x.id) === String(id));
   if (!lesson) return;
 
   const result = await db
@@ -424,11 +604,8 @@ async function toggleLesson(id) {
     })
     .eq("id", id);
 
-  if (result.error) {
-    alert(result.error.message);
-  } else {
-    await loadLessons();
-  }
+  if (result.error) alert(result.error.message);
+  else await loadLessons();
 }
 
 async function deleteLesson(id) {
@@ -439,9 +616,8 @@ async function deleteLesson(id) {
     .delete()
     .eq("id", id);
 
-  if (result.error) {
-    alert(result.error.message);
-  } else {
+  if (result.error) alert(result.error.message);
+  else {
     await loadLessons();
     await loadLessonOptions();
   }
