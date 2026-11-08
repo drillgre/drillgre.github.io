@@ -302,12 +302,12 @@
     if(!saved?.attempt_id || !saved?.session_token) return;
 
     const { data: sessionData } = await db.auth.getSession();
-    const guestKey = saved.visitor_key || visitorKey();
+    const guestKey = saved.visitor_key || (!sessionData.session ? visitorKey() : null);
     setStatus("Resuming your saved mock attempt…");
     const {data,error}=await db.rpc("resume_gre_mock",{
       p_attempt_id:saved.attempt_id,
       p_session_token:saved.session_token,
-      p_visitor_key:sessionData.session ? null : guestKey
+      p_visitor_key:guestKey
     });
 
     if(error) {
@@ -328,7 +328,7 @@
     active={
       attempt_id:saved.attempt_id,
       session_token:saved.session_token,
-      visitor_key:sessionData.session ? null : guestKey,
+      visitor_key:guestKey,
       status:data.status
     };
     displayAttemptSection(data);
