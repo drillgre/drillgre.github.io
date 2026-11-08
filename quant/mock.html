@@ -70,11 +70,30 @@
     .mock-footer-note{font-size:12px;color:var(--muted);line-height:1.6}
     @media(max-width:650px){.rule-grid,.score-grid,.quantities{grid-template-columns:1fr}.topic{margin-left:0}.section-controls{align-items:flex-start;flex-direction:column}.section-controls button{width:100%}}
   </style>
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/assets/js/site-nav.js"></script>
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="../index.html">Drill<em>GRE</em> <span style="font-size:11px;color:#c7d2f0">QUANT MOCK</span></a>
-  <nav class="toplinks"><a href="../index.html">Home</a><a href="index.html">Quant Academy</a><a href="../account.html">Sign in</a><a href="../dashboard.html">Learner dashboard</a></nav>
+<header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span>
+      <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      <span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <a href="/#practice">Practice</a>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions">
+      <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+      <a class="drillgre-start-link" href="/#practice">Start drilling <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
 </header>
 
 <main class="mock-shell">
