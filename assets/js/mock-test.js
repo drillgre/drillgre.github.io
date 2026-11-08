@@ -299,6 +299,17 @@
     return String(item.response);
   }
 
+  function reviewOptionMarkup(question) {
+    const options = parseOptions(question.options);
+    if (question.question_type === "quantitative_comparison") {
+      const a = options.find(x => /quantity.?a/i.test(x.label || ""))?.text || options[0]?.text || "";
+      const b = options.find(x => /quantity.?b/i.test(x.label || ""))?.text || options[1]?.text || "";
+      return `<div class="review-answer"><b>Quantity A:</b> ${esc(a)}<br><b>Quantity B:</b> ${esc(b)}</div>`;
+    }
+    if (!options.length) return "";
+    return `<ul>${options.map((option,index)=>`<li><b>${esc(option.label || String.fromCharCode(65+index))}.</b> ${esc(option.text ?? "")}</li>`).join("")}</ul>`;
+  }
+
   function renderReview(items) {
     $("reviewList").innerHTML=(items||[]).map((item,index)=>{
       const q=item.question||{};
@@ -315,6 +326,7 @@
           <div class="question-head"><b>Q${index+1} · Section ${item.section_number}</b><span>Level ${esc(q.difficulty)}</span><strong>${item.is_correct?"Correct":"Incorrect / blank"}</strong></div>
           <p class="question-prompt">${esc(q.question_text||"")}</p>
           ${q.figure_url?`<img class="question-figure" src="${esc(q.figure_url)}" alt="Question figure">`:""}
+          ${reviewOptionMarkup(q)}
           <div class="review-answer"><b>Your answer:</b> ${esc(answerDisplay(item))}<br><b>Correct answer:</b> ${esc(correctAnswerText(item))}</div>
           ${explanation}
         </article>`;
