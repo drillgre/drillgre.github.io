@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Take an adaptive GRE Quant mock test on DrillGRE.">
+  <title>Adaptive Quant Mock | DrillGRE</title>
+  <link rel="stylesheet" href="../assets/css/lms.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="../assets/js/lms.js"></script>
+  <script defer src="../assets/js/mock-test.js"></script>
+  <style>
+    .mock-shell{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+    .mock-hero{background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:20px;padding:28px;margin-bottom:18px}
+    .mock-hero h1{font-size:clamp(28px,4vw,40px);line-height:1.12;margin:8px 0 12px;letter-spacing:-1.2px}
+    .mock-hero p{color:var(--muted);line-height:1.65;max-width:760px}
+    .rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+    .rule{border:1px solid var(--line);border-radius:12px;background:white;padding:14px}
+    .rule strong{display:block;font-size:16px;margin-bottom:5px}
+    .rule span{font-size:12px;color:var(--muted);line-height:1.5}
+    .distribution{background:white;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:12px}
+    .distribution h3{margin:0 0 9px;font-size:15px}
+    .distribution table{width:100%;border-collapse:collapse;font-size:13px}
+    .distribution td,.distribution th{padding:8px;border-bottom:1px solid var(--line);text-align:left}
+    .distribution tr:last-child td{border-bottom:0}
+    .mock-button{border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 18px;font-weight:800;cursor:pointer}
+    .mock-button:disabled{opacity:.55;cursor:wait}
+    .mock-status{padding:12px 14px;border:1px solid var(--line);background:white;border-radius:10px;color:var(--muted);font-size:13px;margin:12px 0}
+    .mock-status.error{color:#9a2e20;border-color:#f3d0cb;background:#fff5f4}
+    .mock-progress{height:7px;background:#e9edf5;border-radius:99px;overflow:hidden;margin:14px 0 5px}
+    .mock-progress span{display:block;height:100%;width:0;background:var(--blue);transition:width .15s}
+    .mock-question{background:white;border:1px solid var(--line);border-radius:15px;padding:20px;margin:14px 0}
+    .mock-question.answered{border-color:#b8c7ff}
+    .question-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-bottom:12px}
+    .question-number{font-weight:850;color:#3154c5;background:#eef2ff;padding:5px 9px;border-radius:20px}
+    .difficulty{padding:5px 9px;border:1px solid var(--line);border-radius:20px}
+    .topic{margin-left:auto}
+    .question-prompt{white-space:pre-line;font-size:15px;line-height:1.75;color:var(--ink);margin:8px 0 15px}
+    .question-figure{display:block;max-width:100%;max-height:420px;object-fit:contain;margin:12px 0;border:1px solid var(--line);border-radius:10px}
+    .quantities{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+    .quantities>div{background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:12px}
+    .quantities p{white-space:pre-line;margin:6px 0 0;color:#354158;font-size:14px;line-height:1.6}
+    .mock-option{display:flex;align-items:flex-start;gap:10px;padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;line-height:1.5}
+    .mock-option:has(input:checked){border-color:#8aa5ff;background:#f3f6ff}
+    .mock-option input{margin-top:4px}
+    .numeric-wrap{display:grid;gap:8px;max-width:300px;font-size:13px;font-weight:700}
+    .numeric-answer{padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+    .section-controls{position:sticky;bottom:0;background:#f5f7fbf2;backdrop-filter:blur(8px);padding:14px 0;margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .section-controls button{border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 17px;font-weight:800;cursor:pointer}
+    .section-controls button:disabled{opacity:.5}
+    .score-card{background:var(--navy);color:white;border-radius:18px;padding:24px;margin-bottom:16px}
+    .score-card .score{font-size:54px;font-weight:900;letter-spacing:-2px;line-height:1.1}
+    .score-card p{color:#dbe3f8;margin:5px 0}
+    .score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+    .score-metric{background:#ffffff12;border:1px solid #ffffff25;border-radius:10px;padding:12px}
+    .score-metric strong{display:block;font-size:18px}
+    .score-metric span{font-size:11px;color:#dbe3f8}
+    .review-question{background:white;border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+    .review-question.right{border-left:4px solid #269b61}
+    .review-question.wrong{border-left:4px solid #d08a30}
+    .review-question .question-head strong{margin-left:auto}
+    .review-answer{background:#f7f8fb;border-radius:9px;padding:11px;font-size:13px;line-height:1.8;margin:10px 0}
+    .review-explanation{white-space:pre-wrap;color:#38445a;font-size:13px;line-height:1.65;margin:10px 0}
+    .review-video iframe{width:100%;max-width:560px;aspect-ratio:16/9;border:0;border-radius:10px}
+    .mock-footer-note{font-size:12px;color:var(--muted);line-height:1.6}
+    @media(max-width:650px){.rule-grid,.score-grid,.quantities{grid-template-columns:1fr}.topic{margin-left:0}.section-controls{align-items:flex-start;flex-direction:column}.section-controls button{width:100%}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../index.html">Drill<em>GRE</em> <span style="font-size:11px;color:#c7d2f0">QUANT MOCK</span></a>
+  <nav class="toplinks"><a href="../index.html">Home</a><a href="index.html">Quant Academy</a></nav>
+</header>
+
+<main class="mock-shell">
+  <div class="crumb"><a href="index.html">Quant Academy</a> / Adaptive Mock Test</div>
+  <p id="mockStatus" class="mock-status" hidden role="status"></p>
+
+  <section id="introPanel" class="mock-hero">
+    <div class="eyebrow">Adaptive quantitative reasoning</div>
+    <h1>GRE Quant Mock Test</h1>
+    <p>This mock contains 27 questions across two sections. Your performance in Section 1 determines the difficulty mix in Section 2.</p>
+    <div class="rule-grid">
+      <div class="rule"><strong>Section 1</strong><span>12 questions: 2 Level 1, 3 Level 2, 4 Level 3, 3 Level 4.</span></div>
+      <div class="rule"><strong>Section 2</strong><span>15 questions. The difficulty distribution adapts to your Section 1 score.</span></div>
+      <div class="rule"><strong>Adaptive threshold</strong><span>8 or more correct leads to the harder route. Fewer than 8 leads to the foundation route.</span></div>
+    </div>
+    <div class="distribution">
+      <h3>Section 2 difficulty routes</h3>
+      <table>
+        <thead><tr><th>Difficulty</th><th>8 or more correct</th><th>Fewer than 8</th></tr></thead>
+        <tbody>
+          <tr><td>Level 1</td><td>0</td><td>3</td></tr>
+          <tr><td>Level 2</td><td>0</td><td>5</td></tr>
+          <tr><td>Level 3</td><td>5</td><td>5</td></tr>
+          <tr><td>Level 4</td><td>5</td><td>2</td></tr>
+          <tr><td>Level 5</td><td>5</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="distribution">
+      <h3>Scoring</h3>
+      <p class="mock-footer-note">Correct answers earn points according to difficulty: Level 1 = 1 point, Level 2 = 2, Level 3 = 3, Level 4 = 4, and Level 5 = 5. Incorrect and unanswered questions receive zero points. There is no negative marking.</p>
+      <p class="mock-footer-note"><b>Scaled score:</b> 130 + 40 × (weighted points earned ÷ weighted points available). This is an initial DrillGRE scale, not an official ETS score conversion.</p>
+    </div>
+    <div style="margin-top:18px"><button id="startMock" class="mock-button" type="button">Start adaptive mock</button></div>
+    <p class="mock-footer-note" style="margin-top:12px">There is no timer in this first version. Your in-progress answers are saved in this browser, and you can resume after refreshing the page.</p>
+  </section>
+
+  <section id="testPanel" hidden>
+    <div class="mock-hero">
+      <div class="eyebrow" id="sectionLabel">Section 1 of 2</div>
+      <h1 id="sectionTitle">Adaptive foundation</h1>
+      <p id="sectionDescription"></p>
+      <div class="mock-progress"><span id="progressFill"></span></div>
+      <small id="answeredCount" style="color:#69758b">0 answered</small>
+    </div>
+    <div id="questionStack"></div>
+    <div class="section-controls">
+      <span class="mock-footer-note">You may leave questions blank. Unanswered questions receive zero points.</span>
+      <button id="submitSection" type="button">Submit Section 1</button>
+    </div>
+  </section>
+
+  <section id="resultPanel" hidden>
+    <div class="score-card">
+      <div class="eyebrow" style="background:#ffffff18;border-color:#ffffff30;color:#cbd7ff">Your DrillGRE Quant score</div>
+      <div id="scaledScore" class="score">—</div>
+      <p>Provisional scaled score · 130–170</p>
+      <div class="score-grid">
+        <div class="score-metric"><strong id="totalCorrect">—</strong><span>Correct overall</span></div>
+        <div class="score-metric"><strong id="sectionOneResult">—</strong><span>Section 1</span></div>
+        <div class="score-metric"><strong id="sectionTwoResult">—</strong><span>Section 2</span></div>
+        <div class="score-metric"><strong id="weightedResult">—</strong><span>Weighted points</span></div>
+        <div class="score-metric"><strong id="accuracyResult">—</strong><span>Weighted accuracy</span></div>
+        <div class="score-metric"><strong id="routeResult">—</strong><span>Adaptive route</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Answer review</h2>
+      <p>Review your answers and explanations, including available teaching videos.</p>
+      <div id="reviewList"></div>
+    </div>
+    <button id="newMock" class="mock-button" type="button">Start another mock</button>
+  </section>
+</main>
+<footer style="max-width:1000px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Adaptive Quant Mock</footer>
+</body>
+</html>
