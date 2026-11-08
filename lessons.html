@@ -284,10 +284,12 @@ import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@2.11.5/
     const content={html:editor.getHTML(),video_url:videoUrl||null};
     const body={module_id:module.id,title:lessonTitle,slug:lessonSlug,sort_order:Number($("sortOrder").value)||0,published:$("published").checked,content,updated_at:new Date().toISOString()};
     const id=$("lessonId").value;
-    const result=id?await db.from("lessons").update(body).eq("id",id):await db.from("lessons").insert(body);
+    const result=id
+      ? await db.from("lessons").update(body).eq("id",id).select("id").single()
+      : await db.from("lessons").insert(body).select("id").single();
     if(result.error){msg("saveMsg",result.error.message);return;}
+    $("lessonId").value=result.data.id;
     msg("saveMsg","Lesson saved successfully.",true);
-    $("lessonId").value=result.data?.id||id;
     await loadLessons();
   };
 
