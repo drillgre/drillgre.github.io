@@ -16,6 +16,11 @@ alter table public.profiles add column if not exists country text;
 alter table public.profiles add column if not exists academic_background text;
 alter table public.profiles add column if not exists further_study text;
 alter table public.profiles add column if not exists further_study_fields text[] not null default '{}';
+alter table public.profiles add column if not exists further_study_field text;
+update public.profiles
+set further_study_field = further_study_fields[1]
+where further_study_field is null
+  and coalesce(cardinality(further_study_fields), 0) > 0;
 
 alter table public.gre_mock_attempts
   add column if not exists learner_id uuid references auth.users(id) on delete set null;
@@ -48,7 +53,7 @@ begin
     'country', p.country,
     'academic_background', p.academic_background,
     'further_study', p.further_study,
-    'further_study_fields', p.further_study_fields
+    'further_study_field', p.further_study_field
   )
   into v_profile
   from public.profiles p
