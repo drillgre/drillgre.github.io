@@ -26,6 +26,9 @@
     .lesson-video-preview { width:100%; max-width:560px; aspect-ratio:16/9; border:0; border-radius:9px; background:#e2e8f0; }
     .lesson-video-preview-wrap { padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; }
     .tiptap-mathematics-render { margin:8px 0; }
+    #stimulusPanel { padding:14px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; }
+    #stimulusPanel h3 { margin:0 0 6px; }
+    #stimulusEditor { margin-top:12px; }
     @media(max-width:650px) { .lesson-toolbar button { padding:7px 8px; } .lesson-editor { min-height:300px; } }
   </style>
 
@@ -330,14 +333,24 @@
       <div class="grid">
 
 
-        <!-- Topic -->
         <label>
-          Topic
+          GRE category
+          <select id="topicCategory" required>
+            <option value="arithmetic">Arithmetic</option>
+            <option value="data_analysis">Data Analysis</option>
+            <option value="algebra">Algebra</option>
+            <option value="geometry">Geometry</option>
+          </select>
+        </label>
 
-          <input
-            id="topic"
-            required
-            placeholder="Geometry">
+        <label>
+          Subtopic
+          <select id="subtopic" required></select>
+        </label>
+
+        <label class="full">
+          Topic label
+          <input id="topic" required placeholder="e.g. Number properties, ratios, triangles">
         </label>
 
 
@@ -396,6 +409,38 @@
           </select>
         </label>
 
+
+        <div id="stimulusPanel" class="full" hidden>
+          <h3>Shared Data Analysis stimulus</h3>
+          <p class="field-note">
+            Create one shared chart, table, graph, or data context, then link exactly three Data Analysis questions to it.
+            The mock test presents the stimulus once and keeps the three questions together.
+          </p>
+          <label>
+            Existing stimulus group
+            <select id="stimulusGroup">
+              <option value="">No shared stimulus (standalone question)</option>
+            </select>
+          </label>
+          <div class="actions" style="justify-content:flex-start">
+            <button type="button" class="secondary" id="newStimulusGroup">+ Create shared stimulus</button>
+          </div>
+          <div id="stimulusEditor" class="dynamic-card" hidden>
+            <label>Stimulus title
+              <input id="stimulusTitle" placeholder="e.g. Annual sales by product category">
+            </label>
+            <label>Shared context or instructions
+              <textarea id="stimulusText" rows="3" placeholder="Provide the instructions or context shared by the three questions."></textarea>
+            </label>
+            <label>Shared chart / table / figure
+              <input id="stimulusFigure" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+            </label>
+            <div id="stimulusFigurePreview" class="preview"></div>
+            <button type="button" id="saveStimulusGroup">Save shared stimulus group</button>
+            <p class="field-note">After saving, select this group for each of its three questions. A group becomes eligible for mocks only when all three questions are published and their difficulty levels match the mock blueprint.</p>
+            <p id="stimulusMsg" class="msg"></p>
+          </div>
+        </div>
 
         <!-- Question text -->
         <label class="full">
