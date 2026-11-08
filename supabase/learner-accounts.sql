@@ -1,7 +1,7 @@
 -- DrillGRE learner accounts, email/password authentication, and mock-attempt limits.
 -- Run AFTER gre-mock-tests.sql and BEFORE learner-read-policies.sql.
 --
--- Registration uses email/password with email OTP confirmation. Sign-in uses email/password.
+-- Registration uses email/password with email-link confirmation. Sign-in uses email/password.
 -- Authenticated learners have unlimited mock attempts.
 -- Anonymous learners may start two attempts per persistent browser visitor key.
 -- Guest quotas are tied to a browser-local key, so clearing browser storage
@@ -35,7 +35,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = pg_catalog, public, auth, pg_temp
-as $
+as $$
 begin
   insert into public.profiles (
     id, role, name, email, education, age_range, country,
@@ -65,7 +65,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists on_auth_user_created_drillgre on auth.users;
 create trigger on_auth_user_created_drillgre
