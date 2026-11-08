@@ -809,8 +809,13 @@ begin
 end;
 $$;
 
-revoke all on function private.gre_mock_select_section(uuid, integer, text, text)
-  from public, anon, authenticated;
+do $$ 
+begin
+  if to_regprocedure('private.gre_mock_select_section(uuid,integer,text,text)') is not null then
+    execute 'revoke all on function private.gre_mock_select_section(uuid, integer, text, text) from public, anon, authenticated';
+  end if;
+end $$;
+
 revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text)
   from public, anon, authenticated;
 
