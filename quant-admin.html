@@ -7,6 +7,27 @@
   <title>DrillGRE Admin</title>
 
   <link rel="stylesheet" href="assets/css/admin.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <style>
+    #lessonDialog { width: min(1000px, calc(100% - 24px)); }
+    .lesson-content-field { min-width: 0; }
+    .lesson-toolbar { display:flex; flex-wrap:wrap; gap:6px; padding:9px; border:1px solid #cbd5e1; border-bottom:0; border-radius:9px 9px 0 0; background:#f8fafc; }
+    .lesson-toolbar button { padding:7px 10px; font-size:12px; background:#fff; color:#172033; border:1px solid #dbe2ea; }
+    .lesson-toolbar button.active { background:#eaf0ff; color:#2356d8; border-color:#9db5ff; }
+    .lesson-editor { min-height:390px; max-height:65vh; overflow:auto; border:1px solid #cbd5e1; border-radius:0 0 9px 9px; padding:18px; background:#fff; }
+    .lesson-editor .tiptap { min-height:350px; outline:none; line-height:1.7; }
+    .lesson-editor h1,.lesson-editor h2,.lesson-editor h3 { color:#172033; margin:1.2em 0 .5em; }
+    .lesson-editor p,.lesson-editor li { color:#334155; }
+    .lesson-editor ul,.lesson-editor ol { padding-left:25px; }
+    .lesson-editor blockquote { border-left:3px solid #2356d8; margin:14px 0; padding:8px 14px; background:#f4f7ff; }
+    .lesson-editor pre { background:#172033; color:#fff; border-radius:8px; padding:12px; overflow:auto; }
+    .lesson-editor code { background:#eef2f7; padding:2px 4px; border-radius:4px; }
+    .field-note { font-size:12px; color:#64748b; margin:6px 0 0; }
+    .lesson-video-preview { width:100%; max-width:560px; aspect-ratio:16/9; border:0; border-radius:9px; background:#e2e8f0; }
+    .lesson-video-preview-wrap { padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; }
+    .tiptap-mathematics-render { margin:8px 0; }
+    @media(max-width:650px) { .lesson-toolbar button { padding:7px 8px; } .lesson-editor { min-height:300px; } }
+  </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -59,10 +80,7 @@
           <p>Manage course lessons and GRE Quant questions.</p>
         </div>
 
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <a href="lessons.html" class="secondary" style="display:inline-block;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#172033;font-weight:700">Open lesson editor</a>
-          <button id="logout" class="secondary">Sign out</button>
-        </div>
+        <button id="logout" class="secondary">Sign out</button>
       </div>
 
 
@@ -227,14 +245,41 @@
           Publish lesson
         </label>
 
-        <label class="full">
-          Lesson content (Markdown)
+        <div class="full lesson-content-field">
+          <label>Lesson content</label>
 
-          <textarea
-            id="content"
-            rows="12"
-            placeholder="# Objectives&#10;## Explanation&#10;## Worked example"></textarea>
+          <div class="lesson-toolbar" id="lessonToolbar">
+            <button type="button" data-editor-command="bold"><b>B</b></button>
+            <button type="button" data-editor-command="italic"><i>I</i></button>
+            <button type="button" data-editor-command="heading" data-level="1">H1</button>
+            <button type="button" data-editor-command="heading" data-level="2">H2</button>
+            <button type="button" data-editor-command="heading" data-level="3">H3</button>
+            <button type="button" data-editor-command="bulletList">Bullets</button>
+            <button type="button" data-editor-command="orderedList">Numbered</button>
+            <button type="button" data-editor-command="blockquote">Quote</button>
+            <button type="button" data-editor-command="codeBlock">Code</button>
+            <button type="button" id="insertInlineMath">Inline equation</button>
+            <button type="button" id="insertBlockMath">Block equation</button>
+            <button type="button" data-editor-command="undo">Undo</button>
+            <button type="button" data-editor-command="redo">Redo</button>
+          </div>
+
+          <div id="lessonEditor" class="lesson-editor"></div>
+          <p class="field-note">
+            Write concepts, explanations, worked examples, and GRE strategies.
+            Use the equation buttons to insert LaTeX formulas.
+          </p>
+        </div>
+
+        <label class="full">
+          YouTube teaching video (optional)
+          <input
+            id="lessonVideo"
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=VIDEO_ID">
         </label>
+
+        <div id="lessonVideoPreview" class="full"></div>
 
       </div>
 
@@ -488,7 +533,7 @@
 
 
   <!-- Admin JavaScript -->
-  <script src="assets/js/admin.js"></script>
+  <script type="module" src="assets/js/admin.js"></script>
 
 </body>
 </html>
