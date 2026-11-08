@@ -84,6 +84,24 @@ create policy "Admins manage question stimuli"
     exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
   );
 
+-- Read only stimulus groups associated with published lesson questions.
+grant select on public.question_stimuli to anon, authenticated;
+drop policy if exists "Public can read stimuli for published lessons" on public.question_stimuli;
+create policy "Public can read stimuli for published lessons"
+on public.question_stimuli
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1
+    from public.questions q
+    join public.lessons l on l.id = q.lesson_id
+    where q.stimulus_id = question_stimuli.id
+      and q.published = true
+      and l.published = true
+  )
+);
+
 create or replace function public.limit_question_stimulus_members()
 returns trigger
 language plpgsql
