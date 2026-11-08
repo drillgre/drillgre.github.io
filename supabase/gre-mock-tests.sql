@@ -401,7 +401,7 @@ begin
           and prior_attempt.created_at >= now() - interval '60 days'
           and (
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
-            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+            or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
       ) asc, random()
     limit 1;
@@ -485,7 +485,7 @@ begin
           and prior_attempt.created_at >= now() - interval '60 days'
           and (
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
-            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+            or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
       ) asc, random()
       limit 1;
@@ -592,7 +592,7 @@ begin
           and prior_attempt.created_at >= now() - interval '60 days'
           and (
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
-            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+            or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
       ) asc, random()
       limit 1;
@@ -679,7 +679,7 @@ begin
           and prior_attempt.created_at >= now() - interval '60 days'
           and (
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
-            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+            or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
       ) asc, random()
         limit 1;
@@ -764,7 +764,7 @@ begin
           and prior_attempt.created_at >= now() - interval '60 days'
           and (
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
-            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+            or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
       ) asc, random()
         limit 1;
