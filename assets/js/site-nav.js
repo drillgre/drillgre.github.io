@@ -52,8 +52,8 @@
     accountLink.textContent = name;
     accountLink.href = isAdmin ? "/admin.html" : "/dashboard.html";
     accountLink.dataset.signedIn = "true";
-    accountLink.setAttribute("aria-label", name + "'s learner dashboard");
-    accountLink.title = "Open learner dashboard";
+    accountLink.setAttribute("aria-label", isAdmin ? name + "'s admin workspace" : name + "'s learner dashboard");
+    accountLink.title = isAdmin ? "Open admin workspace" : "Open learner dashboard";
   }
 
   function startAuth() {
