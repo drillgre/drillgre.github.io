@@ -320,36 +320,11 @@ begin
     limit 1;
 
     v_time_spent := 0;
-    select case when coalesce(item ->> 'seconds','') ~ '^[0-9]+
-
-    if v_is_correct then v_correct_count := v_correct_count + 1; end if;
-  end loop;
-
-  v_route := case when v_correct_count >= 8 then 'harder' else 'easier' end;
-
-  v_selection := private.gre_mock_select_section(
-    p_attempt_id, 2, v_route, v_attempt.section1_da_subtopic, v_attempt.visitor_key
-  );
-  v_questions := v_selection -> 'questions';
-
-  update public.gre_mock_attempts
-  set status = 'section2', section1_correct = v_correct_count, route = v_route
-  where id = p_attempt_id;
-
-  return jsonb_build_object(
-    'attempt_id', p_attempt_id,
-    'status', 'section2',
-    'section_number', 2,
-    'section1_correct', v_correct_count,
-    'route', v_route,
-    'question_count', 15,
-    'questions', coalesce(v_questions, '[]'::jsonb)
-  );
-end;
-$$;
-
-
-      then least(86400, (item ->> 'seconds')::integer) else 0 end
+    select case
+      when coalesce(item ->> 'seconds','') ~ '^[0-9]+$'
+        then least(86400, (item ->> 'seconds')::integer)
+      else 0
+    end
     into v_time_spent
     from jsonb_array_elements(coalesce(p_question_times, '[]'::jsonb)) as t(item)
     where item ->> 'question_id' = v_item.question_id
@@ -454,76 +429,11 @@ begin
     limit 1;
 
     v_time_spent := 0;
-    select case when coalesce(item ->> 'seconds','') ~ '^[0-9]+
-  end loop;
-
-  select
-    count(*) filter (where a.is_correct),
-    coalesce(sum(case when a.is_correct then (aq.question_snapshot ->> 'difficulty')::numeric else 0 end),0),
-    coalesce(sum((aq.question_snapshot ->> 'difficulty')::numeric),0)
-  into v_total_correct, v_weighted_points, v_max_points
-  from public.gre_mock_attempt_questions aq
-  left join public.gre_mock_attempt_answers a
-    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
-  where aq.attempt_id = p_attempt_id;
-
-  select count(*) filter (where a.is_correct)
-  into v_section2_correct
-  from public.gre_mock_attempt_questions aq
-  left join public.gre_mock_attempt_answers a
-    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
-  where aq.attempt_id = p_attempt_id and aq.section_number = 2;
-
-  v_scaled_score := case
-    when v_max_points <= 0 then 130
-    else greatest(130, least(170, round(130 + 40 * v_weighted_points / v_max_points)::integer))
-  end;
-
-  select jsonb_agg(
-    jsonb_build_object(
-      'section_number', aq.section_number,
-      'position', aq.position,
-      'question', aq.question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url',
-      'response', a.response,
-      'is_correct', coalesce(a.is_correct,false),
-      'time_spent_seconds', coalesce(a.time_spent_seconds,0),
-      'correct_answer', aq.question_snapshot -> 'correct_answer',
-      'explanation', aq.question_snapshot -> 'explanation',
-      'explanation_type', coalesce(aq.question_snapshot ->> 'explanation_type','text'),
-      'explanation_video_url', aq.question_snapshot -> 'explanation_video_url'
-    )
-    order by aq.section_number, aq.position
-  ) into v_review
-  from public.gre_mock_attempt_questions aq
-  left join public.gre_mock_attempt_answers a
-    on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
-  where aq.attempt_id = p_attempt_id;
-
-  update public.gre_mock_attempts
-  set status = 'completed', total_correct = v_total_correct,
-      weighted_points = v_weighted_points, max_weighted_points = v_max_points,
-      scaled_score = v_scaled_score, completed_at = now()
-  where id = p_attempt_id;
-
-  return jsonb_build_object(
-    'attempt_id', p_attempt_id,
-    'status', 'completed',
-    'route', v_attempt.route,
-    'section1_correct', v_attempt.section1_correct,
-    'section2_correct', v_section2_correct,
-    'total_correct', v_total_correct,
-    'total_questions', 27,
-    'weighted_points', v_weighted_points,
-    'max_weighted_points', v_max_points,
-    'weighted_accuracy', case when v_max_points > 0 then round(100 * v_weighted_points / v_max_points,2) else 0 end,
-    'scaled_score', v_scaled_score,
-    'review', coalesce(v_review,'[]'::jsonb)
-  );
-end;
-$$;
-
-
-      then least(86400, (item ->> 'seconds')::integer) else 0 end
+    select case
+      when coalesce(item ->> 'seconds','') ~ '^[0-9]+$'
+        then least(86400, (item ->> 'seconds')::integer)
+      else 0
+    end
     into v_time_spent
     from jsonb_array_elements(coalesce(p_question_times, '[]'::jsonb)) as t(item)
     where item ->> 'question_id' = v_item.question_id
@@ -571,6 +481,7 @@ $$;
       'question', aq.question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url',
       'response', a.response,
       'is_correct', coalesce(a.is_correct,false),
+      'time_spent_seconds', coalesce(a.time_spent_seconds,0),
       'correct_answer', aq.question_snapshot -> 'correct_answer',
       'explanation', aq.question_snapshot -> 'explanation',
       'explanation_type', coalesce(aq.question_snapshot ->> 'explanation_type','text'),
@@ -698,7 +609,7 @@ end;
 $$;
 
 -- Privacy-first public leaderboard. Learners must opt in.
--- Only first name, best score and completed-mock count are exposed publicly.
+-- Public output exposes only first name, best score and completed mock count.
 create or replace function public.set_leaderboard_opt_in(p_opt_in boolean)
 returns boolean
 language plpgsql
@@ -728,7 +639,8 @@ from (
   select row_number() over (order by max(a.scaled_score) desc, count(*) desc, min(a.completed_at) asc)::integer as rank,
     split_part(coalesce(nullif(trim(p.name), ''), 'Learner'), ' ', 1) as first_name,
     max(a.scaled_score)::integer as best_score, count(*)::integer as mocks_completed
-  from public.profiles p join public.gre_mock_attempts a on a.learner_id = p.id and a.status = 'completed'
+  from public.profiles p
+  join public.gre_mock_attempts a on a.learner_id = p.id and a.status = 'completed'
   where p.role = 'learner' and p.leaderboard_opt_in = true
   group by p.id, p.name
   order by max(a.scaled_score) desc, count(*) desc, min(a.completed_at) asc
