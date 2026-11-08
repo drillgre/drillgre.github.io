@@ -31,10 +31,16 @@ create policy "Public can read published questions"
 on public.questions
 for select
 to anon, authenticated
-using (published = true);
+using (
+  (published = true and question_usage in ('practice','both'))
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin'
+  )
+);
 
 -- Restrict the anonymous role to question prompt fields only.
-revoke select on public.questions from anon, public;
+revoke select on public.questions from anon, authenticated, public;
 grant select (
   id,
   lesson_id,
@@ -47,12 +53,12 @@ grant select (
   topic_category,
   subtopic,
   stimulus_id,
+  question_usage,
   published,
   created_at
-) on public.questions to anon;
--- The authenticated role retains the full select permission used by the admin
--- dashboard. The published-question RLS policy still filters non-admin rows.
-grant select on public.questions to authenticated;
+) on public.questions to anon, authenticated;
+-- Learners and admins receive prompt-only columns. Admin question editing
+-- obtains answer keys through the role-checked admin_get_question RPC below.
 
 -- Read only stimulus groups associated with published lesson questions.
 grant select on public.question_stimuli to anon, authenticated;
@@ -68,6 +74,7 @@ using (
     join public.lessons l on l.id = q.lesson_id
     where q.stimulus_id = question_stimuli.id
       and q.published = true
+      and q.question_usage in ('practice','both')
       and l.published = true
   )
 );
@@ -114,6 +121,7 @@ begin
   join public.lessons l on l.id = q.lesson_id
   where q.id::text = p_question_id
     and q.published = true
+    and q.question_usage in ('practice','both')
     and l.published = true;
 
   if not found then
@@ -168,7 +176,39 @@ $$;
 revoke all on function public.grade_gre_question(text, jsonb) from public;
 grant execute on function public.grade_gre_question(text, jsonb) to anon, authenticated;
 
+-- Full question records, including correct answers, are available only to admins.
+create or replace function public.admin_get_question(p_question_id text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_question jsonb;
+begin
+  if not exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin'
+  ) then
+    raise exception 'Administrator access is required to view question answers.';
+  end if;
+
+  select to_jsonb(q) into v_question
+  from public.questions q
+  where q.id::text = p_question_id;
+
+  if v_question is null then
+    raise exception 'Question not found.';
+  end if;
+
+  return v_question;
+end;
+$;
+
+revoke all on function public.admin_get_question(text) from public;
+grant execute on function public.admin_get_question(text) to authenticated;
+
 -- Security note:
 -- This RPC protects answer and explanation columns from ordinary anonymous
--- SELECT requests. It is adequate for lesson practice. For timed mock exams,
+-- SELECT requests. It is adequate for lesson practice. Timed mock answer keys remain server-side in the mock attempt snapshots. For timed mock exams,
 -- add per-user attempt records, server-side timing, and attempt limits.
