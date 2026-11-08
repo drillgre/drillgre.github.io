@@ -34,7 +34,7 @@ to anon, authenticated
 using (published = true);
 
 -- Restrict the anonymous role to question prompt fields only.
-revoke select on public.questions from anon;
+revoke select on public.questions from anon, public;
 grant select (
   id,
   lesson_id,
@@ -47,6 +47,9 @@ grant select (
   published,
   created_at
 ) on public.questions to anon;
+-- The authenticated role retains the full select permission used by the admin
+-- dashboard. The published-question RLS policy still filters non-admin rows.
+grant select on public.questions to authenticated;
 
 -- Grade answers inside PostgreSQL. The answer and explanation are returned
 -- only after the learner submits a response.
