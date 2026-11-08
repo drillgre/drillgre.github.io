@@ -66,6 +66,8 @@ The adaptive generator selects only published questions marked `mock` or `both`.
 - Account creation with email/password and email-link confirmation, plus email/password sign-in: `/account.html`
 - Learner dashboard and mock history: `/dashboard.html`
 - Adaptive mock: `/quant/mock.html`
+- Privacy-first public leaderboard: `/leaderboard.html` (learner opt-in required)
+- Admin question-management workspace: `/admin.html` (requires `profiles.role = 'admin'`)
 
 
 ## Mock timing and leaderboard additions
