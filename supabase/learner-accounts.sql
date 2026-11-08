@@ -222,8 +222,8 @@ begin
   where id = p_attempt_id
     and session_token = p_session_token
     and (
-      (auth.uid() is not null and learner_id = auth.uid())
-      or (auth.uid() is null and learner_id is null and visitor_key = p_visitor_key)
+      (learner_id is not null and learner_id = auth.uid())
+      or (learner_id is null and visitor_key = p_visitor_key)
     );
 
   if not found then
@@ -292,8 +292,8 @@ begin
     and session_token = p_session_token
     and status = 'section1'
     and (
-      (auth.uid() is not null and learner_id = auth.uid())
-      or (auth.uid() is null and learner_id is null and visitor_key = p_visitor_key)
+      (learner_id is not null and learner_id = auth.uid())
+      or (learner_id is null and visitor_key = p_visitor_key)
     )
   for update;
 
@@ -379,8 +379,8 @@ begin
     and session_token = p_session_token
     and status = 'section2'
     and (
-      (auth.uid() is not null and learner_id = auth.uid())
-      or (auth.uid() is null and learner_id is null and visitor_key = p_visitor_key)
+      (learner_id is not null and learner_id = auth.uid())
+      or (learner_id is null and visitor_key = p_visitor_key)
     )
   for update;
 
@@ -539,16 +539,12 @@ end;
 $$;
 
 -- Revoke old function signatures and expose only the owner-aware RPCs.
-revoke all on function public.start_gre_mock(text) from public;
-revoke all on function public.resume_gre_mock(uuid, text) from public;
-revoke all on function public.submit_gre_mock_section1(uuid, text, jsonb) from public;
-revoke all on function public.finish_gre_mock(uuid, text, jsonb) from public;
-
 revoke all on function public.start_gre_mock(text, text) from public;
 revoke all on function public.resume_gre_mock(uuid, text, text) from public;
 revoke all on function public.submit_gre_mock_section1(uuid, text, jsonb, text) from public;
 revoke all on function public.finish_gre_mock(uuid, text, jsonb, text) from public;
 revoke all on function public.get_learner_dashboard() from public;
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text) from public, anon, authenticated;
 
 grant execute on function public.start_gre_mock(text, text) to anon, authenticated;
 grant execute on function public.resume_gre_mock(uuid, text, text) to anon, authenticated;
