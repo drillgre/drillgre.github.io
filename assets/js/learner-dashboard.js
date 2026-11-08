@@ -66,7 +66,18 @@
     const { data:sessionData, error:sessionError } = await db.auth.getSession();
     const session = sessionData?.session;
     if (sessionError || !session) {
-      window.location.replace("account.html");
+      window.location.replace("/account.html");
+      return;
+    }
+
+    const { data: accessProfile } = await db
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    if (accessProfile?.role === "admin") {
+      window.location.replace("/admin.html");
       return;
     }
 
