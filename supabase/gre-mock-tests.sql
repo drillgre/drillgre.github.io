@@ -142,6 +142,7 @@ drop trigger if exists questions_limit_stimulus_members on public.questions;
 create trigger questions_limit_stimulus_members
 before insert or update of stimulus_id, topic_category, subtopic, lesson_id on public.questions
 for each row execute function public.limit_question_stimulus_members();
+revoke all on function public.limit_question_stimulus_members() from public, anon, authenticated;
 
 
 -- Run this complete script in Supabase SQL Editor.
