@@ -58,16 +58,16 @@ begin
     v_fields
   )
   on conflict (id) do update set
-    name = coalesce(excluded.name, public.profiles.name),
-    email = coalesce(excluded.email, public.profiles.email),
-    education = coalesce(excluded.education, public.profiles.education),
-    age_range = coalesce(excluded.age_range, public.profiles.age_range),
-    country = coalesce(excluded.country, public.profiles.country),
-    academic_background = coalesce(excluded.academic_background, public.profiles.academic_background),
-    further_study = coalesce(excluded.further_study, public.profiles.further_study),
+    name = coalesce(excluded.name, profiles.name),
+    email = coalesce(excluded.email, profiles.email),
+    education = coalesce(excluded.education, profiles.education),
+    age_range = coalesce(excluded.age_range, profiles.age_range),
+    country = coalesce(excluded.country, profiles.country),
+    academic_background = coalesce(excluded.academic_background, profiles.academic_background),
+    further_study = coalesce(excluded.further_study, profiles.further_study),
     further_study_fields = case
       when cardinality(excluded.further_study_fields) > 0 then excluded.further_study_fields
-      else public.profiles.further_study_fields
+      else profiles.further_study_fields
     end;
 
   return new;
