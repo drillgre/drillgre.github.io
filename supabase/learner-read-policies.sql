@@ -1,5 +1,5 @@
 -- DrillGRE learner access and answer-checking setup
--- Run this entire script in Supabase SQL Editor.
+-- Run this entire script after gre-mock-tests.sql has created question_stimuli.
 --
 -- It grants public read access only to published course material.
 -- Anonymous learners can read question prompts and options, but not answers
