@@ -54,7 +54,7 @@ grant select on public.questions to authenticated;
 -- Grade answers inside PostgreSQL. The answer and explanation are returned
 -- only after the learner submits a response.
 create or replace function public.grade_gre_question(
-  p_question_id uuid,
+  p_question_id text,
   p_response jsonb
 )
 returns jsonb
@@ -89,7 +89,7 @@ begin
     v_explanation_video_url
   from public.questions q
   join public.lessons l on l.id = q.lesson_id
-  where q.id = p_question_id
+  where q.id::text = p_question_id
     and q.published = true
     and l.published = true;
 
@@ -142,7 +142,7 @@ begin
 end;
 $$;
 
-revoke all on function public.grade_gre_question(uuid, jsonb) from public;
+revoke all on function public.grade_gre_question(text, jsonb) from public;
 grant execute on function public.grade_gre_question(uuid, jsonb) to anon, authenticated;
 
 -- Security note:
