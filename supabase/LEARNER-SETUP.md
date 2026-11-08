@@ -50,9 +50,9 @@ The registration form collects:
 - Highest education
 - Age range
 - Country
-- Academic background: one of ten categories, or Other
+- Academic background: Engineering; Commerce and Business; Economics; Mathematics and Statistics; Computer Science and IT; Natural Sciences; Social Sciences; Humanities and Arts; Law; Medicine and Health Sciences; or Other
 - Further study goal: PhD or Master's
-- Intended field of study: one selection from ten fields, or Other
+- Field of study: Economics; Mathematics; Statistics; Finance; Business Administration; Public Policy; Development Studies; Computer Science; Data Science; Engineering; or Other
 
 An Auth trigger copies these fields from Auth user metadata into `public.profiles`. The role is assigned as `learner`; it is not supplied by the browser.
 
