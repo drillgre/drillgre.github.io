@@ -1,4 +1,124 @@
 -- DrillGRE adaptive Quant mock tests
+
+
+-- Topic classification and linked Data Analysis stimuli.
+create table if not exists public.question_stimuli (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  stimulus_text text not null default '',
+  figure_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.questions add column if not exists topic_category text;
+alter table public.questions add column if not exists subtopic text;
+alter table public.questions add column if not exists stimulus_id uuid;
+
+update public.questions
+set topic_category = case
+  when lower(coalesce(topic,'')) similar to '%(geometry|coordinate)%' then 'geometry'
+  when question_type = 'data_interpretation'
+    or lower(coalesce(topic,'')) similar to '%(data|probability|counting|permutation|combination|statistics|interpretation)%'
+    then 'data_analysis'
+  when lower(coalesce(topic,'')) similar to '%(algebra|inequalit|equation|function|word problem)%' then 'algebra'
+  else 'arithmetic'
+end
+where topic_category is null;
+
+update public.questions
+set subtopic = case
+  when topic_category = 'geometry' and lower(coalesce(topic,'')) like '%coordinate%' then 'coordinate_geometry'
+  when topic_category = 'geometry' then 'geometry'
+  when topic_category = 'algebra' and lower(coalesce(topic,'')) like '%inequalit%' then 'inequalities'
+  when topic_category = 'algebra' and lower(coalesce(topic,'')) like '%word%' then 'word_problems'
+  when topic_category = 'algebra' then 'algebra_core'
+  when topic_category = 'data_analysis' and lower(coalesce(topic,'')) like '%probab%' then 'probability'
+  when topic_category = 'data_analysis' and lower(coalesce(topic,'')) similar to '%(count|permutation|combination)%' then 'counting'
+  when topic_category = 'data_analysis' and lower(coalesce(topic,'')) like '%stat%' then 'statistics'
+  when topic_category = 'data_analysis' then 'data_interpretation'
+  when lower(coalesce(topic,'')) similar to '%(number|property)%' then 'number_properties'
+  else 'arithmetic_other'
+end
+where subtopic is null or btrim(subtopic) = '';
+
+alter table public.questions alter column topic_category set default 'arithmetic';
+
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'questions_topic_category_check'
+      and conrelid = 'public.questions'::regclass
+  ) then
+    alter table public.questions add constraint questions_topic_category_check
+      check (topic_category in ('arithmetic','data_analysis','algebra','geometry'));
+  end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'questions_stimulus_id_fkey'
+      and conrelid = 'public.questions'::regclass
+  ) then
+    alter table public.questions add constraint questions_stimulus_id_fkey
+      foreign key (stimulus_id) references public.question_stimuli(id) on delete set null;
+  end if;
+end $;
+
+create index if not exists questions_mock_topic_difficulty_idx
+  on public.questions(topic_category, subtopic, difficulty)
+  where published = true;
+create index if not exists questions_stimulus_id_idx
+  on public.questions(stimulus_id);
+
+alter table public.question_stimuli enable row level security;
+revoke all on public.question_stimuli from anon, public;
+grant select, insert, update, delete on public.question_stimuli to authenticated;
+drop policy if exists "Admins manage question stimuli" on public.question_stimuli;
+create policy "Admins manage question stimuli"
+  on public.question_stimuli
+  for all to authenticated
+  using (
+    exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+  )
+  with check (
+    exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+  );
+
+create or replace function public.limit_question_stimulus_members()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $
+declare
+  v_count integer;
+begin
+  if new.stimulus_id is null then
+    return new;
+  end if;
+
+  if new.topic_category <> 'data_analysis' then
+    raise exception 'A shared stimulus can only be linked to Data Analysis questions.';
+  end if;
+
+  select count(*) into v_count
+  from public.questions q
+  where q.stimulus_id = new.stimulus_id
+    and q.id is distinct from new.id;
+
+  if v_count >= 3 then
+    raise exception 'A shared Data Analysis stimulus can be linked to a maximum of three questions.';
+  end if;
+
+  return new;
+end;
+$;
+
+drop trigger if exists questions_limit_stimulus_members on public.questions;
+create trigger questions_limit_stimulus_members
+before insert or update of stimulus_id, topic_category on public.questions
+for each row execute function public.limit_question_stimulus_members();
+
+
 -- Run this complete script in Supabase SQL Editor.
 --
 -- Section 1: 12 questions (D1:2, D2:3, D3:4, D4:3)
@@ -23,8 +143,11 @@ create table if not exists public.gre_mock_attempts (
   max_weighted_points numeric(10,2),
   scaled_score integer,
   created_at timestamptz not null default now(),
-  completed_at timestamptz
+  completed_at timestamptz,
+  section1_da_subtopic text
 );
+
+alter table public.gre_mock_attempts add column if not exists section1_da_subtopic text;
 
 create unique index if not exists gre_mock_attempts_session_token_uidx
   on public.gre_mock_attempts(session_token);
@@ -117,6 +240,403 @@ $$;
 
 revoke all on function private.gre_mock_answer_is_correct(jsonb, jsonb) from public, anon, authenticated;
 
+
+create or replace function private.gre_mock_select_section(
+  p_attempt_id uuid,
+  p_section_number integer,
+  p_route text,
+  p_section1_da_subtopic text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+declare
+  v_group_difficulties integer[];
+  v_stimulus public.question_stimuli%rowtype;
+  v_question public.questions%rowtype;
+  v_target record;
+  v_position integer := 0;
+  v_questions jsonb;
+  v_da_subtopic text;
+  v_remaining_subtopics text[];
+  v_first_subtopic text;
+  v_second_subtopic text;
+  v_da_diff_1 integer;
+  v_da_diff_2 integer;
+begin
+  if p_section_number = 1 then
+    v_group_difficulties := array[2,3,4];
+  elsif p_route = 'harder' then
+    v_group_difficulties := array[3,4,5];
+  else
+    v_group_difficulties := array[1,2,3];
+  end if;
+
+  -- A stimulus is eligible only when it has exactly three published
+  -- Data Analysis questions at the required difficulty levels.
+  select s.* into v_stimulus
+  from public.question_stimuli s
+  where exists (
+    select 1
+    from public.questions q
+    where q.stimulus_id = s.id
+      and q.published = true
+      and q.topic_category = 'data_analysis'
+    group by q.stimulus_id
+    having count(*) = 3
+       and array_agg(q.difficulty order by q.difficulty) = v_group_difficulties
+  )
+  order by random()
+  limit 1;
+
+  if not found then
+    raise exception 'No complete published Data Analysis stimulus group is available for this section. The group must contain exactly three published questions at difficulty levels %.',
+      array_to_string(v_group_difficulties, ', ');
+  end if;
+
+  -- Insert the three linked questions consecutively, with shared stimulus
+  -- metadata copied into each protected server-side snapshot.
+  for v_question in
+    select q.* from public.questions q
+    where q.stimulus_id = v_stimulus.id
+      and q.published = true
+      and q.topic_category = 'data_analysis'
+    order by q.difficulty, q.created_at
+  loop
+    v_position := v_position + 1;
+    insert into public.gre_mock_attempt_questions(
+      attempt_id, question_id, section_number, position, question_snapshot
+    )
+    values (
+      p_attempt_id, v_question.id::text, p_section_number, v_position,
+      jsonb_build_object(
+        'id', v_question.id::text,
+        'topic', v_question.topic,
+        'topic_category', v_question.topic_category,
+        'subtopic', v_question.subtopic,
+        'question_type', v_question.question_type,
+        'difficulty', v_question.difficulty,
+        'question_text', v_question.question_text,
+        'options', v_question.options,
+        'figure_url', v_question.figure_url,
+        'stimulus_id', v_stimulus.id::text,
+        'stimulus_title', v_stimulus.title,
+        'stimulus_text', v_stimulus.stimulus_text,
+        'stimulus_figure_url', v_stimulus.figure_url,
+        'correct_answer', v_question.correct_answer,
+        'explanation', v_question.explanation,
+        'explanation_type', v_question.explanation_type,
+        'explanation_video_url', v_question.explanation_video_url
+      )
+    );
+  end loop;
+
+  if p_section_number = 1 then
+    -- Section 1 has one standalone Data Analysis question. Across the
+    -- complete mock, the standalone questions cover Probability, Counting,
+    -- and Statistics once each.
+    select q.* into v_question
+    from public.questions q
+    where q.published = true
+      and q.topic_category = 'data_analysis'
+      and q.subtopic in ('probability','counting','statistics')
+      and q.stimulus_id is null
+      and q.difficulty = 4
+    order by random()
+    limit 1;
+
+    if not found then
+      raise exception 'Section 1 needs one standalone Data Analysis question at Level 4, tagged Probability, Counting, or Statistics.';
+    end if;
+
+    v_da_subtopic := v_question.subtopic;
+    v_position := v_position + 1;
+    insert into public.gre_mock_attempt_questions(
+      attempt_id, question_id, section_number, position, question_snapshot
+    )
+    values (
+      p_attempt_id, v_question.id::text, p_section_number, v_position,
+      jsonb_build_object(
+        'id', v_question.id::text, 'topic', v_question.topic,
+        'topic_category', v_question.topic_category, 'subtopic', v_question.subtopic,
+        'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
+        'question_text', v_question.question_text, 'options', v_question.options,
+        'figure_url', v_question.figure_url, 'stimulus_id', null,
+        'correct_answer', v_question.correct_answer, 'explanation', v_question.explanation,
+        'explanation_type', v_question.explanation_type,
+        'explanation_video_url', v_question.explanation_video_url
+      )
+    );
+
+    -- Section 1 topic matrix: Arithmetic 3, Data Analysis 4,
+    -- Algebra 3, Geometry 2.
+    for v_target in
+      select * from (values
+        (1,'arithmetic','number_properties'),
+        (1,'algebra','word_problems'),
+        (2,'arithmetic','number_properties'),
+        (2,'algebra','inequalities'),
+        (3,'arithmetic','arithmetic_other'),
+        (3,'algebra','algebra_core'),
+        (3,'geometry','geometry'),
+        (4,'geometry','coordinate_geometry')
+      ) as m(difficulty, topic_category, subtopic)
+    loop
+      select q.* into v_question
+      from public.questions q
+      where q.published = true
+        and q.topic_category = v_target.topic_category
+        and q.subtopic = v_target.subtopic
+        and q.difficulty = v_target.difficulty
+        and not exists (
+          select 1 from public.gre_mock_attempt_questions aq
+          where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
+        )
+      order by random()
+      limit 1;
+
+      if not found then
+        raise exception 'Question bank needs a published Level % question tagged % / % for Section 1.',
+          v_target.difficulty, v_target.topic_category, v_target.subtopic;
+      end if;
+
+      v_position := v_position + 1;
+      insert into public.gre_mock_attempt_questions(
+        attempt_id, question_id, section_number, position, question_snapshot
+      )
+      values (
+        p_attempt_id, v_question.id::text, p_section_number, v_position,
+        jsonb_build_object(
+          'id', v_question.id::text, 'topic', v_question.topic,
+          'topic_category', v_question.topic_category, 'subtopic', v_question.subtopic,
+          'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
+          'question_text', v_question.question_text, 'options', v_question.options,
+          'figure_url', v_question.figure_url, 'stimulus_id', null,
+          'correct_answer', v_question.correct_answer, 'explanation', v_question.explanation,
+          'explanation_type', v_question.explanation_type,
+          'explanation_video_url', v_question.explanation_video_url
+        )
+      );
+    end loop;
+
+  else
+    -- The next two standalone Data Analysis questions use the two subtopics
+    -- not selected in Section 1, so Probability, Counting and Statistics all
+    -- appear once across the 27-question test.
+    v_remaining_subtopics := array_remove(
+      array['probability','counting','statistics']::text[],
+      p_section1_da_subtopic
+    );
+
+    if coalesce(array_length(v_remaining_subtopics,1),0) <> 2 then
+      raise exception 'The Section 1 Data Analysis subtopic could not be recovered. Please start a new mock attempt.';
+    end if;
+
+    if p_route = 'harder' then
+      v_da_diff_1 := 3;
+      v_da_diff_2 := 4;
+    else
+      v_da_diff_1 := 2;
+      v_da_diff_2 := 4;
+    end if;
+
+    select a.subtopic, b.subtopic into v_first_subtopic, v_second_subtopic
+    from unnest(v_remaining_subtopics) as a(subtopic)
+    cross join unnest(v_remaining_subtopics) as b(subtopic)
+    where a.subtopic <> b.subtopic
+      and exists (
+        select 1 from public.questions q
+        where q.published = true and q.topic_category = 'data_analysis'
+          and q.subtopic = a.subtopic and q.stimulus_id is null
+          and q.difficulty = v_da_diff_1
+          and not exists (
+            select 1 from public.gre_mock_attempt_questions aq
+            where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
+          )
+      )
+      and exists (
+        select 1 from public.questions q
+        where q.published = true and q.topic_category = 'data_analysis'
+          and q.subtopic = b.subtopic and q.stimulus_id is null
+          and q.difficulty = v_da_diff_2
+          and not exists (
+            select 1 from public.gre_mock_attempt_questions aq
+            where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
+          )
+      )
+    order by random()
+    limit 1;
+
+    if not found then
+      raise exception 'Section 2 needs standalone Data Analysis questions from the two remaining subtopics (Probability, Counting, Statistics) at Levels % and %.',
+        v_da_diff_1, v_da_diff_2;
+    end if;
+
+    for v_target in
+      select * from (values
+        (v_da_diff_1, v_first_subtopic),
+        (v_da_diff_2, v_second_subtopic)
+      ) as d(difficulty, subtopic)
+    loop
+      select q.* into v_question
+      from public.questions q
+      where q.published = true
+        and q.topic_category = 'data_analysis'
+        and q.subtopic = v_target.subtopic
+        and q.stimulus_id is null
+        and q.difficulty = v_target.difficulty
+        and not exists (
+          select 1 from public.gre_mock_attempt_questions aq
+          where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
+        )
+      order by random()
+      limit 1;
+
+      if not found then
+        raise exception 'No published standalone Data Analysis question found for % at Level %.',
+          v_target.subtopic, v_target.difficulty;
+      end if;
+
+      v_position := v_position + 1;
+      insert into public.gre_mock_attempt_questions(
+        attempt_id, question_id, section_number, position, question_snapshot
+      )
+      values (
+        p_attempt_id, v_question.id::text, p_section_number, v_position,
+        jsonb_build_object(
+          'id', v_question.id::text, 'topic', v_question.topic,
+          'topic_category', v_question.topic_category, 'subtopic', v_question.subtopic,
+          'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
+          'question_text', v_question.question_text, 'options', v_question.options,
+          'figure_url', v_question.figure_url, 'stimulus_id', null,
+          'correct_answer', v_question.correct_answer, 'explanation', v_question.explanation,
+          'explanation_type', v_question.explanation_type,
+          'explanation_video_url', v_question.explanation_video_url
+        )
+      );
+    end loop;
+
+    if p_route = 'harder' then
+      -- Section 2 harder route: 4 Arithmetic, 5 Data Analysis,
+      -- 3 Algebra, 3 Geometry. Difficulty counts remain 5/5/5.
+      for v_target in
+        select * from (values
+          (3,'arithmetic','number_properties'),
+          (3,'algebra','word_problems'),
+          (3,'geometry','geometry'),
+          (4,'arithmetic','number_properties'),
+          (4,'algebra','inequalities'),
+          (4,'geometry','coordinate_geometry'),
+          (5,'arithmetic','arithmetic_other'),
+          (5,'arithmetic','arithmetic_other'),
+          (5,'algebra','algebra_core'),
+          (5,'geometry','geometry')
+        ) as m(difficulty, topic_category, subtopic)
+      loop
+        select q.* into v_question
+        from public.questions q
+        where q.published = true and q.topic_category = v_target.topic_category
+          and q.subtopic = v_target.subtopic and q.difficulty = v_target.difficulty
+          and not exists (
+            select 1 from public.gre_mock_attempt_questions aq
+            where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
+          )
+        order by random() limit 1;
+
+        if not found then
+          raise exception 'Question bank needs a published Level % question tagged % / % for the harder Section 2 route.',
+            v_target.difficulty, v_target.topic_category, v_target.subtopic;
+        end if;
+
+        v_position := v_position + 1;
+        insert into public.gre_mock_attempt_questions(
+          attempt_id, question_id, section_number, position, question_snapshot
+        )
+        values (
+          p_attempt_id, v_question.id::text, p_section_number, v_position,
+          jsonb_build_object(
+            'id', v_question.id::text, 'topic', v_question.topic,
+            'topic_category', v_question.topic_category, 'subtopic', v_question.subtopic,
+            'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
+            'question_text', v_question.question_text, 'options', v_question.options,
+            'figure_url', v_question.figure_url, 'stimulus_id', null,
+            'correct_answer', v_question.correct_answer, 'explanation', v_question.explanation,
+            'explanation_type', v_question.explanation_type,
+            'explanation_video_url', v_question.explanation_video_url
+          )
+        );
+      end loop;
+    else
+      -- Easier route keeps the same topic quotas but uses D1-D4 questions.
+      for v_target in
+        select * from (values
+          (1,'arithmetic','number_properties'),
+          (1,'algebra','word_problems'),
+          (2,'arithmetic','number_properties'),
+          (2,'algebra','inequalities'),
+          (2,'geometry','geometry'),
+          (3,'arithmetic','arithmetic_other'),
+          (3,'algebra','algebra_core'),
+          (3,'geometry','geometry'),
+          (3,'geometry','coordinate_geometry'),
+          (4,'arithmetic','arithmetic_other')
+        ) as m(difficulty, topic_category, subtopic)
+      loop
+        select q.* into v_question
+        from public.questions q
+        where q.published = true and q.topic_category = v_target.topic_category
+          and q.subtopic = v_target.subtopic and q.difficulty = v_target.difficulty
+          and not exists (
+            select 1 from public.gre_mock_attempt_questions aq
+            where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
+          )
+        order by random() limit 1;
+
+        if not found then
+          raise exception 'Question bank needs a published Level % question tagged % / % for the foundation Section 2 route.',
+            v_target.difficulty, v_target.topic_category, v_target.subtopic;
+        end if;
+
+        v_position := v_position + 1;
+        insert into public.gre_mock_attempt_questions(
+          attempt_id, question_id, section_number, position, question_snapshot
+        )
+        values (
+          p_attempt_id, v_question.id::text, p_section_number, v_position,
+          jsonb_build_object(
+            'id', v_question.id::text, 'topic', v_question.topic,
+            'topic_category', v_question.topic_category, 'subtopic', v_question.subtopic,
+            'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
+            'question_text', v_question.question_text, 'options', v_question.options,
+            'figure_url', v_question.figure_url, 'stimulus_id', null,
+            'correct_answer', v_question.correct_answer, 'explanation', v_question.explanation,
+            'explanation_type', v_question.explanation_type,
+            'explanation_video_url', v_question.explanation_video_url
+          )
+        );
+      end loop;
+    end if;
+  end if;
+
+  select jsonb_agg(
+    question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url'
+    order by position
+  ) into v_questions
+  from public.gre_mock_attempt_questions
+  where attempt_id = p_attempt_id and section_number = p_section_number;
+
+  return jsonb_build_object(
+    'questions', coalesce(v_questions,'[]'::jsonb),
+    'da_subtopic', v_da_subtopic
+  );
+end;
+$$;
+
+revoke all on function private.gre_mock_select_section(uuid, integer, text, text)
+  from public, anon, authenticated;
+
 create or replace function public.start_gre_mock(p_session_token text)
 returns jsonb
 language plpgsql
@@ -125,90 +645,33 @@ set search_path = public, private, pg_temp
 as $$
 declare
   v_attempt_id uuid;
-  v_distribution record;
-  v_question record;
-  v_available integer;
-  v_position integer := 0;
+  v_selection jsonb;
   v_questions jsonb;
+  v_da_subtopic text;
 begin
   if p_session_token is null or length(p_session_token) < 32 then
     raise exception 'A valid mock-test session token is required.';
   end if;
 
-  -- Check the entire bank before beginning, so the learner cannot reach
-  -- Section 2 and discover that the required adaptive route is unavailable.
-  for v_distribution in
-    select * from (values (1,5),(2,8),(3,9),(4,8),(5,5))
-      as d(difficulty, question_count)
-  loop
-    select count(*) into v_available
-    from public.questions q
-    where q.published = true and q.difficulty = v_distribution.difficulty;
-
-    if v_available < v_distribution.question_count then
-      raise exception 'Adaptive mock unavailable: difficulty level % needs at least % published questions to support both routes; the bank currently has %.',
-        v_distribution.difficulty, v_distribution.question_count, v_available;
-    end if;
-  end loop;
-
   insert into public.gre_mock_attempts(session_token, status)
   values (p_session_token, 'section1')
   returning id into v_attempt_id;
 
-  for v_distribution in
-    select * from (values (1,2),(2,3),(3,4),(4,3)) as d(difficulty, question_count)
-  loop
-    select count(*) into v_available
-    from public.questions q
-    where q.published = true and q.difficulty = v_distribution.difficulty;
+  v_selection := private.gre_mock_select_section(v_attempt_id, 1, null, null);
+  v_questions := v_selection -> 'questions';
+  v_da_subtopic := v_selection ->> 'da_subtopic';
 
-    if v_available < v_distribution.question_count then
-      raise exception 'Not enough published questions at difficulty level %. Need %, available %.',
-        v_distribution.difficulty, v_distribution.question_count, v_available;
-    end if;
-
-    for v_question in
-      select q.* from public.questions q
-      where q.published = true and q.difficulty = v_distribution.difficulty
-      order by random()
-      limit v_distribution.question_count
-    loop
-      v_position := v_position + 1;
-      insert into public.gre_mock_attempt_questions(
-        attempt_id, question_id, section_number, position, question_snapshot
-      )
-      values (
-        v_attempt_id, v_question.id::text, 1, v_position,
-        jsonb_build_object(
-          'id', v_question.id::text,
-          'topic', v_question.topic,
-          'question_type', v_question.question_type,
-          'difficulty', v_question.difficulty,
-          'question_text', v_question.question_text,
-          'options', v_question.options,
-          'figure_url', v_question.figure_url,
-          'correct_answer', v_question.correct_answer,
-          'explanation', v_question.explanation,
-          'explanation_type', v_question.explanation_type,
-          'explanation_video_url', v_question.explanation_video_url
-        )
-      );
-    end loop;
-  end loop;
-
-  select jsonb_agg(
-    question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url'
-    order by position
-  ) into v_questions
-  from public.gre_mock_attempt_questions
-  where attempt_id = v_attempt_id and section_number = 1;
+  update public.gre_mock_attempts
+  set section1_da_subtopic = v_da_subtopic
+  where id = v_attempt_id;
 
   return jsonb_build_object(
     'attempt_id', v_attempt_id, 'status', 'section1', 'section_number', 1,
-    'question_count', 12, 'questions', coalesce(v_questions, '[]'::jsonb)
+    'question_count', 12, 'questions', coalesce(v_questions,'[]'::jsonb)
   );
 end;
 $$;
+
 
 create or replace function public.resume_gre_mock(
   p_attempt_id uuid,
@@ -260,6 +723,7 @@ begin
 end;
 $$;
 
+
 create or replace function public.submit_gre_mock_section1(
   p_attempt_id uuid,
   p_session_token text,
@@ -277,10 +741,7 @@ declare
   v_is_correct boolean;
   v_correct_count integer := 0;
   v_route text;
-  v_distribution record;
-  v_question record;
-  v_available integer;
-  v_position integer := 0;
+  v_selection jsonb;
   v_questions jsonb;
 begin
   select * into v_attempt
@@ -318,114 +779,23 @@ begin
 
   v_route := case when v_correct_count >= 8 then 'harder' else 'easier' end;
 
-  if v_route = 'harder' then
-    for v_distribution in
-      select * from (values (3,5),(4,5),(5,5)) as d(difficulty, question_count)
-    loop
-      select count(*) into v_available
-      from public.questions q
-      where q.published = true and q.difficulty = v_distribution.difficulty
-        and not exists (
-          select 1 from public.gre_mock_attempt_questions aq
-          where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
-        );
-
-      if v_available < v_distribution.question_count then
-        raise exception 'Not enough unused published questions at difficulty level %. Need %, available %.',
-          v_distribution.difficulty, v_distribution.question_count, v_available;
-      end if;
-
-      for v_question in
-        select q.* from public.questions q
-        where q.published = true and q.difficulty = v_distribution.difficulty
-          and not exists (
-            select 1 from public.gre_mock_attempt_questions aq
-            where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
-          )
-        order by random()
-        limit v_distribution.question_count
-      loop
-        v_position := v_position + 1;
-        insert into public.gre_mock_attempt_questions(
-          attempt_id, question_id, section_number, position, question_snapshot
-        )
-        values (
-          p_attempt_id, v_question.id::text, 2, v_position,
-          jsonb_build_object(
-            'id', v_question.id::text, 'topic', v_question.topic,
-            'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
-            'question_text', v_question.question_text, 'options', v_question.options,
-            'figure_url', v_question.figure_url, 'correct_answer', v_question.correct_answer,
-            'explanation', v_question.explanation, 'explanation_type', v_question.explanation_type,
-            'explanation_video_url', v_question.explanation_video_url
-          )
-        );
-      end loop;
-    end loop;
-  else
-    for v_distribution in
-      select * from (values (1,3),(2,5),(3,5),(4,2)) as d(difficulty, question_count)
-    loop
-      select count(*) into v_available
-      from public.questions q
-      where q.published = true and q.difficulty = v_distribution.difficulty
-        and not exists (
-          select 1 from public.gre_mock_attempt_questions aq
-          where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
-        );
-
-      if v_available < v_distribution.question_count then
-        raise exception 'Not enough unused published questions at difficulty level %. Need %, available %.',
-          v_distribution.difficulty, v_distribution.question_count, v_available;
-      end if;
-
-      for v_question in
-        select q.* from public.questions q
-        where q.published = true and q.difficulty = v_distribution.difficulty
-          and not exists (
-            select 1 from public.gre_mock_attempt_questions aq
-            where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
-          )
-        order by random()
-        limit v_distribution.question_count
-      loop
-        v_position := v_position + 1;
-        insert into public.gre_mock_attempt_questions(
-          attempt_id, question_id, section_number, position, question_snapshot
-        )
-        values (
-          p_attempt_id, v_question.id::text, 2, v_position,
-          jsonb_build_object(
-            'id', v_question.id::text, 'topic', v_question.topic,
-            'question_type', v_question.question_type, 'difficulty', v_question.difficulty,
-            'question_text', v_question.question_text, 'options', v_question.options,
-            'figure_url', v_question.figure_url, 'correct_answer', v_question.correct_answer,
-            'explanation', v_question.explanation, 'explanation_type', v_question.explanation_type,
-            'explanation_video_url', v_question.explanation_video_url
-          )
-        );
-      end loop;
-    end loop;
-  end if;
+  v_selection := private.gre_mock_select_section(
+    p_attempt_id, 2, v_route, v_attempt.section1_da_subtopic
+  );
+  v_questions := v_selection -> 'questions';
 
   update public.gre_mock_attempts
   set status = 'section2', section1_correct = v_correct_count, route = v_route
   where id = p_attempt_id;
 
-  select jsonb_agg(
-    question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url'
-    order by position
-  ) into v_questions
-  from public.gre_mock_attempt_questions
-  where attempt_id = p_attempt_id and section_number = 2;
-
   return jsonb_build_object(
     'attempt_id', p_attempt_id, 'status', 'section2', 'section_number', 2,
     'section1_correct', v_correct_count, 'route', v_route,
-    'question_count', 15, 'questions', coalesce(v_questions, '[]'::jsonb)
+    'question_count', 15, 'questions', coalesce(v_questions,'[]'::jsonb)
   );
 end;
 $$;
+
 
 create or replace function public.finish_gre_mock(
   p_attempt_id uuid,
