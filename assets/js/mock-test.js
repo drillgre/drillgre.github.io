@@ -404,14 +404,14 @@
 
     $("startMock").disabled = true;
     $("startMock").textContent = "Preparing questions…";
-    setStatus("Selecting 12 questions from the published question bank. Please wait.");
+    setStatus("Preparing your first section. Please wait.");
 
     const {data,error} = await db.rpc("start_gre_mock",{
       p_session_token:sessionToken,
       p_visitor_key:isSignedIn ? null : guestKey
     });
     $("startMock").disabled = false;
-    $("startMock").textContent = "Start adaptive mock";
+    $("startMock").textContent = "Start Quant mock";
 
     if(error) {
       if (error.message.includes("used both free mock attempts")) {
@@ -516,11 +516,12 @@
     if(error) {
       submissionInProgress=false;
       setStatus(error.message,true);
-      if (!automatic) startSectionTimer();
+      if (!automatic && !(active.deadline_ts && active.deadline_ts <= Date.now())) startSectionTimer();
       return;
     }
 
     if(section===1) {
+      submissionInProgress=false;
       localStorage.removeItem(DRAFT_KEY);
       displayAttemptSection(data);
       window.scrollTo({top:0,behavior:"smooth"});
