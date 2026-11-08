@@ -124,35 +124,9 @@
     }).join("");
   }
 
-  function normalizeAnswer(value) {
-    if (Array.isArray(value)) return value.map(String).sort();
-    return String(value ?? "").trim();
-  }
-
-  function evaluateAnswer(question, response) {
-    const correct = question.correct_answer;
-
-    if (question.question_type === "numeric_entry") {
-      const expected = Number(correct && typeof correct === "object" ? correct.value : correct);
-      const entered = Number(response);
-      const tolerance = Number(correct && typeof correct === "object" ? correct.tolerance || 0 : 0);
-      return Number.isFinite(entered) && Number.isFinite(expected) &&
-        Math.abs(entered - expected) <= tolerance;
-    }
-
-    if (question.question_type === "multiple_choice_multiple") {
-      const actual = normalizeAnswer(response);
-      const expected = normalizeAnswer(Array.isArray(correct) ? correct : [correct]);
-      return JSON.stringify(actual) === JSON.stringify(expected);
-    }
-
-    return String(response ?? "").trim().toUpperCase() === String(correct ?? "").trim().toUpperCase();
-  }
-
-  function answerLabel(question) {
-    const correct = question.correct_answer;
-    if (question.question_type === "numeric_entry") {
-      return String(correct && typeof correct === "object" ? correct.value : correct);
+  function answerLabel(correct) {
+    if (correct && typeof correct === "object" && !Array.isArray(correct)) {
+      return String(correct.value ?? "");
     }
     if (Array.isArray(correct)) return correct.join(", ");
     return String(correct ?? "");
@@ -239,13 +213,32 @@
           response = question.question_type === "multiple_choice_multiple" ? selected : selected[0];
         }
 
-        const correct = evaluateAnswer(question,response);
+        button.disabled = true;
+        button.textContent = "Checking…";
+
+        const { data:grade, error:gradeError } = await db.rpc("grade_gre_question", {
+          p_question_id: question.id,
+          p_response: response
+        });
+
+        button.disabled = false;
+        button.textContent = "Check answer";
+
         const feedback = card.querySelector("#feedback-" + CSS.escape(String(question.id)));
         feedback.hidden = false;
+
+        if (gradeError) {
+          feedback.className = "answer-feedback incorrect";
+          feedback.textContent = "We could not check this answer: " + gradeError.message +
+            ". Please verify that the learner SQL setup has been run in Supabase.";
+          return;
+        }
+
+        const correct = !!grade?.correct;
         feedback.className = "answer-feedback " + (correct ? "correct" : "incorrect");
         feedback.innerHTML =
           `<strong>${correct ? "Correct!" : "Not quite."}</strong>` +
-          `<div>Correct answer: ${esc(answerLabel(question))}</div>` +
+          `<div>Correct answer: ${esc(answerLabel(grade?.correct_answer))}</div>` +
           explanationMarkup(question);
       });
     });
@@ -277,7 +270,7 @@
     const [{data:siblings,error:siblingError},{data:questions,error:questionError}] = await Promise.all([
       db.from("lessons").select("id,title,slug,sort_order").eq("module_id",lesson.module_id).eq("published",true).order("sort_order"),
       db.from("questions")
-        .select("id,topic,question_type,difficulty,question_text,options,correct_answer,figure_url,explanation,explanation_type,explanation_video_url")
+        .select("id,topic,question_type,difficulty,question_text,options,figure_url,explanation,explanation_type,explanation_video_url")
         .eq("lesson_id",lesson.id)
         .eq("published",true)
         .order("created_at")
