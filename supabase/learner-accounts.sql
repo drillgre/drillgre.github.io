@@ -484,7 +484,7 @@ returns integer
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_claimed integer := 0;
   v_user_id uuid := auth.uid();
@@ -504,7 +504,7 @@ begin
   get diagnostics v_claimed = row_count;
   return v_claimed;
 end;
-$;
+$$;
 
 create or replace function public.get_learner_dashboard()
 returns jsonb
