@@ -78,6 +78,7 @@ drop trigger if exists on_auth_user_created_drillgre on auth.users;
 create trigger on_auth_user_created_drillgre
 after insert on auth.users
 for each row execute function public.handle_new_drillgre_user();
+revoke all on function public.handle_new_drillgre_user() from public, anon, authenticated;
 
 -- Backfill profiles for any existing Auth users without a profile row.
 insert into public.profiles (id, role, name, email, education, age_range, country,
