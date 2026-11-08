@@ -6,8 +6,6 @@
   <title>Lesson Editor | DrillGRE Admin</title>
   <link rel="stylesheet" href="assets/css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tiptap/core@2.11.5/dist/index.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@2.11.5/dist/index.umd.min.js"></script>
   <style>
     .editor-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px}
     .editor-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:9px;border:1px solid #cbd5e1;border-bottom:0;border-radius:9px 9px 0 0;background:#f8fafc}
@@ -118,7 +116,10 @@
   <footer>DrillGRE · Lesson editor</footer>
 </main>
 
-<script>
+<script type="module">
+import { Editor } from "https://cdn.jsdelivr.net/npm/@tiptap/core@2.11.5/+esm";
+import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@2.11.5/+esm";
+
 (() => {
   "use strict";
   const SUPABASE_URL = "https://aayzpcfryixauwsytphd.supabase.co";
@@ -146,8 +147,6 @@
 
   function initEditor() {
     if (editor) return;
-    const { Editor } = window.tiptap;
-    const { StarterKit } = window.tiptapStarterKit;
     editor = new Editor({
       element: $("lessonEditor"),
       extensions: [StarterKit],
