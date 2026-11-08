@@ -325,8 +325,9 @@ begin
     having count(*) = 3
        and array_agg(q.difficulty order by q.difficulty) = v_group_difficulties
   )
-  order by exists (
-    select 1 from public.questions group_question
+  order by (
+    select count(distinct prior_attempt.id)
+    from public.questions group_question
     join public.gre_mock_attempt_questions hist on hist.question_id=group_question.id::text
     join public.gre_mock_attempts prior_attempt on prior_attempt.id=hist.attempt_id
     where group_question.stimulus_id=s.id
@@ -334,9 +335,9 @@ begin
       and prior_attempt.created_at>=now()-interval '60 days'
       and (
         (auth.uid() is not null and prior_attempt.learner_id=auth.uid())
-        or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key=p_visitor_key)
+        or (p_visitor_key is not null and prior_attempt.visitor_key=p_visitor_key)
       )
-  ) asc, random()
+  ), random()
   limit 1;
 
   if not found then
@@ -393,8 +394,9 @@ begin
       and q.subtopic in ('probability','counting','statistics')
       and q.stimulus_id is null
       and q.difficulty = 4
-    order by exists (
-        select 1 from public.gre_mock_attempt_questions hist
+    order by (
+        select count(distinct prior_attempt.id)
+        from public.gre_mock_attempt_questions hist
         join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
         where hist.question_id = q.id::text
           and prior_attempt.id <> p_attempt_id
@@ -403,7 +405,7 @@ begin
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
             or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
-      ) asc, random()
+      ), random()
     limit 1;
 
     if not found then
@@ -477,8 +479,9 @@ begin
           select 1 from public.gre_mock_attempt_questions aq
           where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
         )
-      order by exists (
-        select 1 from public.gre_mock_attempt_questions hist
+      order by (
+        select count(distinct prior_attempt.id)
+        from public.gre_mock_attempt_questions hist
         join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
         where hist.question_id = q.id::text
           and prior_attempt.id <> p_attempt_id
@@ -487,7 +490,7 @@ begin
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
             or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
-      ) asc, random()
+      ), random()
       limit 1;
 
       if not found then
@@ -584,8 +587,9 @@ begin
           select 1 from public.gre_mock_attempt_questions aq
           where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
         )
-      order by exists (
-        select 1 from public.gre_mock_attempt_questions hist
+      order by (
+        select count(distinct prior_attempt.id)
+        from public.gre_mock_attempt_questions hist
         join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
         where hist.question_id = q.id::text
           and prior_attempt.id <> p_attempt_id
@@ -594,7 +598,7 @@ begin
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
             or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
-      ) asc, random()
+      ), random()
       limit 1;
 
       if not found then
@@ -671,8 +675,9 @@ begin
             select 1 from public.gre_mock_attempt_questions aq
             where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
           )
-        order by exists (
-        select 1 from public.gre_mock_attempt_questions hist
+        order by (
+        select count(distinct prior_attempt.id)
+        from public.gre_mock_attempt_questions hist
         join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
         where hist.question_id = q.id::text
           and prior_attempt.id <> p_attempt_id
@@ -681,7 +686,7 @@ begin
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
             or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
-      ) asc, random()
+      ), random()
         limit 1;
 
         if not found then
@@ -756,8 +761,9 @@ begin
             select 1 from public.gre_mock_attempt_questions aq
             where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
           )
-        order by exists (
-        select 1 from public.gre_mock_attempt_questions hist
+        order by (
+        select count(distinct prior_attempt.id)
+        from public.gre_mock_attempt_questions hist
         join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
         where hist.question_id = q.id::text
           and prior_attempt.id <> p_attempt_id
@@ -766,7 +772,7 @@ begin
             (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
             or (p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
           )
-      ) asc, random()
+      ), random()
         limit 1;
 
         if not found then
