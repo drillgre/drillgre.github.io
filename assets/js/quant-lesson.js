@@ -160,8 +160,44 @@
       return;
     }
 
-    host.innerHTML = questions.map((question,index) => {
-      const figure = question.figure_url
+    // Move all members of a shared stimulus group together while preserving
+    // the first position at which that group appears in the lesson.
+    const ordered = [];
+    const visitedStimuli = new Set();
+    questions.forEach(question => {
+      if (!question.stimulus_id) {
+        ordered.push(question);
+        return;
+      }
+      const key = String(question.stimulus_id);
+      if (visitedStimuli.has(key)) return;
+      visitedStimuli.add(key);
+      ordered.push(...questions.filter(item => String(item.stimulus_id) === key));
+    });
+
+    const seenStimuli = new Set();
+    host.innerHTML = ordered.map((question,index) => {
+      let sharedStimulus = "";
+      if (question.stimulus_id && !seenStimuli.has(String(question.stimulus_id))) {
+        seenStimuli.add(String(question.stimulus_id));
+        const stimulus = question.stimulus || {};
+        const sharedFigure = stimulus.figure_url
+          ? `<img class="question-figure" src="${esc(stimulus.figure_url)}" alt="${esc(stimulus.title || "Shared Data Analysis figure")}" loading="lazy">`
+          : "";
+        const sharedText = stimulus.stimulus_text
+          ? `<p class="stimulus-context">${esc(stimulus.stimulus_text)}</p>`
+          : "";
+        sharedStimulus = `
+          <section class="shared-stimulus">
+            <div class="stimulus-label">Shared Data Analysis stimulus</div>
+            <h3>${esc(stimulus.title || "Data set")}</h3>
+            ${sharedText}
+            ${sharedFigure}
+            <p class="stimulus-instruction">Use this same figure or data set for the three linked questions below.</p>
+          </section>`;
+      }
+
+      const figure = !question.stimulus_id && question.figure_url
         ? `<img class="question-figure" src="${esc(question.figure_url)}" alt="Question figure" loading="lazy">`
         : "";
       const questionText = esc(question.question_text || "");
@@ -174,12 +210,20 @@
             : question.question_type === "data_interpretation"
               ? "Data interpretation"
               : "Single answer";
+      const category = ({
+        arithmetic: "Arithmetic",
+        data_analysis: "Data Analysis",
+        algebra: "Algebra",
+        geometry: "Geometry"
+      })[question.topic_category] || question.topic || "GRE Quant";
+      const subtopic = String(question.subtopic || "").replaceAll("_"," ");
 
       return `
+        ${sharedStimulus}
         <article class="question-card" data-question-card="${esc(question.id)}">
           <div class="question-meta">
             <span class="question-tag">Question ${index+1}</span>
-            <span>${esc(question.topic || "GRE Quant")}</span>
+            <span>${esc(category)}${subtopic ? " · " + esc(subtopic) : ""}</span>
             <span>${label}</span>
             <span>Difficulty ${esc(question.difficulty ?? "—")}/5</span>
           </div>
@@ -191,7 +235,7 @@
         </article>`;
     }).join("");
 
-    questions.forEach(question => {
+    ordered.forEach(question => {
       const card = host.querySelector(`[data-question-card="${CSS.escape(String(question.id))}"]`);
       const button = card.querySelector("[data-check-answer]");
       button.addEventListener("click", async () => {
@@ -270,11 +314,27 @@
     const [{data:siblings,error:siblingError},{data:questions,error:questionError}] = await Promise.all([
       db.from("lessons").select("id,title,slug,sort_order").eq("module_id",lesson.module_id).eq("published",true).order("sort_order"),
       db.from("questions")
-        .select("id,topic,question_type,difficulty,question_text,options,figure_url")
+        .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,options,figure_url")
         .eq("lesson_id",lesson.id)
         .eq("published",true)
         .order("created_at")
     ]);
+
+    let stimulusError = null;
+    let displayQuestions = questions || [];
+    const stimulusIds = [...new Set(displayQuestions.map(q => q.stimulus_id).filter(Boolean))];
+    if (stimulusIds.length) {
+      const { data: stimulusRows, error: stimulusQueryError } = await db
+        .from("question_stimuli")
+        .select("id,title,stimulus_text,figure_url")
+        .in("id", stimulusIds);
+      stimulusError = stimulusQueryError;
+      const stimulusMap = new Map((stimulusRows || []).map(row => [String(row.id), row]));
+      displayQuestions = displayQuestions.map(q => ({
+        ...q,
+        stimulus: q.stimulus_id ? stimulusMap.get(String(q.stimulus_id)) || null : null
+      }));
+    }
 
     const moduleTitle = lesson.modules?.title || "Quantitative Reasoning";
     $("moduleBreadcrumb").textContent = moduleTitle;
@@ -320,10 +380,11 @@
     };
     syncCompletion();
 
-    if (questionError) {
-      $("questionList").innerHTML = '<div class="empty-state">The lesson loaded, but its questions could not be retrieved: ' + esc(questionError.message) + '</div>';
+    if (questionError || stimulusError) {
+      const error = questionError || stimulusError;
+      $("questionList").innerHTML = '<div class="empty-state">The lesson loaded, but its questions or shared Data Analysis figures could not be retrieved: ' + esc(error.message) + '</div>';
     } else {
-      renderQuestions(questions || []);
+      renderQuestions(displayQuestions);
     }
 
     status.hidden = true;
