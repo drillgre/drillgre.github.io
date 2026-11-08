@@ -21,13 +21,14 @@ These scripts are designed to be rerunnable. Run the full scripts in the stated 
 Learners register with an email address and password. Supabase sends a six-digit OTP only to verify the email address during first-time registration. Returning learners sign in with email and password; sign-in does not send an OTP.
 
 1. Open **Authentication → Providers → Email** and enable email sign-up and email confirmations.
-2. Open **Authentication → Email Templates → Confirm signup**. Replace the confirmation-link variable `{{ .ConfirmationURL }}` with the OTP variable `{{ .Token }}`. This template is used to verify a new registration.
-3. The **Magic Link** template is not used for ordinary sign-in. Password recovery uses the **Reset Password** template and a recovery link.
+2. Open **Authentication → Email Templates → Confirm signup**. Replace the confirmation-link variable `{{ .ConfirmationURL }}` with the OTP variable `{{ .Token }}`. Use a subject and body such as:
 
    **Subject**
+
    `Your DrillGRE verification code`
 
    **Email body**
+
    ```html
    <h2>Your DrillGRE verification code</h2>
    <p>Enter this six-digit code on the DrillGRE account page:</p>
@@ -35,6 +36,7 @@ Learners register with an email address and password. Supabase sends a six-digit
    <p>This code expires in one hour. If you did not request it, you can ignore this email.</p>
    ```
 
+3. The **Magic Link** template is not used for ordinary sign-in. Password recovery uses the **Reset Password** template and a recovery link.
 4. Open **Authentication → URL Configuration**. Set **Site URL** to `https://drillgre.github.io`.
 5. Under **Redirect URLs**, add the exact URL `https://drillgre.github.io/account.html`. Keep localhost only if you actively test locally.
 
