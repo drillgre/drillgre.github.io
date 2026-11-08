@@ -201,6 +201,7 @@ import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@2.11.5/
 
   function openNew() {
     $("lessonForm").reset(); $("lessonId").value="";
+    $("moduleSlug").dataset.manual=""; $("lessonSlug").dataset.manual="";
     $("formTitle").textContent="Create lesson";
     $("sortOrder").value=1; $("videoPreview").innerHTML="";
     initEditor(); setEditorContent({html:"<h2>Lesson introduction</h2><p></p>"});
@@ -212,6 +213,7 @@ import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@2.11.5/
     const {data,error}=await db.from("lessons").select("*,modules(*)").eq("id",id).single();
     if(error){alert(error.message);return;}
     $("lessonForm").reset(); $("lessonId").value=data.id;
+    $("moduleSlug").dataset.manual=""; $("lessonSlug").dataset.manual="";
     $("moduleTitle").value=data.modules?.title||"";
     $("moduleSlug").value=data.modules?.slug||"";
     $("lessonTitle").value=data.title||"";
