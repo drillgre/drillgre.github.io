@@ -1,7 +1,8 @@
--- DrillGRE learner accounts, email OTP profiles, and mock-attempt limits.
+-- DrillGRE learner accounts, email/password authentication, and mock-attempt limits.
 -- Run AFTER gre-mock-tests.sql and BEFORE learner-read-policies.sql.
 --
--- Auth is email OTP. Authenticated learners have unlimited mock attempts.
+-- Registration uses email/password with email OTP confirmation. Sign-in uses email/password.
+-- Authenticated learners have unlimited mock attempts.
 -- Anonymous learners may start two attempts per persistent browser visitor key.
 -- Guest quotas are tied to a browser-local key, so clearing browser storage
 -- or using another browser can reset the guest identity.
@@ -18,6 +19,13 @@ alter table public.profiles add column if not exists country text;
 alter table public.profiles add column if not exists academic_background text;
 alter table public.profiles add column if not exists further_study text;
 alter table public.profiles add column if not exists further_study_fields text[] not null default '{}';
+alter table public.profiles add column if not exists further_study_field text;
+
+-- Preserve the first legacy selection when migrating from the old multi-select field.
+update public.profiles
+set further_study_field = further_study_fields[1]
+where further_study_field is null
+  and coalesce(cardinality(further_study_fields), 0) > 0;
 
 create index if not exists profiles_email_idx on public.profiles(email);
 
@@ -27,23 +35,11 @@ returns trigger
 language plpgsql
 security definer
 set search_path = pg_catalog, public, auth, pg_temp
-as $$
-declare
-  v_fields text[];
+as $
 begin
-  select coalesce(array_agg(value), array[]::text[])
-  into v_fields
-  from jsonb_array_elements_text(
-    case
-      when jsonb_typeof(new.raw_user_meta_data -> 'further_study_fields') = 'array'
-        then new.raw_user_meta_data -> 'further_study_fields'
-      else '[]'::jsonb
-    end
-  ) as values_table(value);
-
   insert into public.profiles (
     id, role, name, email, education, age_range, country,
-    academic_background, further_study, further_study_fields
+    academic_background, further_study, further_study_field
   )
   values (
     new.id,
@@ -55,7 +51,7 @@ begin
     nullif(trim(new.raw_user_meta_data ->> 'country'), ''),
     nullif(new.raw_user_meta_data ->> 'academic_background', ''),
     nullif(new.raw_user_meta_data ->> 'further_study', ''),
-    v_fields
+    nullif(new.raw_user_meta_data ->> 'further_study_field', '')
   )
   on conflict (id) do update set
     name = coalesce(excluded.name, profiles.name),
@@ -65,14 +61,11 @@ begin
     country = coalesce(excluded.country, profiles.country),
     academic_background = coalesce(excluded.academic_background, profiles.academic_background),
     further_study = coalesce(excluded.further_study, profiles.further_study),
-    further_study_fields = case
-      when cardinality(excluded.further_study_fields) > 0 then excluded.further_study_fields
-      else profiles.further_study_fields
-    end;
+    further_study_field = coalesce(excluded.further_study_field, profiles.further_study_field);
 
   return new;
 end;
-$$;
+$;
 
 drop trigger if exists on_auth_user_created_drillgre on auth.users;
 create trigger on_auth_user_created_drillgre
@@ -82,7 +75,7 @@ revoke all on function public.handle_new_drillgre_user() from public, anon, auth
 
 -- Backfill profiles for any existing Auth users without a profile row.
 insert into public.profiles (id, role, name, email, education, age_range, country,
-  academic_background, further_study, further_study_fields)
+  academic_background, further_study, further_study_field)
 select
   u.id,
   'learner',
@@ -93,11 +86,10 @@ select
   nullif(trim(u.raw_user_meta_data ->> 'country'), ''),
   nullif(u.raw_user_meta_data ->> 'academic_background', ''),
   nullif(u.raw_user_meta_data ->> 'further_study', ''),
-  case
-    when jsonb_typeof(u.raw_user_meta_data -> 'further_study_fields') = 'array'
-      then array(select jsonb_array_elements_text(u.raw_user_meta_data -> 'further_study_fields'))
-    else array[]::text[]
-  end
+  coalesce(
+    nullif(u.raw_user_meta_data ->> 'further_study_field', ''),
+    nullif((u.raw_user_meta_data -> 'further_study_fields') ->> 0, '')
+  )
 from auth.users u
 left join public.profiles p on p.id = u.id
 where p.id is null;
@@ -531,7 +523,7 @@ begin
     'country', p.country,
     'academic_background', p.academic_background,
     'further_study', p.further_study,
-    'further_study_fields', p.further_study_fields
+    'further_study_field', p.further_study_field
   ) into v_profile
   from public.profiles p
   where p.id = v_user_id;
