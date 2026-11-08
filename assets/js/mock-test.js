@@ -275,8 +275,11 @@
     $("startMock").textContent = "Start adaptive mock";
 
     if(error) {
+      if (error.message.includes("used both free mock attempts")) {
+        localStorage.setItem(GUEST_USED_KEY, "2");
+        await refreshAccessNote(0);
+      }
       setStatus(error.message,true);
-      await refreshAccessNote();
       return;
     }
 
