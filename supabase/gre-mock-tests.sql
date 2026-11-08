@@ -105,8 +105,9 @@ using (
 create or replace function public.limit_question_stimulus_members()
 returns trigger
 language plpgsql
-set search_path = public, pg_temp
-as $$
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $
 declare
   v_count integer;
 begin
@@ -117,6 +118,13 @@ begin
   if new.topic_category <> 'data_analysis' or new.subtopic <> 'data_interpretation' then
     raise exception 'A shared stimulus can only be linked to Data Interpretation questions.';
   end if;
+
+  -- Serialize membership changes to prevent concurrent inserts from exceeding
+  -- the three-question group limit. SECURITY DEFINER makes this count complete
+  -- even when the admin is editing unpublished questions under RLS.
+  perform 1 from public.question_stimuli
+  where id = new.stimulus_id
+  for update;
 
   select count(*) into v_count
   from public.questions q
