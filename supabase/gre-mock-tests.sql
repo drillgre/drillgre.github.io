@@ -44,7 +44,7 @@ where subtopic is null or btrim(subtopic) = '';
 
 alter table public.questions alter column topic_category set default 'arithmetic';
 
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_constraint
@@ -62,7 +62,7 @@ begin
     alter table public.questions add constraint questions_stimulus_id_fkey
       foreign key (stimulus_id) references public.question_stimuli(id) on delete set null;
   end if;
-end $;
+end $$;
 
 create index if not exists questions_mock_topic_difficulty_idx
   on public.questions(topic_category, subtopic, difficulty)
@@ -88,7 +88,7 @@ create or replace function public.limit_question_stimulus_members()
 returns trigger
 language plpgsql
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_count integer;
 begin
@@ -111,7 +111,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists questions_limit_stimulus_members on public.questions;
 create trigger questions_limit_stimulus_members
