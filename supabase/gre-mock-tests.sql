@@ -14,6 +14,13 @@ create table if not exists public.question_stimuli (
 alter table public.questions add column if not exists topic_category text;
 alter table public.questions add column if not exists subtopic text;
 alter table public.questions add column if not exists stimulus_id uuid;
+alter table public.questions add column if not exists question_usage text not null default 'both';
+do $
+begin
+  if not exists (select 1 from pg_constraint where conname='questions_question_usage_check' and conrelid='public.questions'::regclass) then
+    alter table public.questions add constraint questions_question_usage_check check (question_usage in ('mock','practice','both'));
+  end if;
+end $;
 
 update public.questions
 set topic_category = case
@@ -166,6 +173,10 @@ create table if not exists public.gre_mock_attempts (
 );
 
 alter table public.gre_mock_attempts add column if not exists section1_da_subtopic text;
+alter table public.gre_mock_attempts add column if not exists learner_id uuid references auth.users(id) on delete set null;
+alter table public.gre_mock_attempts add column if not exists visitor_key text;
+create index if not exists gre_mock_attempts_learner_created_idx on public.gre_mock_attempts(learner_id, created_at desc);
+create index if not exists gre_mock_attempts_visitor_created_idx on public.gre_mock_attempts(visitor_key, created_at desc);
 
 create unique index if not exists gre_mock_attempts_session_token_uidx
   on public.gre_mock_attempts(session_token);
@@ -300,7 +311,7 @@ begin
     select 1
     from public.questions q
     where q.stimulus_id = s.id
-      and q.published = true
+      and q.published = true and q.question_usage in ('mock','both')
       and q.topic_category = 'data_analysis'
       and q.subtopic = 'data_interpretation'
       and not exists (
@@ -326,7 +337,7 @@ begin
   for v_question in
     select q.* from public.questions q
     where q.stimulus_id = v_stimulus.id
-      and q.published = true
+      and q.published = true and q.question_usage in ('mock','both')
       and q.topic_category = 'data_analysis'
       and q.subtopic = 'data_interpretation'
     order by q.difficulty, q.created_at
@@ -365,7 +376,7 @@ begin
     -- and Statistics once each.
     select q.* into v_question
     from public.questions q
-    where q.published = true
+    where q.published = true and q.question_usage in ('mock','both')
       and q.topic_category = 'data_analysis'
       and q.subtopic in ('probability','counting','statistics')
       and q.stimulus_id is null
@@ -412,7 +423,7 @@ begin
     loop
       select q.* into v_question
       from public.questions q
-      where q.published = true
+      where q.published = true and q.question_usage in ('mock','both')
         and q.topic_category = v_target.topic_category
         and (
           q.subtopic = v_target.subtopic
@@ -498,7 +509,7 @@ begin
     where a.subtopic <> b.subtopic
       and exists (
         select 1 from public.questions q
-        where q.published = true and q.topic_category = 'data_analysis'
+        where q.published = true and q.question_usage in ('mock','both') and q.topic_category = 'data_analysis'
           and q.subtopic = a.subtopic and q.stimulus_id is null
           and q.difficulty = v_da_diff_1
           and not exists (
@@ -508,7 +519,7 @@ begin
       )
       and exists (
         select 1 from public.questions q
-        where q.published = true and q.topic_category = 'data_analysis'
+        where q.published = true and q.question_usage in ('mock','both') and q.topic_category = 'data_analysis'
           and q.subtopic = b.subtopic and q.stimulus_id is null
           and q.difficulty = v_da_diff_2
           and not exists (
@@ -532,7 +543,7 @@ begin
     loop
       select q.* into v_question
       from public.questions q
-      where q.published = true
+      where q.published = true and q.question_usage in ('mock','both')
         and q.topic_category = 'data_analysis'
         and q.subtopic = v_target.subtopic
         and q.stimulus_id is null
@@ -587,7 +598,7 @@ begin
       loop
         select q.* into v_question
         from public.questions q
-        where q.published = true and q.topic_category = v_target.topic_category
+        where q.published = true and q.question_usage in ('mock','both') and q.topic_category = v_target.topic_category
           and (
             q.subtopic = v_target.subtopic
             or (
@@ -661,7 +672,7 @@ begin
       loop
         select q.* into v_question
         from public.questions q
-        where q.published = true and q.topic_category = v_target.topic_category
+        where q.published = true and q.question_usage in ('mock','both') and q.topic_category = v_target.topic_category
           and (
             q.subtopic = v_target.subtopic
             or (
