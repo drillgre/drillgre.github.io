@@ -16,13 +16,13 @@ The third script configures learner read access, protects question answers from 
 
 These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes.
 
-## Email OTP configuration
+## Email and password authentication
 
-The account page uses six-digit email OTPs, not passwords or magic links. Supabase chooses the email template based on the authentication flow, so configure **both** templates:
+Learners register with an email address and password. Supabase sends a six-digit OTP only to verify the email address during first-time registration. Returning learners sign in with email and password; sign-in does not send an OTP.
 
-1. Open **Authentication → Email Templates → Confirm signup** (used when a learner creates a new account).
-2. Open **Authentication → Email Templates → Magic Link** or **Magic Link or OTP** (used when an existing learner signs in).
-3. In each template, remove any use of `{{ .ConfirmationURL }}`. Use `{{ .Token }}` as the code instead. For example:
+1. Open **Authentication → Providers → Email** and enable email sign-up and email confirmations.
+2. Open **Authentication → Email Templates → Confirm signup**. Replace the confirmation-link variable `{{ .ConfirmationURL }}` with the OTP variable `{{ .Token }}`. This template is used to verify a new registration.
+3. The **Magic Link** template is not used for ordinary sign-in. Password recovery uses the **Reset Password** template and a recovery link.
 
    **Subject**
    `Your DrillGRE verification code`
@@ -36,11 +36,9 @@ The account page uses six-digit email OTPs, not passwords or magic links. Supaba
    ```
 
 4. Open **Authentication → URL Configuration**. Set **Site URL** to `https://drillgre.github.io`.
-5. Under **Redirect URLs**, add the exact URL `https://drillgre.github.io/account.html`. Add a localhost URL only when you are actively testing locally, for example `http://localhost:3000/account.html`.
+5. Under **Redirect URLs**, add the exact URL `https://drillgre.github.io/account.html`. Keep localhost only if you actively test locally.
 
-The account page now passes its own current URL as `emailRedirectTo`, so production confirmation links will return to the deployed account page rather than the project's old localhost default. The user-facing flow still expects the six-digit code.
-
-The app calls `signInWithOtp` and then `verifyOtp` with `type: "email"`. Supabase's default email OTP limit is one request per 60 seconds, and codes expire after one hour unless those project settings are changed. After changing the templates, request a **new** code. Previously sent confirmation links will not turn into OTP emails.
+The app calls `signUp` with the user's email and password. For first-time registration, it verifies the six-digit code with `verifyOtp` using `type: "signup"`. Returning learners use `signInWithPassword`. The Forgot password link sends a recovery email so a learner can set a new password.
 
 ## Learner registration fields
 
@@ -50,9 +48,9 @@ The registration form collects:
 - Highest education
 - Age range
 - Country
-- Academic background: Engineering, Commerce, Economics, or Mathematics
+- Academic background: one of ten categories, or Other
 - Further study goal: PhD or Master's
-- Further study fields: Economics and/or Mathematics
+- Intended field of study: one selection from ten fields, or Other
 
 An Auth trigger copies these fields from Auth user metadata into `public.profiles`. The role is assigned as `learner`; it is not supplied by the browser.
 
@@ -76,6 +74,6 @@ The adaptive generator selects only published questions marked `mock` or `both`.
 
 ## Learner pages
 
-- Account creation and email OTP sign-in: `/account.html`
+- Account creation with email/password and email OTP verification, plus email/password sign-in: `/account.html`
 - Learner dashboard and mock history: `/dashboard.html`
 - Adaptive mock: `/quant/mock.html`
