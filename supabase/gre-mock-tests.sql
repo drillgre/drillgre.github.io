@@ -135,6 +135,22 @@ begin
     raise exception 'A valid mock-test session token is required.';
   end if;
 
+  -- Check the entire bank before beginning, so the learner cannot reach
+  -- Section 2 and discover that the required adaptive route is unavailable.
+  for v_distribution in
+    select * from (values (1,5),(2,8),(3,9),(4,8),(5,5))
+      as d(difficulty, question_count)
+  loop
+    select count(*) into v_available
+    from public.questions q
+    where q.published = true and q.difficulty = v_distribution.difficulty;
+
+    if v_available < v_distribution.question_count then
+      raise exception 'Adaptive mock unavailable: difficulty level % needs at least % published questions to support both routes; the bank currently has %.',
+        v_distribution.difficulty, v_distribution.question_count, v_available;
+    end if;
+  end loop;
+
   insert into public.gre_mock_attempts(session_token, status)
   values (p_session_token, 'section1')
   returning id into v_attempt_id;
