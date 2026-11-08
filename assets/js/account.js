@@ -80,7 +80,26 @@
     showMessage("A new confirmation email has been sent. Check your inbox and spam folder.");
   }
 
-  async function claimGuestAttemptsAndContinue() {
+  async function claimGuestAttemptsAndContinue(user = null) {
+    if (!user) {
+      const { data } = await db.auth.getUser();
+      user = data?.user || null;
+    }
+
+    if (user) {
+      const { data: profile } = await db
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.role === "admin") {
+        showMessage("Admin account recognised. Opening the admin workspace…");
+        window.location.replace("/admin.html");
+        return;
+      }
+    }
+
     const guestKey = localStorage.getItem("drillgre_guest_visitor_key_v1");
     if (guestKey) {
       const { error } = await db.rpc("claim_guest_mock_attempts", {
@@ -92,7 +111,7 @@
       }
     }
     showMessage("Your account is ready. Opening your learner dashboard…");
-    window.location.replace("dashboard.html");
+    window.location.replace("/dashboard.html");
   }
 
   $("loginTab").addEventListener("click", () => setMode("login"));
@@ -109,7 +128,7 @@
     button.textContent = "Signing in…";
     showMessage("Signing in to your DrillGRE account…");
 
-    const { error } = await db.auth.signInWithPassword({ email, password });
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
 
     button.disabled = false;
     button.textContent = "Sign in";
@@ -123,7 +142,7 @@
       return;
     }
 
-    await claimGuestAttemptsAndContinue();
+    await claimGuestAttemptsAndContinue(data.user);
   });
 
   $("registerForm").addEventListener("submit", async event => {
@@ -226,14 +245,14 @@
 
     const button = $("resetPasswordForm").querySelector('button[type="submit"]');
     button.disabled = true;
-    const { error } = await db.auth.updateUser({ password });
+    const { data, error } = await db.auth.updateUser({ password });
     button.disabled = false;
     if (error) {
       showMessage(error.message, true);
       return;
     }
-    showMessage("Your password has been updated. Opening your learner dashboard…");
-    window.location.replace("dashboard.html");
+    showMessage("Your password has been updated. Opening your account workspace…");
+    await claimGuestAttemptsAndContinue(data.user);
   });
 
   db.auth.onAuthStateChange(async event => {
