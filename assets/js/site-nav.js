@@ -83,7 +83,7 @@
         // Metadata or email provides a useful fallback if the profile query
         // is unavailable on a page or before the profile migration is run.
       }
-      displaySignedIn(firstNameFrom(name, user.email));
+      displaySignedIn(firstNameFrom(name, user.email), isAdmin);
     }
 
     db.auth.getSession()
