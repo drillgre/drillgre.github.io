@@ -9,9 +9,18 @@
   const DRAFT_KEY = "drillgre_mock_answers_v1";
   const VISITOR_KEY = "drillgre_guest_visitor_key_v1";
   const GUEST_USED_KEY = "drillgre_guest_mocks_used_v1";
+  const TIMING_MODE_KEY = "drillgre_mock_timing_mode_v1";
+  const STANDARD_SECONDS = {1:21*60, 2:26*60};
   const $ = id => document.getElementById(id);
   let active = null;
   let currentQuestions = [];
+  let timerInterval = null;
+  let timerSubmitting = false;
+  let submissionInProgress = false;
+  let trackedQuestionId = null;
+  let trackedQuestionStartedAt = 0;
+  let questionVisibility = new Map();
+  let questionObserver = null;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
@@ -30,6 +39,120 @@
     return key;
   }
 
+  function timingMode() {
+    return active?.timing_mode || $("timingMode")?.value || localStorage.getItem(TIMING_MODE_KEY) || "standard";
+  }
+  function timingMultiplier(mode) {
+    return mode === "time_and_half" ? 1.5 : mode === "double" ? 2 : 1;
+  }
+  function sectionAllowance(section, mode = timingMode()) {
+    return mode === "untimed" ? null : Math.round(STANDARD_SECONDS[section] * timingMultiplier(mode));
+  }
+  function timingModeLabel(mode = timingMode()) {
+    return ({standard:"Standard GRE timing",time_and_half:"50% extra time",double:"Double time",untimed:"Untimed practice"})[mode] || "Standard GRE timing";
+  }
+  function formatDuration(seconds) {
+    const safe = Math.max(0, Math.round(Number(seconds) || 0));
+    return String(Math.floor(safe / 60)).padStart(2,"0") + ":" + String(safe % 60).padStart(2,"0");
+  }
+  function persistActive() {
+    if (active) localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
+  }
+  function flushTrackedQuestion() {
+    if (!active || !trackedQuestionId || !trackedQuestionStartedAt) return;
+    const elapsed = Math.max(0, (performance.now() - trackedQuestionStartedAt) / 1000);
+    active.question_times = active.question_times || {};
+    active.question_times[trackedQuestionId] = Number(active.question_times[trackedQuestionId] || 0) + elapsed;
+    trackedQuestionStartedAt = performance.now();
+    persistActive();
+  }
+  function stopTrackedQuestion() {
+    flushTrackedQuestion();
+    trackedQuestionId = null;
+    trackedQuestionStartedAt = 0;
+  }
+  function trackQuestion(questionId) {
+    const next = questionId ? String(questionId) : null;
+    if (next === trackedQuestionId) return;
+    stopTrackedQuestion();
+    if (next && !document.hidden && active) {
+      trackedQuestionId = next;
+      trackedQuestionStartedAt = performance.now();
+    }
+  }
+  function selectVisibleQuestion() {
+    if (document.hidden) return trackQuestion(null);
+    let bestId = null, bestRatio = 0.18;
+    for (const [id, ratio] of questionVisibility.entries()) {
+      if (ratio > bestRatio) { bestRatio = ratio; bestId = id; }
+    }
+    trackQuestion(bestId);
+  }
+  function setupQuestionTiming() {
+    if (questionObserver) questionObserver.disconnect();
+    questionObserver = null;
+    questionVisibility = new Map();
+    stopTrackedQuestion();
+    if (!("IntersectionObserver" in window)) return;
+    questionObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const id = entry.target.dataset.qid;
+        if (id) questionVisibility.set(String(id), entry.isIntersecting ? entry.intersectionRatio : 0);
+      }
+      selectVisibleQuestion();
+    }, {threshold:[0,0.15,0.25,0.4,0.6,0.8,1]});
+    $("questionStack").querySelectorAll(".mock-question[data-qid]").forEach(card => questionObserver.observe(card));
+  }
+  function questionTimesPayload() {
+    flushTrackedQuestion();
+    return Object.entries(active?.question_times || {}).map(([question_id,seconds]) => ({
+      question_id, seconds:Math.max(0,Math.round(Number(seconds)||0))
+    }));
+  }
+  function updateTimerDisplay() {
+    if (!active || !$("sectionTimer")) return;
+    const mode = timingMode(), card = $("timerCard");
+    card.classList.remove("low-time");
+    if (mode === "untimed" || !active.deadline_ts) {
+      $("timerLabel").textContent = "Time";
+      $("sectionTimer").textContent = "Untimed";
+      $("timerModeLabel").textContent = timingModeLabel(mode);
+      return;
+    }
+    const remaining = Math.max(0,Math.ceil((active.deadline_ts-Date.now())/1000));
+    $("timerLabel").textContent = "Time remaining";
+    $("sectionTimer").textContent = formatDuration(remaining);
+    $("timerModeLabel").textContent = timingModeLabel(mode);
+    if (remaining <= 300) card.classList.add("low-time");
+    return remaining;
+  }
+  function stopSectionTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  function startSectionTimer() {
+    stopSectionTimer();
+    timerSubmitting = false;
+    const tick = () => {
+      flushTrackedQuestion();
+      const remaining = updateTimerDisplay();
+      persistActive();
+      if (remaining !== undefined && remaining <= 0 && !timerSubmitting) {
+        timerSubmitting = true;
+        stopTrackedQuestion();
+        stopSectionTimer();
+        setStatus("Time has expired. Submitting this section…");
+        submitSection(true);
+      }
+    };
+    tick();
+    timerInterval = setInterval(tick,1000);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) trackQuestion(null);
+    else selectVisibleQuestion();
+  });
+
   async function refreshAccessNote(remaining = null) {
     const note = $("mockAccessNote");
     if (!note) return;
@@ -44,7 +167,7 @@
     if (left > 0) {
       note.innerHTML = `Guest access: ${left} of 2 free mock attempts remaining on this browser. <a href="../account.html">Sign in or create an account</a> for unlimited mocks.`;
     } else {
-      note.innerHTML = 'You have used both free mock attempts on this browser. <a href="../account.html">Sign in with email OTP</a> to continue with unlimited mocks.';
+      note.innerHTML = 'You have used both free mock attempts on this browser. <a href="../account.html">Sign in with email and password</a> to continue with unlimited mocks.';
     }
   }
 
@@ -146,10 +269,14 @@
 
   function saveDraftResponses() {
     if (!active) return;
+    flushTrackedQuestion();
+    active.question_times = active.question_times || {};
+    persistActive();
     const draft = {
       attempt_id: active.attempt_id,
       status: active.status,
-      responses: collectResponses()
+      responses: collectResponses(),
+      question_times: active.question_times
     };
     localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
   }
@@ -160,6 +287,10 @@
     try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch {}
     if (!draft || draft.attempt_id !== active.attempt_id || draft.status !== active.status) return;
 
+    if (draft.question_times && typeof draft.question_times === "object") {
+      active.question_times = draft.question_times;
+      persistActive();
+    }
     (draft.responses || []).forEach(item => {
       const q = currentQuestions.find(question => String(question.id) === String(item.question_id));
       if (!q) return;
@@ -208,8 +339,6 @@
         <article class="mock-question" data-qid="${esc(q.id)}">
           <div class="question-head">
             <span class="question-number">Question ${index+1} of ${currentQuestions.length}</span>
-            <span class="difficulty">Level ${esc(q.difficulty)}</span>
-            <span class="topic">${esc(topicLabel(q))}</span>
           </div>
           <div class="question-prompt">${esc(q.question_text || "")}</div>
           ${individualFigure}
@@ -232,34 +361,44 @@
     });
     restoreDraftResponses();
     updateProgress();
+    setupQuestionTiming();
   }
 
   function displayAttemptSection(data) {
+    const previous = active || {};
+    const sameSection = Number(previous.section_number) === Number(data.section_number);
+    const mode = previous.timing_mode || localStorage.getItem(TIMING_MODE_KEY) || "standard";
+    const allowance = sectionAllowance(data.section_number, mode);
     active = {
       attempt_id:data.attempt_id,
-      session_token:active.session_token,
-      visitor_key:active.visitor_key || null,
-      status:data.status
+      session_token:previous.session_token,
+      visitor_key:previous.visitor_key || null,
+      status:data.status,
+      section_number:data.section_number,
+      timing_mode:mode,
+      deadline_ts:allowance === null ? null :
+        (sameSection && previous.deadline_ts ? previous.deadline_ts : Date.now()+allowance*1000),
+      question_times:previous.question_times || {}
     };
     localStorage.setItem(ACTIVE_KEY,JSON.stringify(active));
     $("introPanel").hidden = true;
     $("resultPanel").hidden = true;
     $("testPanel").hidden = false;
-    $("sectionLabel").textContent = data.section_number === 1 ? "Section 1 of 2" : "Section 2 of 2";
-    $("sectionTitle").textContent = data.section_number === 1 ? "Adaptive foundation" : "Adaptive challenge";
-    $("sectionDescription").textContent = data.section_number === 1
-      ? "12 questions · Arithmetic 3, Data Analysis 4, Algebra 3, Geometry 2. Difficulty: 2 Level 1, 3 Level 2, 4 Level 3, 3 Level 4."
-      : data.route === "harder"
-        ? "15 questions · Arithmetic 4, Data Analysis 5, Algebra 3, Geometry 3. Difficulty: 5 Level 3, 5 Level 4, 5 Level 5. Harder route."
-        : "15 questions · Arithmetic 4, Data Analysis 5, Algebra 3, Geometry 3. Difficulty: 3 Level 1, 5 Level 2, 5 Level 3, 2 Level 4. Foundation route.";
+    $("sectionLabel").textContent = "Quantitative Reasoning · Section " + data.section_number;
+    $("sectionTitle").textContent = "Section " + data.section_number;
+    $("sectionDescription").textContent = "Work through the questions and review your answers before submitting. You may move freely within this section.";
     $("submitSection").textContent = data.section_number === 1 ? "Submit Section 1" : "Finish mock test";
     renderQuestions(data.questions || []);
+    persistActive();
+    startSectionTimer();
     setStatus("");
   }
 
   async function startMock() {
     const sessionToken = token();
     const guestKey = visitorKey();
+    const mode = $("timingMode")?.value || localStorage.getItem(TIMING_MODE_KEY) || "standard";
+    localStorage.setItem(TIMING_MODE_KEY,mode);
     const { data: sessionData } = await db.auth.getSession();
     const isSignedIn = !!sessionData.session;
 
@@ -291,7 +430,11 @@
       attempt_id:data.attempt_id,
       session_token:sessionToken,
       visitor_key:isSignedIn ? null : guestKey,
-      status:data.status
+      status:data.status,
+      section_number:1,
+      timing_mode:mode,
+      deadline_ts:null,
+      question_times:{}
     };
     localStorage.setItem(ACTIVE_KEY,JSON.stringify(active));
     await refreshAccessNote(data.guest_attempts_remaining);
@@ -329,25 +472,32 @@
     }
 
     active={
+      ...saved,
       attempt_id:saved.attempt_id,
       session_token:saved.session_token,
       visitor_key:guestKey,
-      status:data.status
+      status:data.status,
+      section_number:saved.section_number || data.section_number,
+      timing_mode:saved.timing_mode || localStorage.getItem(TIMING_MODE_KEY) || "standard",
+      question_times:saved.question_times || {}
     };
     displayAttemptSection(data);
   }
 
-  async function submitSection() {
-    if(!active) return;
-
+  async function submitSection(automatic = false) {
+    if(!active || submissionInProgress) return;
+    stopTrackedQuestion();
     const responses=collectResponses();
     const section=active.status==="section1" ? 1 : 2;
-    const prompt=section===1
-      ? "Submit Section 1? You have answered "+responses.length+" of 12 questions. Unanswered questions receive zero points. Section 2 cannot be changed after submission."
-      : "Finish the mock test? You have answered "+responses.length+" of 15 questions in Section 2. Unanswered questions receive zero points.";
-
-    if(!confirm(prompt)) return;
-
+    const prompt=automatic
+      ? "Time has expired. Submit this section now?"
+      : "Submit this section? You will not be able to return to it after submission.";
+    if(!automatic && !confirm(prompt)) {
+      selectVisibleQuestion();
+      return;
+    }
+    submissionInProgress=true;
+    stopSectionTimer();
     $("submitSection").disabled=true;
     $("submitSection").textContent=section===1?"Submitting Section 1…":"Calculating score…";
     setStatus("Recording your answers…");
@@ -357,14 +507,16 @@
       p_attempt_id:active.attempt_id,
       p_session_token:active.session_token,
       p_responses:responses,
-      p_visitor_key:active.visitor_key || null
+      p_visitor_key:active.visitor_key || null,
+      p_question_times:questionTimesPayload()
     });
 
     $("submitSection").disabled=false;
     $("submitSection").textContent=section===1?"Submit Section 1":"Finish mock test";
-
     if(error) {
+      submissionInProgress=false;
       setStatus(error.message,true);
+      if (!automatic) startSectionTimer();
       return;
     }
 
@@ -375,6 +527,7 @@
     } else {
       localStorage.removeItem(ACTIVE_KEY);
       localStorage.removeItem(DRAFT_KEY);
+      stopSectionTimer();
       renderResult(data);
       window.scrollTo({top:0,behavior:"smooth"});
     }
@@ -436,7 +589,7 @@
       return `
         ${stimulus}
         <article class="review-question ${item.is_correct?"right":"wrong"}">
-          <div class="question-head"><b>Q${index+1} · Section ${item.section_number}</b><span>Level ${esc(q.difficulty)}</span><span>${esc(topicLabel(q))}</span><strong>${item.is_correct?"Correct":"Incorrect / blank"}</strong></div>
+          <div class="question-head"><b>Q${index+1} · Section ${item.section_number}</b><span class="review-time">Time on question: ${formatDuration(item.time_spent_seconds || 0)}</span><strong>${item.is_correct?"Correct":"Incorrect / blank"}</strong></div>
           <p class="question-prompt">${esc(q.question_text||"")}</p>
           ${individualFigure}
           ${reviewOptionMarkup(q)}
@@ -467,17 +620,26 @@
     $("totalCorrect").textContent=result.total_correct+" / 27";
     $("sectionOneResult").textContent=result.section1_correct+" / 12";
     $("sectionTwoResult").textContent=result.section2_correct+" / 15";
-    $("routeResult").textContent=result.route==="harder"?"Harder second section":"Foundation second section";
-    $("weightedResult").textContent=Number(result.weighted_points).toFixed(1)+" / "+Number(result.max_weighted_points).toFixed(1);
-    $("accuracyResult").textContent=Number(result.weighted_accuracy).toFixed(1)+"%";
+    const totalSeconds=(result.review||[]).reduce((sum,item)=>sum+Number(item.time_spent_seconds||0),0);
+    $("totalTimeSpent").textContent=formatDuration(totalSeconds);
     renderReview(result.review);
   }
 
   $("startMock").addEventListener("click",startMock);
-  $("submitSection").addEventListener("click",submitSection);
+  $("submitSection").addEventListener("click",()=>submitSection(false));
+  if ($("timingMode")) {
+    $("timingMode").value=localStorage.getItem(TIMING_MODE_KEY)||"standard";
+    $("timingMode").addEventListener("change",()=>localStorage.setItem(TIMING_MODE_KEY,$("timingMode").value));
+  }
   $("newMock").addEventListener("click",()=>{
+    stopSectionTimer();
+    if (questionObserver) questionObserver.disconnect();
     active=null;
     currentQuestions=[];
+    trackedQuestionId=null;
+    trackedQuestionStartedAt=0;
+    timerSubmitting=false;
+    submissionInProgress=false;
     $("resultPanel").hidden=true;
     $("introPanel").hidden=false;
     localStorage.removeItem(ACTIVE_KEY);
