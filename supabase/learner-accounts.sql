@@ -157,7 +157,7 @@ begin
 
     select count(*) into v_guest_count
     from public.gre_mock_attempts
-    where visitor_key = p_visitor_key and learner_id is null;
+    where visitor_key = p_visitor_key;
 
     if v_guest_count >= 2 then
       raise exception 'You have used both free mock attempts on this browser. Sign in with your email to create unlimited mocks.';
