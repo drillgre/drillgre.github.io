@@ -10,6 +10,20 @@
   <script defer src="../assets/js/lms.js"></script>
   <script defer src="../assets/js/mock-test.js"></script>
   <style>
+
+    .timing-settings{max-width:470px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:17px;margin-top:20px}
+    .timing-settings label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}
+    .timing-settings select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:var(--ink);font:inherit}
+    .test-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .test-toolbar>div:first-child{min-width:0}
+    .timer-card{flex:0 0 170px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 6px 18px rgba(35,55,95,.05)}
+    .timer-card span,.timer-card small{display:block;color:var(--muted);font-size:11px}
+    .timer-card strong{display:block;font-size:30px;line-height:1.3;color:#182641;font-variant-numeric:tabular-nums}
+    .timer-card.low-time{border-color:#e6a29c;background:#fff7f6}
+    .timer-card.low-time strong{color:#ba3c32}
+    .question-head .question-number{font-size:12px}
+    .review-time{font-size:12px;color:#3154c5;font-weight:800;white-space:nowrap}
+    .result-summary{color:#dbe3f8;font-size:13px;margin-top:8px}
     .mock-shell{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
     .mock-hero{background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:20px;padding:28px;margin-bottom:18px}
     .mock-hero h1{font-size:clamp(28px,4vw,40px);line-height:1.12;margin:8px 0 12px;letter-spacing:-1.2px}
@@ -68,7 +82,7 @@
     .review-explanation{white-space:pre-wrap;color:#38445a;font-size:13px;line-height:1.65;margin:10px 0}
     .review-video iframe{width:100%;max-width:560px;aspect-ratio:16/9;border:0;border-radius:10px}
     .mock-footer-note{font-size:12px;color:var(--muted);line-height:1.6}
-    @media(max-width:650px){.rule-grid,.score-grid,.quantities{grid-template-columns:1fr}.topic{margin-left:0}.section-controls{align-items:flex-start;flex-direction:column}.section-controls button{width:100%}}
+    @media(max-width:650px){.test-toolbar{align-items:stretch;flex-direction:column}.timer-card{flex:1;width:100%}.score-grid,.quantities{grid-template-columns:1fr}.topic{margin-left:0}.section-controls{align-items:flex-start;flex-direction:column}.section-controls button{width:100%}}
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script defer src="/assets/js/site-nav.js"></script>
@@ -101,62 +115,44 @@
   <p id="mockStatus" class="mock-status" hidden role="status"></p>
 
   <section id="introPanel" class="mock-hero">
-    <div class="eyebrow">Adaptive quantitative reasoning</div>
+    <div class="eyebrow">GRE-style quantitative reasoning</div>
     <h1>GRE Quant Mock Test</h1>
-    <p>This mock contains 27 questions across two sections. Your performance in Section 1 determines the difficulty mix in Section 2.</p>
-    <div class="rule-grid">
-      <div class="rule"><strong>Section 1</strong><span>12 questions: 2 Level 1, 3 Level 2, 4 Level 3, 3 Level 4.</span></div>
-      <div class="rule"><strong>Section 2</strong><span>15 questions. The difficulty distribution adapts to your Section 1 score.</span></div>
-      <div class="rule"><strong>Adaptive threshold</strong><span>8 or more correct leads to the harder route. Fewer than 8 leads to the foundation route.</span></div>
+    <p>Practise under realistic section timing, move freely between questions, and review your performance after the test.</p>
+    <div class="timing-settings">
+      <label for="timingMode">Time allowance</label>
+      <select id="timingMode">
+        <option value="standard">Standard GRE timing</option>
+        <option value="time_and_half">50% extra time</option>
+        <option value="double">Double time</option>
+        <option value="untimed">Untimed practice</option>
+      </select>
+      <p class="mock-footer-note">Standard timing follows the GRE Quant section allowances. You can choose extra time or untimed practice before starting.</p>
     </div>
-    <div class="distribution">
-      <h3>Topic distribution in both sections</h3>
-      <table>
-        <thead><tr><th>GRE category</th><th>Section 1</th><th>Section 2</th></tr></thead>
-        <tbody>
-          <tr><td>Arithmetic</td><td>3</td><td>4</td></tr>
-          <tr><td>Data Analysis</td><td>4</td><td>5</td></tr>
-          <tr><td>Algebra</td><td>3</td><td>3</td></tr>
-          <tr><td>Geometry</td><td>2</td><td>3</td></tr>
-        </tbody>
-      </table>
-      <p class="mock-footer-note">Each section includes one shared Data Analysis figure or table with three linked questions. The remaining Data Analysis questions cover Probability, Counting, and Statistics, one of each across the full mock. Arithmetic, Algebra, and Geometry subtopics are varied.</p>
-    </div>
-    <div class="distribution">
-      <h3>Section 2 difficulty routes</h3>
-      <table>
-        <thead><tr><th>Difficulty</th><th>8 or more correct</th><th>Fewer than 8</th></tr></thead>
-        <tbody>
-          <tr><td>Level 1</td><td>0</td><td>3</td></tr>
-          <tr><td>Level 2</td><td>0</td><td>5</td></tr>
-          <tr><td>Level 3</td><td>5</td><td>5</td></tr>
-          <tr><td>Level 4</td><td>5</td><td>2</td></tr>
-          <tr><td>Level 5</td><td>5</td><td>0</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="distribution">
-      <h3>Scoring</h3>
-      <p class="mock-footer-note">Correct answers earn points according to difficulty: Level 1 = 1 point, Level 2 = 2, Level 3 = 3, Level 4 = 4, and Level 5 = 5. Incorrect and unanswered questions receive zero points. There is no negative marking.</p>
-      <p class="mock-footer-note"><b>Scaled score:</b> 130 + 40 × (weighted points earned ÷ weighted points available). This is an initial DrillGRE scale, not an official ETS score conversion.</p>
-    </div>
-    <div style="margin-top:18px"><button id="startMock" class="mock-button" type="button">Start adaptive mock</button></div>
-    <p id="mockAccessNote" class="mock-footer-note" style="margin-top:12px">Guests can create two mock attempts on this browser. <a href="../account.html">Sign in or create an account</a> for unlimited mocks.</p>
-    <p class="mock-footer-note">New mocks prioritise questions and shared Data Analysis sets you have used least in the previous 60 days. A few repeats may occur when the available question bank is limited.</p>
-    <p class="mock-footer-note">There is no timer in this first version. Your in-progress answers are saved in this browser, and you can resume after refreshing the page.</p>
+    <div style="margin-top:18px"><button id="startMock" class="mock-button" type="button">Start Quant mock</button></div>
+    <p id="mockAccessNote" class="mock-footer-note" style="margin-top:12px">Guests can take two free mock attempts on this browser. <a href="../account.html">Sign in or create an account</a> for unlimited attempts.</p>
+    <p class="mock-footer-note">Your answers are saved as you work. You may review and change answers within the current section. When the timer reaches zero, that section is submitted automatically.</p>
   </section>
 
   <section id="testPanel" hidden>
     <div class="mock-hero">
-      <div class="eyebrow" id="sectionLabel">Section 1 of 2</div>
-      <h1 id="sectionTitle">Adaptive foundation</h1>
-      <p id="sectionDescription"></p>
+      <div class="test-toolbar">
+        <div>
+          <div class="eyebrow" id="sectionLabel">Quantitative Reasoning · Section 1</div>
+          <h1 id="sectionTitle">Section 1</h1>
+          <p id="sectionDescription">Work through the questions at your own pace within the section time limit.</p>
+        </div>
+        <div class="timer-card" id="timerCard">
+          <span id="timerLabel">Time remaining</span>
+          <strong id="sectionTimer">21:00</strong>
+          <small id="timerModeLabel">Standard GRE timing</small>
+        </div>
+      </div>
       <div class="mock-progress"><span id="progressFill"></span></div>
       <small id="answeredCount" style="color:#69758b">0 answered</small>
     </div>
     <div id="questionStack"></div>
     <div class="section-controls">
-      <span class="mock-footer-note">You may leave questions blank. Unanswered questions receive zero points.</span>
+      <span class="mock-footer-note">Review your answers before submitting. The section is submitted automatically when time expires.</span>
       <button id="submitSection" type="button">Submit Section 1</button>
     </div>
   </section>
@@ -165,14 +161,12 @@
     <div class="score-card">
       <div class="eyebrow" style="background:#ffffff18;border-color:#ffffff30;color:#cbd7ff">Your DrillGRE Quant score</div>
       <div id="scaledScore" class="score">—</div>
-      <p>Provisional scaled score · 130–170</p>
+      <p>Provisional DrillGRE score</p>
       <div class="score-grid">
-        <div class="score-metric"><strong id="totalCorrect">—</strong><span>Correct overall</span></div>
+        <div class="score-metric"><strong id="totalCorrect">—</strong><span>Correct answers</span></div>
         <div class="score-metric"><strong id="sectionOneResult">—</strong><span>Section 1</span></div>
         <div class="score-metric"><strong id="sectionTwoResult">—</strong><span>Section 2</span></div>
-        <div class="score-metric"><strong id="weightedResult">—</strong><span>Weighted points</span></div>
-        <div class="score-metric"><strong id="accuracyResult">—</strong><span>Weighted accuracy</span></div>
-        <div class="score-metric"><strong id="routeResult">—</strong><span>Adaptive route</span></div>
+        <div class="score-metric"><strong id="totalTimeSpent">—</strong><span>Total time on questions</span></div>
       </div>
     </div>
     <div class="panel">
