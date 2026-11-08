@@ -20,14 +20,33 @@
     .module-lessons .go{margin-left:auto;color:var(--blue)}
     .empty-state{background:white;border:1px dashed #cbd5e1;border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
   </style>
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/assets/js/site-nav.js"></script>
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="../index.html">Drill<em>GRE</em> <span style="font-size:11px;font-weight:600;color:#c7d2f0">QUANT ACADEMY</span></a>
-  <nav class="toplinks"><a href="../index.html">Home</a><a href="mock.html">Adaptive Mock</a><a href="../account.html">Sign in</a><a href="../dashboard.html">Learner dashboard</a><a href="../vocab.html">Vocab Mountain</a></nav>
+<header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span>
+      <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      <span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <a href="/#practice">Practice</a>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions">
+      <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+      <a class="drillgre-start-link" href="/#practice">Start drilling <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
 </header>
 <main class="shell">
-  <div class="crumb"><a href="../index.html">Home</a> / Quant Academy</div>
+  <div class="crumb"><a href="/">Home</a> / Quant Academy</div>
   <section class="hero">
     <div>
       <div class="eyebrow">Structured learning path</div>
