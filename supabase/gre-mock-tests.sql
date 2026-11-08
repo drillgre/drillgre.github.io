@@ -274,7 +274,8 @@ create or replace function private.gre_mock_select_section(
   p_attempt_id uuid,
   p_section_number integer,
   p_route text,
-  p_section1_da_subtopic text default null
+  p_section1_da_subtopic text default null,
+  p_visitor_key text default null
 )
 returns jsonb
 language plpgsql
@@ -324,7 +325,18 @@ begin
     having count(*) = 3
        and array_agg(q.difficulty order by q.difficulty) = v_group_difficulties
   )
-  order by random()
+  order by exists (
+    select 1 from public.questions group_question
+    join public.gre_mock_attempt_questions hist on hist.question_id=group_question.id::text
+    join public.gre_mock_attempts prior_attempt on prior_attempt.id=hist.attempt_id
+    where group_question.stimulus_id=s.id
+      and prior_attempt.id<>p_attempt_id
+      and prior_attempt.created_at>=now()-interval '60 days'
+      and (
+        (auth.uid() is not null and prior_attempt.learner_id=auth.uid())
+        or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key=p_visitor_key)
+      )
+  ) asc, random()
   limit 1;
 
   if not found then
@@ -381,7 +393,17 @@ begin
       and q.subtopic in ('probability','counting','statistics')
       and q.stimulus_id is null
       and q.difficulty = 4
-    order by random()
+    order by exists (
+        select 1 from public.gre_mock_attempt_questions hist
+        join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
+        where hist.question_id = q.id::text
+          and prior_attempt.id <> p_attempt_id
+          and prior_attempt.created_at >= now() - interval '60 days'
+          and (
+            (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
+            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+          )
+      ) asc, random()
     limit 1;
 
     if not found then
@@ -455,7 +477,17 @@ begin
           select 1 from public.gre_mock_attempt_questions aq
           where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
         )
-      order by random()
+      order by exists (
+        select 1 from public.gre_mock_attempt_questions hist
+        join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
+        where hist.question_id = q.id::text
+          and prior_attempt.id <> p_attempt_id
+          and prior_attempt.created_at >= now() - interval '60 days'
+          and (
+            (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
+            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+          )
+      ) asc, random()
       limit 1;
 
       if not found then
@@ -552,7 +584,17 @@ begin
           select 1 from public.gre_mock_attempt_questions aq
           where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
         )
-      order by random()
+      order by exists (
+        select 1 from public.gre_mock_attempt_questions hist
+        join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
+        where hist.question_id = q.id::text
+          and prior_attempt.id <> p_attempt_id
+          and prior_attempt.created_at >= now() - interval '60 days'
+          and (
+            (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
+            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+          )
+      ) asc, random()
       limit 1;
 
       if not found then
@@ -629,7 +671,18 @@ begin
             select 1 from public.gre_mock_attempt_questions aq
             where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
           )
-        order by random() limit 1;
+        order by exists (
+        select 1 from public.gre_mock_attempt_questions hist
+        join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
+        where hist.question_id = q.id::text
+          and prior_attempt.id <> p_attempt_id
+          and prior_attempt.created_at >= now() - interval '60 days'
+          and (
+            (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
+            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+          )
+      ) asc, random()
+        limit 1;
 
         if not found then
           raise exception 'Question bank needs a published Level % question tagged % / % for the harder Section 2 route.',
@@ -703,7 +756,18 @@ begin
             select 1 from public.gre_mock_attempt_questions aq
             where aq.attempt_id = p_attempt_id and aq.question_id = q.id::text
           )
-        order by random() limit 1;
+        order by exists (
+        select 1 from public.gre_mock_attempt_questions hist
+        join public.gre_mock_attempts prior_attempt on prior_attempt.id = hist.attempt_id
+        where hist.question_id = q.id::text
+          and prior_attempt.id <> p_attempt_id
+          and prior_attempt.created_at >= now() - interval '60 days'
+          and (
+            (auth.uid() is not null and prior_attempt.learner_id = auth.uid())
+            or (auth.uid() is null and p_visitor_key is not null and prior_attempt.visitor_key = p_visitor_key)
+          )
+      ) asc, random()
+        limit 1;
 
         if not found then
           raise exception 'Question bank needs a published Level % question tagged % / % for the foundation Section 2 route.',
