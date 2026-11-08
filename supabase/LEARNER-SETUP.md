@@ -18,16 +18,29 @@ These scripts are designed to be rerunnable. Run the full scripts in the stated 
 
 ## Email OTP configuration
 
-The account page uses Supabase email OTP, not passwords.
+The account page uses six-digit email OTPs, not passwords or magic links. Supabase chooses the email template based on the authentication flow, so configure **both** templates:
 
-In Supabase Authentication settings:
+1. Open **Authentication → Email Templates → Confirm signup** (used when a learner creates a new account).
+2. Open **Authentication → Email Templates → Magic Link** or **Magic Link or OTP** (used when an existing learner signs in).
+3. In each template, remove any use of `{{ .ConfirmationURL }}`. Use `{{ .Token }}` as the code instead. For example:
 
-- Enable email sign-in and email confirmations.
-- Open the **Magic Link or OTP** email template. Replace the confirmation-link variable `{{ .ConfirmationURL }}` with the OTP variable `{{ .Token }}`, and include that token in the email body. This makes Supabase send a six-digit code instead of a magic link.
-- Set the site URL to `https://drillgre.github.io`.
-- Add the deployed site and any local development URL to the allowed redirect URLs if you use redirect-based email flows elsewhere.
+   **Subject**
+   `Your DrillGRE verification code`
 
-The app calls `signInWithOtp` and then `verifyOtp` with `type: "email"`. Supabase's default email OTP limit is one request per 60 seconds, and codes expire after one hour unless those project settings are changed.
+   **Email body**
+   ```html
+   <h2>Your DrillGRE verification code</h2>
+   <p>Enter this six-digit code on the DrillGRE account page:</p>
+   <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+   <p>This code expires in one hour. If you did not request it, you can ignore this email.</p>
+   ```
+
+4. Open **Authentication → URL Configuration**. Set **Site URL** to `https://drillgre.github.io`.
+5. Under **Redirect URLs**, add the exact URL `https://drillgre.github.io/account.html`. Add a localhost URL only when you are actively testing locally, for example `http://localhost:3000/account.html`.
+
+The account page now passes its own current URL as `emailRedirectTo`, so production confirmation links will return to the deployed account page rather than the project's old localhost default. The user-facing flow still expects the six-digit code.
+
+The app calls `signInWithOtp` and then `verifyOtp` with `type: "email"`. Supabase's default email OTP limit is one request per 60 seconds, and codes expire after one hour unless those project settings are changed. After changing the templates, request a **new** code. Previously sent confirmation links will not turn into OTP emails.
 
 ## Learner registration fields
 
