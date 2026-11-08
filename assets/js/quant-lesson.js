@@ -217,7 +217,7 @@
         button.textContent = "Checking…";
 
         const { data:grade, error:gradeError } = await db.rpc("grade_gre_question", {
-          p_question_id: question.id,
+          p_question_id: String(question.id),
           p_response: response
         });
 
