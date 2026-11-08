@@ -15,12 +15,12 @@ alter table public.questions add column if not exists topic_category text;
 alter table public.questions add column if not exists subtopic text;
 alter table public.questions add column if not exists stimulus_id uuid;
 alter table public.questions add column if not exists question_usage text not null default 'both';
-do $
+do $$
 begin
   if not exists (select 1 from pg_constraint where conname='questions_question_usage_check' and conrelid='public.questions'::regclass) then
     alter table public.questions add constraint questions_question_usage_check check (question_usage in ('mock','practice','both'));
   end if;
-end $;
+end $$;
 
 update public.questions
 set topic_category = case
