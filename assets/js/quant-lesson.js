@@ -310,6 +310,23 @@
 
     $("backToCourse").href = "../index.html";
 
+    // Mark lesson completion using the existing browser-local LMS progress store.
+    const completeButton = $("completeLesson");
+    const progressKey = "lesson-" + lesson.id;
+    const syncCompletion = () => {
+      const done = window.DrillGREProgress?.isDone(progressKey) || false;
+      completeButton.textContent = done ? "✓ Lesson completed" : "Mark lesson complete";
+      completeButton.classList.toggle("primary", !done);
+    };
+    completeButton.onclick = () => {
+      const done = window.DrillGREProgress?.isDone(progressKey) || false;
+      window.DrillGREProgress?.markDone(progressKey, !done);
+      syncCompletion();
+      const marker = $("sideLessons").querySelector(`a[href="lesson.html?id=${encodeURIComponent(lesson.id)}"] .check`);
+      if (marker) marker.textContent = !done ? "✓" : "";
+    };
+    syncCompletion();
+
     if (questionError) {
       $("questionList").innerHTML = '<div class="empty-state">The lesson loaded, but its questions could not be retrieved: ' + esc(questionError.message) + '</div>';
     } else {
