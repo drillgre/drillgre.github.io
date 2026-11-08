@@ -19,6 +19,8 @@ let lessonsCache = [];
 let figureUrl = null;
 let figurePath = null;
 let lessonEditor = null;
+let stimulusFigureUrl = null;
+let stimulusGroupsCache = [];
 
 const typeNames = {
   quantitative_comparison: "Quantitative Comparison",
@@ -26,6 +28,39 @@ const typeNames = {
   multiple_choice_multiple: "Multiple Choice: Multiple Answers",
   numeric_entry: "Numeric Entry",
   data_interpretation: "Data Interpretation"
+};
+
+const categorySubtopics = {
+  arithmetic: [
+    ["number_properties", "Number properties"],
+    ["fractions_decimals", "Fractions and decimals"],
+    ["percentages", "Percentages"],
+    ["ratios_proportions", "Ratios and proportions"],
+    ["exponents_roots", "Exponents and roots"],
+    ["absolute_values", "Absolute values"],
+    ["arithmetic_other", "Other arithmetic"]
+  ],
+  data_analysis: [
+    ["data_interpretation", "Data interpretation"],
+    ["probability", "Probability"],
+    ["counting", "Counting, permutations and combinations"],
+    ["statistics", "Statistics"]
+  ],
+  algebra: [
+    ["algebra_core", "Equations and functions"],
+    ["inequalities", "Inequalities"],
+    ["word_problems", "Word problems"]
+  ],
+  geometry: [
+    ["geometry", "Geometry"],
+    ["coordinate_geometry", "Coordinate geometry"]
+  ]
+};
+const categoryLabels = {
+  arithmetic: "Arithmetic",
+  data_analysis: "Data Analysis",
+  algebra: "Algebra",
+  geometry: "Geometry"
 };
 
 const slug = s =>
@@ -158,7 +193,8 @@ async function enter(u) {
   await Promise.all([
     loadLessons(),
     loadQuestions(),
-    loadLessonOptions()
+    loadLessonOptions(),
+    loadStimulusGroups()
   ]);
 }
 
@@ -843,8 +879,8 @@ function renderDynamicFields(
         <h3>Answer options</h3>
 
         <p class="field-note">
-          For Data Interpretation, put the shared chart, table, or data
-          context in the question text or upload it as a figure.
+          For a linked Data Interpretation set, create a shared stimulus above
+          and associate all three questions with the same group.
         </p>
 
         <div id="optionRows">
@@ -928,13 +964,147 @@ $("qType").addEventListener("change", () => {
 
 
 // ============================================================
+// GRE topic classification and shared Data Analysis stimuli
+// ============================================================
+
+function fillSubtopicOptions(selected = "") {
+  const category = $("topicCategory").value;
+  const options = categorySubtopics[category] || [];
+  $("subtopic").innerHTML = options.map(([value,label]) =>
+    `<option value="${value}">${label}</option>`
+  ).join("");
+  if (selected && options.some(([value]) => value === selected)) {
+    $("subtopic").value = selected;
+  }
+}
+
+function updateStimulusPanel() {
+  const isDataAnalysis = $("topicCategory").value === "data_analysis";
+  $("stimulusPanel").hidden = !isDataAnalysis;
+  if (!isDataAnalysis) {
+    $("stimulusGroup").value = "";
+    $("stimulusEditor").hidden = true;
+  }
+}
+
+async function loadStimulusGroups(selectedId = "") {
+  const select = $("stimulusGroup");
+  if (!select) return;
+
+  const [groupsResult, linksResult] = await Promise.all([
+    db.from("question_stimuli")
+      .select("id,title,stimulus_text,figure_url")
+      .order("created_at", { ascending: false }),
+    db.from("questions").select("stimulus_id").not("stimulus_id", "is", null)
+  ]);
+
+  if (groupsResult.error) {
+    select.innerHTML = '<option value="">No shared stimulus (standalone question)</option>';
+    message("stimulusMsg", groupsResult.error.message);
+    return;
+  }
+
+  const counts = {};
+  (linksResult.data || []).forEach(row => {
+    if (row.stimulus_id) counts[row.stimulus_id] = (counts[row.stimulus_id] || 0) + 1;
+  });
+
+  stimulusGroupsCache = groupsResult.data || [];
+  select.innerHTML = '<option value="">No shared stimulus (standalone question)</option>' +
+    stimulusGroupsCache.map(group => {
+      const count = counts[group.id] || 0;
+      return `<option value="${esc(group.id)}">${esc(group.title)} · ${count}/3 questions linked</option>`;
+    }).join("");
+
+  if (selectedId) select.value = selectedId;
+}
+
+$("topicCategory").addEventListener("change", () => {
+  fillSubtopicOptions();
+  updateStimulusPanel();
+});
+
+$("newStimulusGroup").addEventListener("click", () => {
+  $("stimulusTitle").value = "";
+  $("stimulusText").value = "";
+  $("stimulusFigure").value = "";
+  $("stimulusFigurePreview").innerHTML = "";
+  stimulusFigureUrl = null;
+  $("stimulusEditor").hidden = false;
+  message("stimulusMsg", "");
+});
+
+$("stimulusFigure").addEventListener("change", async () => {
+  const file = $("stimulusFigure").files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    message("stimulusMsg", "The shared figure must be smaller than 5 MB.");
+    $("stimulusFigure").value = "";
+    return;
+  }
+
+  $("stimulusFigurePreview").textContent = "Uploading shared figure…";
+  const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${user.id}/stimulus-${crypto.randomUUID()}.${ext}`;
+  const { error } = await db.storage.from("question-figures").upload(path, file, {
+    contentType: file.type
+  });
+
+  if (error) {
+    message("stimulusMsg", "Upload failed: " + error.message);
+    return;
+  }
+
+  const { data } = db.storage.from("question-figures").getPublicUrl(path);
+  stimulusFigureUrl = data.publicUrl;
+  $("stimulusFigurePreview").innerHTML =
+    `<img src="${esc(stimulusFigureUrl)}" alt="Shared stimulus preview">`;
+});
+
+$("saveStimulusGroup").addEventListener("click", async () => {
+  const title = $("stimulusTitle").value.trim();
+  const stimulusText = $("stimulusText").value.trim();
+  if (!title || (!stimulusText && !stimulusFigureUrl)) {
+    message("stimulusMsg", "Enter a title and provide shared instructions or a figure.");
+    return;
+  }
+
+  $("saveStimulusGroup").disabled = true;
+  message("stimulusMsg", "Saving shared stimulus…");
+  const { data, error } = await db.from("question_stimuli").insert({
+    title,
+    stimulus_text: stimulusText,
+    figure_url: stimulusFigureUrl
+  }).select("id").single();
+  $("saveStimulusGroup").disabled = false;
+
+  if (error) {
+    message("stimulusMsg", error.message);
+    return;
+  }
+
+  await loadStimulusGroups(data.id);
+  $("stimulusEditor").hidden = true;
+  message("stimulusMsg", "Stimulus saved. Link three Data Analysis questions to this group.", true);
+});
+
+// ============================================================
 // New question
 // ============================================================
 
-$("newQuestion").onclick = () => {
+$("newQuestion").onclick = async () => {
   $("questionForm").reset();
 
   $("questionId").value = "";
+
+  $("topicCategory").value = "arithmetic";
+  fillSubtopicOptions("number_properties");
+  updateStimulusPanel();
+  await loadStimulusGroups();
+  $("stimulusGroup").value = "";
+  $("stimulusEditor").hidden = true;
+  stimulusFigureUrl = null;
 
   figureUrl = null;
   figurePath = null;
@@ -1012,7 +1182,7 @@ $("figure").onchange = async () => {
 async function loadQuestions() {
   const { data, error } = await db
     .from("questions")
-    .select("id,topic,question_type,difficulty,question_text,published")
+    .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,published")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -1038,11 +1208,12 @@ async function loadQuestions() {
       <div class="entry">
         <div>
           <strong>
-            ${esc(x.topic)} · Level ${x.difficulty}
+            ${esc(categoryLabels[x.topic_category] || x.topic_category || "Unclassified")} · ${esc((x.subtopic || "").replaceAll("_"," "))} · Level ${x.difficulty}
           </strong>
 
           <div class="meta">
             ${esc(typeNames[x.question_type] || x.question_type)}
+            · ${x.stimulus_id ? "Shared stimulus group" : "Standalone"}
             · ${x.published ? "Published" : "Draft"}
             · ${esc(x.question_text.slice(0, 130))}
           </div>
@@ -1106,6 +1277,13 @@ async function editQuestion(id) {
   }
 
   $("questionId").value = data.id;
+
+  $("topicCategory").value = data.topic_category || "arithmetic";
+  fillSubtopicOptions(data.subtopic || "arithmetic_other");
+  updateStimulusPanel();
+  await loadStimulusGroups(data.stimulus_id || "");
+  $("stimulusGroup").value = data.stimulus_id || "";
+  $("stimulusEditor").hidden = true;
 
   $("topic").value = data.topic;
   $("qType").value = data.question_type;
@@ -1288,8 +1466,22 @@ $("questionForm").onsubmit = async e => {
 
   // Question database record
 
+  const topicCategory = $("topicCategory").value;
+  const subtopic = $("subtopic").value;
+  const stimulusId = topicCategory === "data_analysis"
+    ? ($("stimulusGroup").value || null)
+    : null;
+
+  if (stimulusId && subtopic !== "data_interpretation") {
+    message("questionMsg", "Questions linked to a shared figure must use the Data Interpretation subtopic.");
+    return;
+  }
+
   const body = {
     topic: $("topic").value.trim(),
+    topic_category: topicCategory,
+    subtopic,
+    stimulus_id: stimulusId,
 
     question_type: type,
 
