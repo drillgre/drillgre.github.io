@@ -157,7 +157,7 @@ begin
 
     select count(*) into v_guest_count
     from public.gre_mock_attempts
-    where visitor_key = p_visitor_key;
+    where visitor_key = p_visitor_key and learner_id is null;
 
     if v_guest_count >= 2 then
       raise exception 'You have used both free mock attempts on this browser. Sign in with your email to create unlimited mocks.';
@@ -478,6 +478,33 @@ $$;
 -- Authenticated learner dashboard data
 -- ============================================================
 
+create or replace function public.claim_guest_mock_attempts(p_visitor_key text)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_claimed integer := 0;
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then
+    raise exception 'Please sign in before claiming guest mock attempts.';
+  end if;
+  if p_visitor_key is null or length(p_visitor_key) < 32 then
+    return 0;
+  end if;
+
+  update public.gre_mock_attempts
+  set learner_id = v_user_id
+  where visitor_key = p_visitor_key
+    and learner_id is null;
+
+  get diagnostics v_claimed = row_count;
+  return v_claimed;
+end;
+$;
+
 create or replace function public.get_learner_dashboard()
 returns jsonb
 language plpgsql
@@ -544,6 +571,7 @@ revoke all on function public.resume_gre_mock(uuid, text, text) from public;
 revoke all on function public.submit_gre_mock_section1(uuid, text, jsonb, text) from public;
 revoke all on function public.finish_gre_mock(uuid, text, jsonb, text) from public;
 revoke all on function public.get_learner_dashboard() from public;
+revoke all on function public.claim_guest_mock_attempts(text) from public;
 revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text) from public, anon, authenticated;
 
 grant execute on function public.start_gre_mock(text, text) to anon, authenticated;
@@ -551,3 +579,4 @@ grant execute on function public.resume_gre_mock(uuid, text, text) to anon, auth
 grant execute on function public.submit_gre_mock_section1(uuid, text, jsonb, text) to anon, authenticated;
 grant execute on function public.finish_gre_mock(uuid, text, jsonb, text) to anon, authenticated;
 grant execute on function public.get_learner_dashboard() to authenticated;
+grant execute on function public.claim_guest_mock_attempts(text) to authenticated;
