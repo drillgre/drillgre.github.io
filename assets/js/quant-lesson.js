@@ -194,7 +194,7 @@
     questions.forEach(question => {
       const card = host.querySelector(`[data-question-card="${CSS.escape(String(question.id))}"]`);
       const button = card.querySelector("[data-check-answer]");
-      button.addEventListener("click", () => {
+      button.addEventListener("click", async () => {
         let response;
 
         if (question.question_type === "numeric_entry") {
