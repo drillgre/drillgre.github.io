@@ -48,8 +48,9 @@
     accountLink.setAttribute("aria-label", "Login or sign up");
   }
 
-  function displaySignedIn(name) {
+  function displaySignedIn(name, isAdmin = false) {
     accountLink.textContent = name;
+    accountLink.href = isAdmin ? "/admin.html" : "/dashboard.html";
     accountLink.dataset.signedIn = "true";
     accountLink.setAttribute("aria-label", name + "'s learner dashboard");
     accountLink.title = "Open learner dashboard";
@@ -71,6 +72,7 @@
 
       const user = session.user;
       let name = user.user_metadata?.name || user.user_metadata?.full_name || "";
+      let isAdmin = false;
       try {
         const { data } = await db
           .from("profiles")
@@ -78,7 +80,7 @@
           .eq("id", user.id)
           .maybeSingle();
         if (data?.name) name = data.name;
-        accountLink.href = data?.role === "admin" ? "/admin.html" : "/dashboard.html";
+        isAdmin = data?.role === "admin";
       } catch (_) {
         // Metadata or email provides a useful fallback if the profile query
         // is unavailable on a page or before the profile migration is run.
