@@ -200,7 +200,7 @@
     const { data, error } = await db.auth.verifyOtp({
       email: pendingEmail,
       token: code,
-      type: "signup"
+      type: "email"
     });
 
     button.disabled = false;
