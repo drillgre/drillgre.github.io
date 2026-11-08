@@ -7,6 +7,7 @@
   const $ = id => document.getElementById(id);
 
   let pendingEmail = "";
+  let passwordToSetAfterOtp = "";
 
   function accountPageUrl() {
     return new URL("account.html", window.location.href).toString();
@@ -178,6 +179,26 @@
         return;
       }
 
+      // Older test registrations may already have created an Auth user
+      // through the previous OTP-only flow. Resend its signup code and set
+      // the password after verification so the learner can use password login.
+      if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        pendingEmail = email;
+        passwordToSetAfterOtp = password;
+        const { error: resendError } = await db.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: accountPageUrl() }
+        });
+        if (resendError) {
+          showMessage("An account with this email may already exist. Try Sign in and use Forgot password to set a password. " + resendError.message, true);
+          return;
+        }
+        showSignupOtp(email);
+        return;
+      }
+
+      passwordToSetAfterOtp = "";
       showSignupOtp(email);
     } catch (error) {
       showMessage(error.message || "Please check the registration form.", true);
@@ -214,6 +235,15 @@
     if (!data.session || !data.user) {
       showMessage("Email verification did not create a signed-in session. Request another code and try again.", true);
       return;
+    }
+
+    if (passwordToSetAfterOtp) {
+      const { error: passwordError } = await db.auth.updateUser({ password: passwordToSetAfterOtp });
+      passwordToSetAfterOtp = "";
+      if (passwordError) {
+        showMessage("Your email is verified, but the password could not be saved. Use Forgot password to set it. " + passwordError.message, true);
+        return;
+      }
     }
 
     await claimGuestAttemptsAndContinue();
@@ -281,8 +311,11 @@
   });
 
   document.addEventListener("DOMContentLoaded", async () => {
-    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const isRecovery = params.get("type") === "recovery";
+    const queryParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const isRecovery = queryParams.get("type") === "recovery"
+      || hashParams.get("type") === "recovery"
+      || queryParams.has("code");
     const { data } = await db.auth.getSession();
     if (data.session && !isRecovery) {
       window.location.replace("dashboard.html");
