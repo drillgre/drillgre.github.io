@@ -107,7 +107,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = pg_catalog, public, pg_temp
-as $
+as $$
 declare
   v_count integer;
 begin
