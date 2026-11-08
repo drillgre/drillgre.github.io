@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Create a DrillGRE learner account or sign in with an email verification code.">
+  <title>Learner Account | DrillGRE</title>
+  <link rel="stylesheet" href="assets/css/lms.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="assets/js/account.js"></script>
+  <style>
+    .account-shell{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+    .account-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px;margin-top:18px}
+    .account-card h1{margin:4px 0 8px;font-size:32px;letter-spacing:-1px}
+    .account-muted{color:var(--muted);font-size:13px;line-height:1.6}
+    .account-tabs{display:flex;gap:8px;margin:20px 0}
+    .account-tabs button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 16px;font-weight:750;color:#49566e}
+    .account-tabs button.active{background:#eef2ff;color:#2448d8;border-color:#b9c7ff}
+    .account-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .account-card label{display:block;font-size:12px;font-weight:750;color:#38445a;margin:11px 0}
+    .account-card input,.account-card select{display:block;width:100%;margin-top:6px;border:1px solid #cbd5e1;border-radius:9px;padding:11px 12px;font:inherit;font-size:14px;background:white;color:var(--ink)}
+    .account-card input[type=checkbox]{display:inline-block;width:auto;margin:0 7px 0 0}
+    .account-checks{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0 14px}
+    .account-checks label{font-weight:600;margin:0}
+    .account-primary{border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 18px;font-weight:800}
+    .account-secondary{border:1px solid var(--line);border-radius:10px;background:white;padding:11px 15px;font-weight:700}
+    .account-message{padding:12px;border-radius:10px;background:#f3f6ff;color:#33466f;font-size:13px;line-height:1.6;margin:14px 0}
+    .account-message.error{background:#fff4f2;color:#9c3023}
+    .otp-input{max-width:260px;font-size:24px!important;letter-spacing:8px;text-align:center;font-weight:850}
+    .full{grid-column:1/-1}
+    @media(max-width:600px){.account-grid{grid-template-columns:1fr}.account-card{padding:20px}.account-card h1{font-size:27px}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">Drill<em>GRE</em></a>
+  <nav class="toplinks"><a href="index.html">Home</a><a href="quant/mock.html">Mock tests</a></nav>
+</header>
+<main class="account-shell">
+  <div class="crumb"><a href="index.html">Home</a> / Learner account</div>
+  <section class="account-card">
+    <div class="eyebrow">Your learning space</div>
+    <h1>Learner account</h1>
+    <p class="account-muted">Sign in using a one-time code sent to your email. Registered learners can create unlimited adaptive mocks and view their mock history.</p>
+    <div id="accountMessage" class="account-message" hidden role="status"></div>
+
+    <div id="accountForms">
+      <div class="account-tabs">
+        <button id="loginTab" class="active" type="button">Sign in</button>
+        <button id="registerTab" type="button">Create account</button>
+      </div>
+
+      <form id="loginForm">
+        <label>Email address
+          <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </label>
+        <button class="account-primary" type="submit">Send sign-in code</button>
+      </form>
+
+      <form id="registerForm" hidden>
+        <div class="account-grid">
+          <label>Full name
+            <input id="regName" required maxlength="120" autocomplete="name">
+          </label>
+          <label>Email address
+            <input id="regEmail" type="email" required maxlength="254" autocomplete="email">
+          </label>
+          <label>Education
+            <select id="regEducation" required>
+              <option value="">Select highest education</option>
+              <option value="secondary">Secondary education</option>
+              <option value="diploma">Diploma</option>
+              <option value="bachelors">Bachelor's degree</option>
+              <option value="masters">Master's degree</option>
+              <option value="doctorate">Doctorate</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>Age range
+            <select id="regAge" required>
+              <option value="">Select age range</option>
+              <option value="18-20">18–20</option>
+              <option value="21-25">21–25</option>
+              <option value="26-30">26–30</option>
+              <option value="31-35">31–35</option>
+              <option value="36-40">36–40</option>
+              <option value="41-50">41–50</option>
+              <option value="51+">51 or above</option>
+            </select>
+          </label>
+          <label>Country
+            <input id="regCountry" required maxlength="100" autocomplete="country-name" placeholder="Country of residence">
+          </label>
+          <label>Academic background
+            <select id="regBackground" required>
+              <option value="">Select your background</option>
+              <option value="engineering">Engineering</option>
+              <option value="commerce">Commerce</option>
+              <option value="economics">Economics</option>
+              <option value="mathematics">Mathematics</option>
+            </select>
+          </label>
+          <label>Further study goal
+            <select id="regFurtherStudy" required>
+              <option value="">Select intended degree</option>
+              <option value="phd">PhD</option>
+              <option value="masters">Master's</option>
+            </select>
+          </label>
+          <div class="full">
+            <div style="font-size:12px;font-weight:750;color:#38445a;margin:8px 0">Fields of further study</div>
+            <div class="account-checks">
+              <label><input type="checkbox" name="studyField" value="economics"> Economics</label>
+              <label><input type="checkbox" name="studyField" value="mathematics"> Mathematics</label>
+            </div>
+          </div>
+          <div class="full">
+            <button class="account-primary" type="submit">Create account and send code</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <form id="otpForm" hidden>
+      <h2 style="margin:8px 0">Verify your email</h2>
+      <p class="account-muted">Enter the one-time code sent to <strong id="otpEmail"></strong>.</p>
+      <label>6-digit email code
+        <input id="otpCode" class="otp-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+      </label>
+      <button class="account-primary" type="submit">Verify and continue</button>
+      <button id="resendOtp" class="account-secondary" type="button" style="margin-left:8px">Resend code</button>
+      <button id="changeEmail" class="account-secondary" type="button" style="margin-left:8px">Change email</button>
+    </form>
+  </section>
+</main>
+<footer style="max-width:760px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Learner account</footer>
+</body>
+</html>
