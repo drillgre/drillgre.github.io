@@ -83,7 +83,6 @@
         setStatus("Your account is signed in, but guest mock history could not be linked. " + claimError.message, true);
         return;
       }
-      localStorage.setItem("drillgre_guest_mocks_used_v1", "0");
     }
 
     const { data, error } = await db.rpc("get_learner_dashboard");
