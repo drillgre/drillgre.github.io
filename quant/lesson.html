@@ -96,23 +96,6 @@
   </div>
 </main>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const b = document.getElementById("completeLesson");
-  const id = new URLSearchParams(location.search).get("id");
-  if (!id || !b) return;
-  b.dataset.markComplete = "lesson-" + id;
-  const sync = () => {
-    const done = window.DrillGREProgress?.isDone("lesson-" + id);
-    b.textContent = done ? "✓ Lesson completed" : "Mark lesson complete";
-    b.classList.toggle("primary", !done);
-  };
-  sync();
-  b.addEventListener("click", () => {
-    window.DrillGREProgress?.markDone("lesson-" + id, !window.DrillGREProgress.isDone("lesson-" + id));
-    sync();
-  });
-});
-</script>
+
 </body>
 </html>
