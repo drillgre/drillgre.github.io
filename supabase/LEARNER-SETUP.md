@@ -40,7 +40,7 @@ Learners register with an email address and password. Supabase sends a six-digit
 4. Open **Authentication → URL Configuration**. Set **Site URL** to `https://drillgre.github.io`.
 5. Under **Redirect URLs**, add the exact URL `https://drillgre.github.io/account.html`. Keep localhost only if you actively test locally.
 
-The app calls `signUp` with the user's email and password. For first-time registration, it verifies the six-digit code with `verifyOtp` using `type: "signup"`. Returning learners use `signInWithPassword`. The Forgot password link sends a recovery email so a learner can set a new password.
+The app calls `signUp` with the user's email and password. For first-time registration, it verifies the six-digit code with `verifyOtp` using `type: "email"`. Returning learners use `signInWithPassword`. The Forgot password link sends a recovery email so a learner can set a new password.
 
 ## Learner registration fields
 
