@@ -314,9 +314,10 @@
     const [{data:siblings,error:siblingError},{data:questions,error:questionError}] = await Promise.all([
       db.from("lessons").select("id,title,slug,sort_order").eq("module_id",lesson.module_id).eq("published",true).order("sort_order"),
       db.from("questions")
-        .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,options,figure_url")
+        .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,options,figure_url,question_usage")
         .eq("lesson_id",lesson.id)
         .eq("published",true)
+        .in("question_usage",["practice","both"])
         .order("created_at")
     ]);
 
