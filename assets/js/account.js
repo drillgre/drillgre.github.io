@@ -131,6 +131,18 @@
       return;
     }
 
+    // Attach any guest mock attempts from this browser to the verified learner.
+    // The server verifies auth.uid() before changing attempt ownership.
+    const guestKey = localStorage.getItem("drillgre_guest_visitor_key_v1");
+    if (guestKey) {
+      const { error: claimError } = await db.rpc("claim_guest_mock_attempts", {
+        p_visitor_key: guestKey
+      });
+      if (claimError) {
+        showMessage("Your account is active, but previous guest attempts could not be attached to your dashboard. " + claimError.message, true);
+      }
+    }
+
     showMessage("Your email is verified. Opening your learner dashboard…");
     window.location.replace("dashboard.html");
   });
