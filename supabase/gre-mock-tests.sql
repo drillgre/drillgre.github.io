@@ -284,6 +284,12 @@ begin
     where q.stimulus_id = s.id
       and q.published = true
       and q.topic_category = 'data_analysis'
+      and not exists (
+        select 1
+        from public.gre_mock_attempt_questions used
+        where used.attempt_id = p_attempt_id
+          and used.question_id = q.id::text
+      )
     group by q.stimulus_id
     having count(*) = 3
        and array_agg(q.difficulty order by q.difficulty) = v_group_difficulties
