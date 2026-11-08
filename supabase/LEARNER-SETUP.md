@@ -66,3 +66,12 @@ The adaptive generator selects only published questions marked `mock` or `both`.
 - Account creation with email/password and email-link confirmation, plus email/password sign-in: `/account.html`
 - Learner dashboard and mock history: `/dashboard.html`
 - Adaptive mock: `/quant/mock.html`
+
+
+## Mock timing and leaderboard additions
+
+The latest `learner-accounts.sql` file also adds question-level time recording and the opt-in public leaderboard. If you have already run an earlier version of `learner-accounts.sql`, run the latest version again after `gre-mock-tests.sql` to add the timing column, update the mock submission RPCs, and create the leaderboard functions.
+
+The leaderboard is opt-in. The public page displays only the learner's first name, best completed DrillGRE mock score, and number of completed mocks. Email addresses and user IDs are not published.
+
+The Quant mock uses standard GRE timing by default: 21 minutes for the first Quant section and 26 minutes for the second. Learners may select 50% extra time, double time, or untimed practice before starting. Question time is an estimate based on how long each question is visible while the test page is active.
