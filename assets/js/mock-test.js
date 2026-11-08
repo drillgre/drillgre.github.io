@@ -7,6 +7,8 @@
 
   const ACTIVE_KEY = "drillgre_active_mock_v1";
   const DRAFT_KEY = "drillgre_mock_answers_v1";
+  const VISITOR_KEY = "drillgre_guest_visitor_key_v1";
+  const GUEST_USED_KEY = "drillgre_guest_mocks_used_v1";
   const $ = id => document.getElementById(id);
   let active = null;
   let currentQuestions = [];
@@ -17,6 +19,33 @@
 
   function token() {
     return crypto.randomUUID() + "-" + crypto.randomUUID();
+  }
+
+  function visitorKey() {
+    let key = localStorage.getItem(VISITOR_KEY);
+    if (!key || key.length < 32) {
+      key = crypto.randomUUID() + "-" + crypto.randomUUID();
+      localStorage.setItem(VISITOR_KEY, key);
+    }
+    return key;
+  }
+
+  async function refreshAccessNote(remaining = null) {
+    const note = $("mockAccessNote");
+    if (!note) return;
+    const { data } = await db.auth.getSession();
+    if (data.session) {
+      note.innerHTML = 'You are signed in. You can create unlimited mock tests. <a href="../dashboard.html">Open your learner dashboard</a>.';
+      return;
+    }
+
+    const used = Number(localStorage.getItem(GUEST_USED_KEY) || 0);
+    const left = remaining === null ? Math.max(0, 2 - used) : remaining;
+    if (left > 0) {
+      note.innerHTML = `Guest access: ${left} of 2 free mock attempts remaining on this browser. <a href="../account.html">Sign in or create an account</a> for unlimited mocks.`;
+    } else {
+      note.innerHTML = 'You have used both free mock attempts on this browser. <a href="../account.html">Sign in with email OTP</a> to continue with unlimited mocks.';
+    }
   }
 
   function setStatus(text, error=false) {
@@ -209,6 +238,7 @@
     active = {
       attempt_id:data.attempt_id,
       session_token:active.session_token,
+      visitor_key:active.visitor_key || null,
       status:data.status
     };
     localStorage.setItem(ACTIVE_KEY,JSON.stringify(active));
@@ -229,22 +259,39 @@
 
   async function startMock() {
     const sessionToken = token();
+    const guestKey = visitorKey();
+    const { data: sessionData } = await db.auth.getSession();
+    const isSignedIn = !!sessionData.session;
+
     $("startMock").disabled = true;
     $("startMock").textContent = "Preparing questions…";
     setStatus("Selecting 12 questions from the published question bank. Please wait.");
 
-    const {data,error} = await db.rpc("start_gre_mock",{p_session_token:sessionToken});
+    const {data,error} = await db.rpc("start_gre_mock",{
+      p_session_token:sessionToken,
+      p_visitor_key:isSignedIn ? null : guestKey
+    });
     $("startMock").disabled = false;
     $("startMock").textContent = "Start adaptive mock";
 
     if(error) {
       setStatus(error.message,true);
+      await refreshAccessNote();
       return;
     }
 
     localStorage.removeItem(DRAFT_KEY);
-    active = {attempt_id:data.attempt_id,session_token:sessionToken,status:data.status};
+    if (!data.is_authenticated && Number.isFinite(Number(data.guest_attempts_used))) {
+      localStorage.setItem(GUEST_USED_KEY, String(data.guest_attempts_used));
+    }
+    active = {
+      attempt_id:data.attempt_id,
+      session_token:sessionToken,
+      visitor_key:isSignedIn ? null : guestKey,
+      status:data.status
+    };
     localStorage.setItem(ACTIVE_KEY,JSON.stringify(active));
+    await refreshAccessNote(data.guest_attempts_remaining);
     displayAttemptSection(data);
     window.scrollTo({top:0,behavior:"smooth"});
   }
@@ -254,16 +301,20 @@
     try { saved = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch {}
     if(!saved?.attempt_id || !saved?.session_token) return;
 
+    const { data: sessionData } = await db.auth.getSession();
+    const guestKey = saved.visitor_key || visitorKey();
     setStatus("Resuming your saved mock attempt…");
     const {data,error}=await db.rpc("resume_gre_mock",{
       p_attempt_id:saved.attempt_id,
-      p_session_token:saved.session_token
+      p_session_token:saved.session_token,
+      p_visitor_key:sessionData.session ? null : guestKey
     });
 
     if(error) {
       localStorage.removeItem(ACTIVE_KEY);
       localStorage.removeItem(DRAFT_KEY);
       setStatus("Your previous mock could not be resumed. You can start a new mock. "+error.message,true);
+      await refreshAccessNote();
       return;
     }
 
@@ -274,7 +325,12 @@
       return;
     }
 
-    active={attempt_id:saved.attempt_id,session_token:saved.session_token,status:data.status};
+    active={
+      attempt_id:saved.attempt_id,
+      session_token:saved.session_token,
+      visitor_key:sessionData.session ? null : guestKey,
+      status:data.status
+    };
     displayAttemptSection(data);
   }
 
@@ -297,7 +353,8 @@
     const {data,error}=await db.rpc(rpc,{
       p_attempt_id:active.attempt_id,
       p_session_token:active.session_token,
-      p_responses:responses
+      p_responses:responses,
+      p_visitor_key:active.visitor_key || null
     });
 
     $("submitSection").disabled=false;
@@ -423,8 +480,12 @@
     localStorage.removeItem(ACTIVE_KEY);
     localStorage.removeItem(DRAFT_KEY);
     setStatus("");
+    refreshAccessNote();
     window.scrollTo({top:0,behavior:"smooth"});
   });
 
-  document.addEventListener("DOMContentLoaded",resumeMock);
+  document.addEventListener("DOMContentLoaded",() => {
+    refreshAccessNote();
+    resumeMock();
+  });
 })();
