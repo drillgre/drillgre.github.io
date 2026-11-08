@@ -825,6 +825,24 @@ end $$;
 revoke all on function private.gre_mock_select_section(uuid, integer, text, text, text)
   from public, anon, authenticated;
 
+-- Disable any legacy, unowned public mock RPCs left by an earlier version.
+-- learner-accounts.sql drops these signatures and installs the owner-aware versions.
+do $$
+begin
+  if to_regprocedure('public.start_gre_mock(text)') is not null then
+    execute 'revoke all on function public.start_gre_mock(text) from public, anon, authenticated';
+  end if;
+  if to_regprocedure('public.resume_gre_mock(uuid,text)') is not null then
+    execute 'revoke all on function public.resume_gre_mock(uuid,text) from public, anon, authenticated';
+  end if;
+  if to_regprocedure('public.submit_gre_mock_section1(uuid,text,jsonb)') is not null then
+    execute 'revoke all on function public.submit_gre_mock_section1(uuid,text,jsonb) from public, anon, authenticated';
+  end if;
+  if to_regprocedure('public.finish_gre_mock(uuid,text,jsonb)') is not null then
+    execute 'revoke all on function public.finish_gre_mock(uuid,text,jsonb) from public, anon, authenticated';
+  end if;
+end $$;
+
 -- Public mock RPC endpoints are created by learner-accounts.sql.
 -- This keeps the unowned legacy endpoints out of the base setup script.
 -- Learner-owned, quota-aware RPCs must be installed before learners can start mocks.
