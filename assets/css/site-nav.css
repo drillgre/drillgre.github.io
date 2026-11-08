@@ -1,0 +1,169 @@
+/* DrillGRE shared site navigation */
+.drillgre-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid #e7ebf3;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.drillgre-nav-shell {
+  width: min(1240px, calc(100% - 48px));
+  min-height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2.2vw, 34px);
+}
+.drillgre-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+  color: #101b35;
+  text-decoration: none;
+  font-size: 1.22rem;
+  font-weight: 850;
+  letter-spacing: -.65px;
+}
+.drillgre-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(145deg,#4c83ff,#2454d7);
+  box-shadow: 0 7px 16px rgba(53,109,243,.22);
+  font-weight: 900;
+}
+.drillgre-brand-name span { color: #356df3; }
+.drillgre-free-tag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cfe9dc;
+  border-radius: 999px;
+  background: #effaf4;
+  color: #168456;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .65px;
+}
+.drillgre-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(15px, 2vw, 29px);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.drillgre-nav-links a {
+  color: #4e5870;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition: color .15s ease;
+}
+.drillgre-nav-links a:hover { color: #356df3; }
+.drillgre-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.drillgre-account-link {
+  color: #26334d;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.drillgre-account-link:hover { color: #356df3; }
+.drillgre-account-link[data-signed-in="true"] {
+  color: #2454d7;
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drillgre-start-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 19px;
+  border: 1px solid #356df3;
+  border-radius: 12px;
+  background: #356df3;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 7px 16px rgba(53,109,243,.16);
+  transition: background .15s ease, transform .15s ease;
+}
+.drillgre-start-link:hover { background: #2454d7; transform: translateY(-1px); }
+.drillgre-nav-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e1e7f1;
+  border-radius: 11px;
+  background: #fff;
+  color: #25324a;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+@media (max-width: 1050px) {
+  .drillgre-nav-shell { gap: 18px; width: min(1240px, calc(100% - 36px)); }
+  .drillgre-nav-links { gap: 15px; }
+  .drillgre-nav-links a { font-size: 13px; }
+  .drillgre-nav-actions { gap: 10px; }
+  .drillgre-start-link { padding: 0 14px; }
+}
+@media (max-width: 820px) {
+  .drillgre-nav-shell {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-areas: "brand toggle" "actions actions" "links links";
+    gap: 0 12px;
+    width: calc(100% - 32px);
+    padding: 11px 0;
+  }
+  .drillgre-brand { grid-area: brand; }
+  .drillgre-nav-toggle { display: inline-grid; place-items: center; grid-area: toggle; }
+  .drillgre-nav-actions {
+    grid-area: actions;
+    margin: 10px 0 0;
+    justify-content: flex-end;
+  }
+  .drillgre-nav-links {
+    grid-area: links;
+    display: none;
+    width: 100%;
+    padding: 10px 0 3px;
+    margin-top: 10px;
+    border-top: 1px solid #edf0f5;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .drillgre-nav-links.is-open { display: flex; }
+  .drillgre-nav-links a { padding: 11px 4px; font-size: 14px; }
+}
+@media (max-width: 420px) {
+  .drillgre-nav-shell { width: calc(100% - 24px); }
+  .drillgre-brand { font-size: 1.1rem; gap: 8px; }
+  .drillgre-brand-mark { width: 36px; height: 36px; }
+  .drillgre-free-tag { font-size: 9px; padding: 3px 6px; }
+  .drillgre-account-link { font-size: 13px; }
+  .drillgre-start-link { min-height: 40px; padding: 0 12px; font-size: 13px; }
+}
