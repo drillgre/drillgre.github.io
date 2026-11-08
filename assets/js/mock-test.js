@@ -61,7 +61,7 @@
         <h3>${esc(q.stimulus_title || "Data set")}</h3>
         ${context}
         ${figure}
-        <p class="stimulus-instruction">Use this same figure or data set to answer Questions 1–3 below.</p>
+        <p class="stimulus-instruction">Use this same figure or data set for the three linked questions immediately below.</p>
       </section>`;
   }
 
