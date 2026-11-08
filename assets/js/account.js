@@ -7,8 +7,10 @@
   const $ = id => document.getElementById(id);
 
   let pendingEmail = "";
-  let pendingMode = "login";
-  let pendingMetadata = null;
+
+  function accountPageUrl() {
+    return new URL("account.html", window.location.href).toString();
+  }
 
   function showMessage(message, error = false) {
     const box = $("accountMessage");
@@ -24,15 +26,11 @@
     $("registerTab").classList.toggle("active", mode === "register");
     $("accountForms").hidden = false;
     $("otpForm").hidden = true;
+    $("resetPasswordForm").hidden = true;
     showMessage("");
   }
 
   function collectRegistration() {
-    const fields = [...document.querySelectorAll('input[name="studyField"]:checked')].map(input => input.value);
-    if (!fields.length) {
-      throw new Error("Select at least one further-study field: Economics or Mathematics.");
-    }
-
     const profile = {
       name: $("regName").value.trim(),
       education: $("regEducation").value,
@@ -40,45 +38,55 @@
       country: $("regCountry").value.trim(),
       academic_background: $("regBackground").value,
       further_study: $("regFurtherStudy").value,
-      further_study_fields: fields
+      further_study_field: $("regStudyField").value
     };
 
     if (profile.name.length < 2) throw new Error("Enter your full name.");
     if (!profile.country) throw new Error("Enter your country.");
+    if (!profile.academic_background) throw new Error("Select your academic background.");
+    if (!profile.further_study_field) throw new Error("Select your intended field of study.");
     return profile;
   }
 
-  async function sendCode(email, mode, metadata = null) {
-    pendingEmail = email.trim().toLowerCase();
-    pendingMode = mode;
-    pendingMetadata = metadata;
-
-    showMessage("Sending a one-time code to " + pendingEmail + "…");
-    const options = {
-      shouldCreateUser: mode === "register",
-      // Keep any confirmation-link fallback on the deployed account page.
-      // On local development this naturally uses the local account page.
-      emailRedirectTo: new URL("account.html", window.location.href).toString()
-    };
-    if (metadata) options.data = metadata;
-
-    const { error } = await db.auth.signInWithOtp({
-      email: pendingEmail,
-      options
-    });
-
-    if (error) {
-      showMessage(error.message, true);
-      return false;
-    }
-
-    $("otpEmail").textContent = pendingEmail;
+  function showSignupOtp(email) {
+    pendingEmail = email;
+    $("otpEmail").textContent = email;
     $("otpCode").value = "";
     $("accountForms").hidden = true;
+    $("resetPasswordForm").hidden = true;
     $("otpForm").hidden = false;
-    showMessage("A six-digit verification code has been sent. Check your inbox and spam folder.");
+    showMessage("A six-digit email verification code has been sent. Enter it below to activate your account.");
     $("otpCode").focus();
-    return true;
+  }
+
+  async function resendSignupOtp() {
+    if (!pendingEmail) return;
+    showMessage("Sending another verification code to " + pendingEmail + "…");
+    const { error } = await db.auth.resend({
+      type: "signup",
+      email: pendingEmail,
+      options: { emailRedirectTo: accountPageUrl() }
+    });
+    if (error) {
+      showMessage(error.message, true);
+      return;
+    }
+    showMessage("A new six-digit verification code has been sent. Check your inbox and spam folder.");
+  }
+
+  async function claimGuestAttemptsAndContinue() {
+    const guestKey = localStorage.getItem("drillgre_guest_visitor_key_v1");
+    if (guestKey) {
+      const { error } = await db.rpc("claim_guest_mock_attempts", {
+        p_visitor_key: guestKey
+      });
+      if (error) {
+        showMessage("Your account is active, but previous guest attempts could not be attached to your dashboard. " + error.message, true);
+        return;
+      }
+    }
+    showMessage("Your account is ready. Opening your learner dashboard…");
+    window.location.replace("dashboard.html");
   }
 
   $("loginTab").addEventListener("click", () => setMode("login"));
@@ -86,17 +94,91 @@
 
   $("loginForm").addEventListener("submit", async event => {
     event.preventDefault();
-    const email = $("loginEmail").value.trim();
-    if (!email) return;
-    await sendCode(email, "login");
+    const email = $("loginEmail").value.trim().toLowerCase();
+    const password = $("loginPassword").value;
+    if (!email || !password) return;
+
+    const button = $("loginForm").querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = "Signing in…";
+    showMessage("Signing in to your DrillGRE account…");
+
+    const { error } = await db.auth.signInWithPassword({ email, password });
+
+    button.disabled = false;
+    button.textContent = "Sign in";
+
+    if (error) {
+      if (/email not confirmed/i.test(error.message)) {
+        pendingEmail = email;
+        showMessage("Your email address has not been verified. Sending a verification code…");
+        const { error: resendError } = await db.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: accountPageUrl() }
+        });
+        if (resendError) {
+          showMessage(error.message + " " + resendError.message, true);
+        } else {
+          showSignupOtp(email);
+        }
+        return;
+      }
+      showMessage(error.message, true);
+      return;
+    }
+
+    await claimGuestAttemptsAndContinue();
   });
 
   $("registerForm").addEventListener("submit", async event => {
     event.preventDefault();
     try {
-      const email = $("regEmail").value.trim();
+      const email = $("regEmail").value.trim().toLowerCase();
+      const password = $("regPassword").value;
+      const confirmPassword = $("regPasswordConfirm").value;
       const metadata = collectRegistration();
-      await sendCode(email, "register", metadata);
+
+      if (password.length < 8) {
+        throw new Error("Use a password with at least 8 characters.");
+      }
+      if (password !== confirmPassword) {
+        throw new Error("The two passwords do not match.");
+      }
+
+      const button = $("registerForm").querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = "Creating account…";
+      showMessage("Creating your account and sending an email verification code…");
+
+      const { data, error } = await db.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: accountPageUrl(),
+          data: metadata
+        }
+      });
+
+      button.disabled = false;
+      button.textContent = "Create account and send verification code";
+
+      if (error) {
+        showMessage(error.message, true);
+        return;
+      }
+
+      if (data.session && data.user) {
+        await claimGuestAttemptsAndContinue();
+        return;
+      }
+
+      if (!data.user) {
+        showMessage("The account could not be created. Please try again.", true);
+        return;
+      }
+
+      showSignupOtp(email);
     } catch (error) {
       showMessage(error.message || "Please check the registration form.", true);
     }
@@ -113,16 +195,16 @@
     const button = $("otpForm").querySelector('button[type="submit"]');
     button.disabled = true;
     button.textContent = "Verifying…";
-    showMessage("Verifying your email code…");
+    showMessage("Verifying your email address…");
 
     const { data, error } = await db.auth.verifyOtp({
       email: pendingEmail,
       token: code,
-      type: "email"
+      type: "signup"
     });
 
     button.disabled = false;
-    button.textContent = "Verify and continue";
+    button.textContent = "Verify email and continue";
 
     if (error) {
       showMessage(error.message, true);
@@ -134,36 +216,76 @@
       return;
     }
 
-    // Attach any guest mock attempts from this browser to the verified learner.
-    // The server verifies auth.uid() before changing attempt ownership.
-    const guestKey = localStorage.getItem("drillgre_guest_visitor_key_v1");
-    if (guestKey) {
-      const { error: claimError } = await db.rpc("claim_guest_mock_attempts", {
-        p_visitor_key: guestKey
-      });
-      if (claimError) {
-        showMessage("Your account is active, but previous guest attempts could not be attached to your dashboard. " + claimError.message, true);
-      }
-    }
-
-    showMessage("Your email is verified. Opening your learner dashboard…");
-    window.location.replace("dashboard.html");
+    await claimGuestAttemptsAndContinue();
   });
 
-  $("resendOtp").addEventListener("click", async () => {
-    if (!pendingEmail) return;
-    await sendCode(pendingEmail, pendingMode, pendingMetadata);
-  });
+  $("resendOtp").addEventListener("click", resendSignupOtp);
 
   $("changeEmail").addEventListener("click", () => {
     $("otpForm").hidden = true;
     $("accountForms").hidden = false;
-    setMode(pendingMode);
-    showMessage("Enter the email address you want to use.");
+    setMode("register");
+    showMessage("Return to registration to change the email address.");
+  });
+
+  $("forgotPassword").addEventListener("click", async () => {
+    const email = $("loginEmail").value.trim().toLowerCase();
+    if (!email) {
+      showMessage("Enter your email address first, then select Forgot password.", true);
+      $("loginEmail").focus();
+      return;
+    }
+    showMessage("Sending a password-reset email to " + email + "…");
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: accountPageUrl()
+    });
+    if (error) {
+      showMessage(error.message, true);
+      return;
+    }
+    showMessage("A password-reset link has been sent. Open it in this browser, then choose a new password.");
+  });
+
+  $("resetPasswordForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const password = $("newPassword").value;
+    const confirmPassword = $("newPasswordConfirm").value;
+    if (password.length < 8) {
+      showMessage("Use a password with at least 8 characters.", true);
+      return;
+    }
+    if (password !== confirmPassword) {
+      showMessage("The two passwords do not match.", true);
+      return;
+    }
+
+    const button = $("resetPasswordForm").querySelector('button[type="submit"]');
+    button.disabled = true;
+    const { error } = await db.auth.updateUser({ password });
+    button.disabled = false;
+    if (error) {
+      showMessage(error.message, true);
+      return;
+    }
+    showMessage("Your password has been updated. Opening your learner dashboard…");
+    window.location.replace("dashboard.html");
+  });
+
+  db.auth.onAuthStateChange(async event => {
+    if (event === "PASSWORD_RECOVERY") {
+      $("accountForms").hidden = true;
+      $("otpForm").hidden = true;
+      $("resetPasswordForm").hidden = false;
+      showMessage("Choose a new password for your DrillGRE account.");
+    }
   });
 
   document.addEventListener("DOMContentLoaded", async () => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const isRecovery = params.get("type") === "recovery";
     const { data } = await db.auth.getSession();
-    if (data.session) window.location.replace("dashboard.html");
+    if (data.session && !isRecovery) {
+      window.location.replace("dashboard.html");
+    }
   });
 })();
