@@ -1,5 +1,66 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quant Academy | DrillGRE</title><link rel="stylesheet" href="../assets/css/lms.css"><script defer src="../assets/js/lms.js"></script></head><body>
-<header class="topbar"><a class="brand" href="../index.html">Drill<em>GRE</em> <span style="font-size:11px;font-weight:600;color:#c7d2f0">QUANT ACADEMY</span></a><nav class="toplinks"><a href="../index.html">Home</a><a href="../vocab.html">Vocab Mountain</a></nav></header>
-<main class="shell"><div class="crumb"><a href="../index.html">Home</a> / Quant Academy</div><section class="hero"><div><div class="eyebrow">Structured learning path</div><h1>Master GRE Quant,<br>lesson by lesson.</h1><p>Learn core concepts, review worked examples, practice GRE-style questions, and build confidence through a clear course pathway.</p></div><div class="hero-side"><strong>10 modules</strong><span>Comprehensive GRE Quant curriculum</span><div class="progressbar"><span id="allProgressBar"></span></div><small id="allProgressText" style="color:#69758b;font-size:11px">Your progress is saved in this browser</small></div></section>
-<div class="sectionhead" style="display:flex;justify-content:space-between;align-items:end;margin:30px 0 14px"><div><h2>Course modules</h2><p style="color:#69758b;margin:6px 0 0;font-size:13px">Start at the beginning or jump to a topic you need.</p></div></div><section class="module-grid"><a class="module-card" href="lessons/numbers.html"><div class="module-icon">01</div><div><h3>Number Properties</h3><p>Numbers, integers, primes, factors, divisibility, remainders</p><div class="module-meta">15 lessons · Start with number fundamentals →</div></div></a><a class="module-card" href="lessons/arithmetic.html"><div class="module-icon">02</div><div><h3>Arithmetic</h3><p>Fractions, ratios, percentages, averages, rates</p><div class="module-meta">12 lessons · Core calculations and relationships →</div></div></a><a class="module-card" href="lessons/algebra.html"><div class="module-icon">03</div><div><h3>Algebra</h3><p>Expressions, equations, inequalities, exponents, functions</p><div class="module-meta">14 lessons · Build and solve algebraic models →</div></div></a><a class="module-card" href="lessons/word-problems.html"><div class="module-icon">04</div><div><h3>Applied Algebra & Word Problems</h3><p>Work, distance, mixtures, interest, translating statements</p><div class="module-meta">10 lessons · Apply math to real-world prompts →</div></div></a><a class="module-card" href="lessons/geometry.html"><div class="module-icon">05</div><div><h3>Geometry</h3><p>Angles, triangles, polygons, circles, coordinate and solid geometry</p><div class="module-meta">15 lessons · Understand shapes and spatial relationships →</div></div></a><a class="module-card" href="lessons/data-analysis.html"><div class="module-icon">06</div><div><h3>Data Analysis</h3><p>Graphs, statistics, distributions, data interpretation</p><div class="module-meta">12 lessons · Analyze and interpret quantitative data →</div></div></a><a class="module-card" href="lessons/probability.html"><div class="module-icon">07</div><div><h3>Probability</h3><p>Events, sample spaces, complements, compound probability</p><div class="module-meta">8 lessons · Quantify uncertainty →</div></div></a><a class="module-card" href="lessons/counting.html"><div class="module-icon">08</div><div><h3>Counting & Combinatorics</h3><p>Counting principle, permutations, combinations</p><div class="module-meta">7 lessons · Count possible outcomes efficiently →</div></div></a><a class="module-card" href="lessons/sequences.html"><div class="module-icon">09</div><div><h3>Sequences & Series</h3><p>Patterns, arithmetic and geometric sequences and sums</p><div class="module-meta">6 lessons · Recognize structured number patterns →</div></div></a><a class="module-card" href="lessons/strategies.html"><div class="module-icon">10</div><div><h3>GRE Quant Strategies</h3><p>QC, plugging in, backsolving, estimation, pacing</p><div class="module-meta">8 lessons · Solve efficiently under time pressure →</div></div></a></section></main>
-<script>document.addEventListener("DOMContentLoaded",()=>{let bar=document.getElementById("allProgressBar"),txt=document.getElementById("allProgressText");let upd=()=>{let n=window.DrillGREProgress.count();txt.textContent=n+" completed lesson"+(n===1?"":"s")+" · saved on this device";bar.style.width=Math.min(100,n/107*100)+"%"};upd();document.addEventListener("drillgre:progress",upd)})</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Study GRE Quant concepts, watch lessons, and practise questions with DrillGRE.">
+  <title>Quant Academy | DrillGRE</title>
+  <link rel="stylesheet" href="../assets/css/lms.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="../assets/js/lms.js"></script>
+  <script defer src="../assets/js/quant-catalog.js"></script>
+  <style>
+    .catalog-status{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font-size:13px;margin:18px 0}
+    .module-card{display:block}
+    .module-head{display:flex;gap:13px;align-items:flex-start}
+    .module-lessons{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+    .module-lessons a{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px;font-size:13px;color:#42506a}
+    .module-lessons a:hover{background:#eef2ff;color:#2448d8}
+    .module-lessons .num{font-size:11px;color:#8b95a7;min-width:22px}
+    .module-lessons .go{margin-left:auto;color:var(--blue)}
+    .empty-state{background:white;border:1px dashed #cbd5e1;border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../index.html">Drill<em>GRE</em> <span style="font-size:11px;font-weight:600;color:#c7d2f0">QUANT ACADEMY</span></a>
+  <nav class="toplinks"><a href="../index.html">Home</a><a href="../vocab.html">Vocab Mountain</a></nav>
+</header>
+<main class="shell">
+  <div class="crumb"><a href="../index.html">Home</a> / Quant Academy</div>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Structured learning path</div>
+      <h1>Master GRE Quant,<br>lesson by lesson.</h1>
+      <p>Study concepts, review worked examples, watch teaching videos, and practise GRE-style questions at your own pace.</p>
+    </div>
+    <div class="hero-side">
+      <strong id="lessonCount">—</strong>
+      <span>Published lessons available</span>
+      <div class="progressbar"><span id="allProgressBar"></span></div>
+      <small id="allProgressText" style="color:#69758b;font-size:11px">Your progress is saved on this device</small>
+    </div>
+  </section>
+  <div class="sectionhead" style="display:flex;justify-content:space-between;align-items:end;margin:30px 0 14px">
+    <div><h2>Course modules</h2><p style="color:#69758b;margin:6px 0 0;font-size:13px">Choose a module and start with any published lesson.</p></div>
+  </div>
+  <div id="catalogStatus" class="catalog-status" role="status">Loading your course…</div>
+  <section id="moduleGrid" class="module-grid" aria-live="polite"></section>
+</main>
+<footer style="max-width:1240px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Quant Academy</footer>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const bar = document.getElementById("allProgressBar");
+  const txt = document.getElementById("allProgressText");
+  const update = () => {
+    const n = window.DrillGREProgress?.count?.() || 0;
+    txt.textContent = n + " completed lesson" + (n === 1 ? "" : "s") + " · saved on this device";
+    const total = Number(document.getElementById("lessonCount").textContent) || 0;
+    bar.style.width = (total ? Math.min(100, n / total * 100) : 0) + "%";
+  };
+  update();
+  document.addEventListener("drillgre:progress", update);
+});
+</script>
+</body>
+</html>
