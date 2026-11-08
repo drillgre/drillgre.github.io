@@ -71,6 +71,21 @@
     }
 
     setStatus("Loading your learner profile and mock history…");
+
+    // Attach guest attempts from this browser to the newly signed-in learner.
+    // The visitor key is only a browser-scoped claim token; it is not the auth credential.
+    const visitorKey = localStorage.getItem("drillgre_guest_visitor_key_v1");
+    if (visitorKey) {
+      const { error: claimError } = await db.rpc("claim_guest_mock_attempts", {
+        p_visitor_key: visitorKey
+      });
+      if (claimError) {
+        setStatus("Your account is signed in, but guest mock history could not be linked. " + claimError.message, true);
+        return;
+      }
+      localStorage.setItem("drillgre_guest_mocks_used_v1", "0");
+    }
+
     const { data, error } = await db.rpc("get_learner_dashboard");
     if (error) {
       setStatus("Your account is signed in, but the learner dashboard could not be loaded. " + error.message + " Check that learner-accounts.sql has been run in Supabase.", true);
