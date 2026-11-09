@@ -680,8 +680,11 @@
         <label>Serial number (optional)
           <input id="vocabSn" type="number" min="1" step="1" placeholder="1">
         </label>
-        <label class="full">Word
+        <label>Word
           <input id="vocabWord" required maxlength="120" placeholder="e.g. Abound">
+        </label>
+        <label>Category
+          <input id="vocabCategory" maxlength="100" placeholder="e.g. Academic, Science, Business">
         </label>
         <label>Meaning 1
           <textarea id="vocabMeaning1" rows="2" placeholder="First meaning"></textarea>
@@ -733,7 +736,7 @@
       <label style="display:block;margin-top:12px">Vocabulary CSV or Excel file
         <input id="vocabImportFile" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:block;margin-top:6px">
       </label>
-      <p class="field-note">Required columns: day, word, and at least one meaning field. Optional columns: sn, synonyms, example1 to example3, and is_published. Existing words are skipped rather than replaced.</p>
+      <p class="field-note">Required columns: day, word, and at least one meaning field. Optional columns: sn, category, synonyms, example1 to example3, and is_published. Existing words are skipped rather than replaced.</p>
       <button type="button" id="validateVocabImport">Preview and validate</button>
       <p id="vocabImportStatus" class="msg" aria-live="polite"></p>
     </div>
