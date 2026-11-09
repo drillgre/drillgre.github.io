@@ -71,7 +71,10 @@
 <main><div class="intro"><div class="eyebrow">Build your word power</div><h1>Vocab Mountain</h1><p>Review words cumulatively by day. Tap a tile to reveal meanings and synonyms, tap again for examples, then tap a third time to reveal the word.</p></div>
 <div class="toolbar"><div class="filters"><input id="search" type="search" placeholder="Search a word…" aria-label="Search vocabulary"><select id="dayFilter"><option value="all">All days</option></select><button class="btn" id="shuffle" type="button">↻ Shuffle</button></div><div class="count" id="counter">Loading words…</div></div>
 <div class="status-tabs" role="tablist" aria-label="Vocabulary status">
-  <button class="status-tab know active" type="button" role="tab" aria-selected="true" data-status-tab="know">
+  <button class="status-tab all active" type="button" role="tab" aria-selected="true" data-status-tab="all">
+    <span class="status-dot"></span> All <span class="status-count" id="countAll">0</span>
+  </button>
+  <button class="status-tab know" type="button" role="tab" aria-selected="false" data-status-tab="know">
     <span class="status-dot"></span> Know it <span class="status-count" id="countKnow">0</span>
   </button>
   <button class="status-tab review" type="button" role="tab" aria-selected="false" data-status-tab="review">
@@ -90,7 +93,7 @@ const VOCAB_SUPABASE_KEY="sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
 const vocabDb=window.supabase.createClient(VOCAB_SUPABASE_URL,VOCAB_SUPABASE_KEY);
 </script>
 <script>
-const S={all:[],available:[],items:[],page:0,n:1,shuffled:false,statusFilter:"know",statuses:new Map(),user:null};
+const S={all:[],available:[],items:[],page:0,n:1,shuffled:false,statusFilter:"all",statuses:new Map(),user:null};
 const $=id=>document.getElementById(id);
 const GUEST_PROGRESS_KEY="drillgre_vocab_word_status_guest_v1";
 const LOCAL_PROGRESS_PREFIX="drillgre_vocab_word_status_user_";
@@ -100,7 +103,7 @@ function progressStorageKey(){return S.user?LOCAL_PROGRESS_PREFIX+S.user.id:GUES
 function readLocalProgress(){
   try{
     const value=JSON.parse(localStorage.getItem(progressStorageKey())||"{}");
-    return new Map(Object.entries(value).filter(([,status])=>status==="review"||status==="unknown"));
+    return new Map(Object.entries(value).filter(([,status])=>status==="know"||status==="review"||status==="unknown"));
   }catch{return new Map()}
 }
 function writeLocalProgress(){
@@ -108,7 +111,7 @@ function writeLocalProgress(){
   try{localStorage.setItem(progressStorageKey(),JSON.stringify(data));}catch{}
 }
 function wordStatus(word){
-  return S.statuses.get(String(word.id))||"know";
+  return S.statuses.get(String(word.id))||"all";
 }
 function mapDatabaseWords(rows){
   return (rows||[]).map(r=>({
@@ -207,7 +210,7 @@ function filter(){
     (!query||word.word.toLowerCase().includes(query))
   );
   updateStatusTabs();
-  S.items=S.available.filter(word=>wordStatus(word)===S.statusFilter);
+  S.items=S.statusFilter==="all"?[...S.available]:S.available.filter(word=>wordStatus(word)===S.statusFilter);
   if(S.shuffled)shuffleList(false);
   S.page=0;
   render();
@@ -223,23 +226,18 @@ function shuffleList(toggle=true){
 }
 async function setWordStatus(word,status){
   const id=String(word.id);
-  if(status==="know")S.statuses.delete(id);else S.statuses.set(id,status);
+  S.statuses.set(id,status);
   writeLocalProgress();
   updateStatusTabs();
-  S.items=S.available.filter(item=>wordStatus(item)===S.statusFilter);
+  S.items=S.statusFilter==="all"?[...S.available]:S.available.filter(item=>wordStatus(item)===S.statusFilter);
   render();
 
   if(!S.user)return;
   try{
     let result;
-    if(status==="know"){
-      result=await vocabDb.from("vocab_word_progress")
-        .delete().eq("learner_id",S.user.id).eq("vocab_word_id",id);
-    }else{
-      result=await vocabDb.from("vocab_word_progress")
-        .upsert({learner_id:S.user.id,vocab_word_id:id,status,updated_at:new Date().toISOString()},
-          {onConflict:"learner_id,vocab_word_id"});
-    }
+    result=await vocabDb.from("vocab_word_progress")
+      .upsert({learner_id:S.user.id,vocab_word_id:id,status,updated_at:new Date().toISOString()},
+        {onConflict:"learner_id,vocab_word_id"});
     if(result.error)throw result.error;
     writeLocalProgress();
     $("status").hidden=true;
@@ -257,7 +255,7 @@ function setCardStage(el,stage){
 function card(word,number){
   const status=wordStatus(word);
   const el=document.createElement("article");
-  el.className="tile status-"+status;
+  el.className="tile"+(status==="all"?"":" status-"+status);
   el.tabIndex=0;
   el.dataset.stage="0";
   el.innerHTML=
