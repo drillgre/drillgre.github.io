@@ -388,6 +388,12 @@
       if (marker) marker.textContent = !done ? "✓" : "";
     };
     syncCompletion();
+    document.addEventListener("drillgre:progress", () => {
+      syncCompletion();
+      const doneNow = window.DrillGREProgress?.isDone(progressKey) || false;
+      const markerNow = $("sideLessons").querySelector('a[href="lesson.html?id=' + encodeURIComponent(lesson.id) + '"] .check');
+      if (markerNow) markerNow.textContent = doneNow ? "✓" : "";
+    });
 
     if (questionError || stimulusError) {
       const error = questionError || stimulusError;
