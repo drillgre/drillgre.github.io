@@ -223,9 +223,9 @@
       const a = opts.find(x => /quantity.?a/i.test(x.label || ""))?.text || opts[0]?.text || "";
       const b = opts.find(x => /quantity.?b/i.test(x.label || ""))?.text || opts[1]?.text || "";
       return `
-        <div class="quantities">
-          <div><b>Quantity A</b><p>${esc(a)}</p></div>
-          <div><b>Quantity B</b><p>${esc(b)}</p></div>
+        <div class="qc-comparison">
+          <div class="qc-column"><div class="qc-label">Quantity A</div><div class="qc-value">${esc(a)}</div></div>
+          <div class="qc-column"><div class="qc-label">Quantity B</div><div class="qc-value">${esc(b)}</div></div>
         </div>
         ${[
           ["A","Quantity A is greater"],
@@ -563,7 +563,10 @@
     if (question.question_type === "quantitative_comparison") {
       const a = options.find(x => /quantity.?a/i.test(x.label || ""))?.text || options[0]?.text || "";
       const b = options.find(x => /quantity.?b/i.test(x.label || ""))?.text || options[1]?.text || "";
-      return `<div class="review-answer"><b>Quantity A:</b> ${esc(a)}<br><b>Quantity B:</b> ${esc(b)}</div>`;
+      return `<div class="qc-comparison">
+        <div class="qc-column"><div class="qc-label">Quantity A</div><div class="qc-value">${esc(a)}</div></div>
+        <div class="qc-column"><div class="qc-label">Quantity B</div><div class="qc-value">${esc(b)}</div></div>
+      </div>`;
     }
     if (!options.length) return "";
     return `<ul>${options.map((option,index)=>`<li><b>${esc(option.label || String.fromCharCode(65+index))}.</b> ${esc(option.text ?? "")}</li>`).join("")}</ul>`;
