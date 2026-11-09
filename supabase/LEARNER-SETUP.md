@@ -77,3 +77,32 @@ The latest `learner-accounts.sql` file also adds question-level time recording a
 The leaderboard is opt-in. The public page displays only the learner's first name, best completed DrillGRE mock score, and number of completed mocks. Email addresses and user IDs are not published.
 
 The Quant mock uses standard GRE timing by default: 21 minutes for the first Quant section and 26 minutes for the second. Learners may select 50% extra time, double time, or untimed practice before starting. Question time is an estimate based on how long each question is visible while the test page is active.
+
+
+## Bulk question import
+
+The admin workspace includes **Import questions** in the Question bank tab. Sign in at `/admin.html` using your own administrator account. No credentials need to be shared with anyone.
+
+Supported file formats are `.xlsx`, `.xls`, `.csv`, and `.json`. The importer previews rows, validates required fields and answer formats, checks existing questions for duplicates, and allows valid rows to be imported while invalid or duplicate rows are skipped. New questions default to unpublished unless the spreadsheet explicitly sets `published` to TRUE.
+
+### Spreadsheet columns
+
+Required columns:
+
+- `topic`: readable label, such as Algebra or Number properties
+- `topic_category`: `arithmetic`, `data_analysis`, `algebra`, or `geometry`
+- `subtopic`: the exact subtopic key used by DrillGRE, such as `algebra_core`, `probability`, or `geometry`
+- `question_type`: `multiple_choice_single`, `multiple_choice_multiple`, `quantitative_comparison`, `numeric_entry`, or `data_interpretation`
+- `difficulty`: integer from 1 through 5
+- `question_text`: question prompt
+- `correct_answer`: option label such as `B`, multiple labels such as `A,C`, a Quantitative Comparison answer `A` to `D`, or a numeric value for Numeric Entry
+
+For ordinary multiple-choice questions, place answer choices in `option_a` through `option_f). For Quantitative Comparison, use `quantity_a` and `quantity_b). For Numeric Entry, use `numeric_answer` and optionally `numeric_tolerance`.
+
+Other supported columns are `figure_url`, `explanation`, `explanation_type` (`text`, `video`, or `both`), `explanation_video_url`, `question_usage` (`mock`, `practice`, or `both`), `published` (TRUE or FALSE), `lesson_id` (optional UUID), and `stimulus_id` (optional existing shared-stimulus UUID).
+
+For shared Data Interpretation groups, create the stimulus in the admin workspace first, then put its `stimulus_id` on each linked question. The database allows no more than three questions in a group and requires all linked questions to use the same lesson assignment. Import the three questions together or complete the group in separate imports.
+
+Question figures must already be uploaded and reachable by a public HTTP/HTTPS URL. Use the existing single-question editor to upload figure files to Supabase Storage, or host them at a stable public image URL.
+
+A JSON file may instead contain an array of question records using the database field names, including `options` and `correct_answer` as JSON arrays or objects.
