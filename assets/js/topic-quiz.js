@@ -544,7 +544,8 @@
       const action = !completed
         ? '<a class="quiz-history-action" target="_blank" rel="noopener" href="topic-quiz.html?attempt=' +
           encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Resume quiz</a>'
-        : '<span class="quiz-history-action" style="opacity:.6;border-color:#cbd5e1;color:#64748b">Completed</span>';
+        : '<a class="quiz-history-action" target="_blank" rel="noopener" href="topic-quiz.html?attempt=' +
+          encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Review answers</a>';
       return '<article class="quiz-history-row">' +
         '<div><div class="quiz-history-title">' + title + '</div>' +
         '<div class="quiz-history-meta">' + esc(date) + ' · ' + esc(attempt.question_count) + ' questions · ' +
