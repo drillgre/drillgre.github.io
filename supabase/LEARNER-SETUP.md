@@ -10,6 +10,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 4. `topic-quiz.sql`
 5. `quiz-progress.sql`
 6. `question-bank-progress.sql`
+7. `vocab-mountain.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -17,7 +18,23 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank completion tracking, the learner dashboard count, and leaderboard participation counts.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank completion tracking, the learner dashboard count, and leaderboard participation counts. The seventh script creates the Vocab Mountain vocabulary table and admin-only content-management policies.
+
+## Vocab Mountain content management
+
+Run \`vocab-mountain.sql\` in the Supabase SQL Editor. It creates the \`vocab_words\` table, allows public visitors to read published words, and restricts inserts, edits, publication changes, and deletes to authenticated users whose profile role is \`admin\`.
+
+In the Admin workspace, select **Vocab Mountain**. Administrators can:
+
+- Add or edit a word using the entry form, with day, serial number, up to three meanings, synonyms, and up to three examples.
+- Import a CSV file after previewing the rows and validation results.
+- See and skip duplicate words rather than replacing existing entries.
+- Publish, unpublish, or delete entries.
+
+CSV columns are \`day\`, \`sn\`, \`word\`, \`meaning1\`, \`meaning2\`, \`meaning3\`, \`synonyms\`, \`example1\`, \`example2\`, \`example3\`, and \`is_published\`. Only \`day\`, \`word\`, and at least one meaning are required. Download the template from the Admin workspace or use [the CSV template](../templates/drillgre-vocabulary-template.csv).
+
+The public Vocab Mountain reads published words from Supabase. Until the vocabulary table contains imported words, it continues to display the existing \`assets/vocab_mountain.xlsx\` workbook as a fallback.
+
 
 ## Email and password authentication
 
