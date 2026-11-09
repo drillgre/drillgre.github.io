@@ -441,6 +441,9 @@
       setStatus("Could not submit the quiz. " + (error.message || "Check the topic-quiz SQL setup and try again."),true);
       if (state.deadlineAt !== null && state.deadlineAt <= Date.now()) {
         $("finalSubmit").textContent = "Retry submission";
+        $("testPanel").hidden = true;
+        $("reviewPanel").hidden = false;
+        renderReviewSummary();
       } else {
         timerInterval = setInterval(renderTimer,1000);
       }
