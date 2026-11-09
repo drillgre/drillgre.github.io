@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Your DrillGRE learner dashboard and adaptive mock history.">
+  <meta name="description" content="Your DrillGRE learner profile, lesson progress, quiz history, and mock history.">
   <title>Learner Dashboard | DrillGRE</title>
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,7 +15,19 @@
     .dash-hero h1{font-size:32px;letter-spacing:-1.2px;margin:6px 0}
     .dash-hero p{color:var(--muted);margin:0;font-size:13px}
     .dash-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--blue);color:#fff;padding:12px 17px;font-weight:800;white-space:nowrap}
-    .dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+    .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+    .progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
+    .progress-track{height:10px;border-radius:99px;background:#e9edf5;overflow:hidden;margin:11px 0 8px}
+    .progress-track span{display:block;height:100%;width:0;background:var(--blue);transition:width .2s}
+    .progress-secondary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+    .progress-secondary>div{background:#f7f9fd;border:1px solid var(--line);padding:13px;border-radius:10px}
+    .progress-secondary strong,.progress-secondary span{display:block}
+    .progress-secondary strong{font-size:14px;color:var(--navy)}
+    .progress-secondary span{font-size:11px;color:var(--muted);margin-top:4px}
+    .quiz-attempt-row{border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 12px}
+    .quiz-attempt-row strong{font-size:12px}
+    .quiz-attempt-row .attempt-meta{font-size:11px;color:var(--muted);line-height:1.5}
+    .quiz-attempt-row a{font-size:11px;font-weight:800;color:var(--blue);text-decoration:none;white-space:nowrap}
     .dash-stat{background:white;border:1px solid var(--line);border-radius:14px;padding:18px}
     .dash-stat strong{display:block;font-size:28px;color:var(--navy)}
     .dash-stat span{font-size:12px;color:var(--muted)}
@@ -33,8 +45,8 @@
     .dash-status{padding:13px 15px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;margin:15px 0}
     .dash-status.error{color:#9c3023;background:#fff4f2;border-color:#f0c9c3}
     .dash-actions{display:flex;gap:9px;flex-wrap:wrap}
-    @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}}
-    @media(max-width:560px){.dash-grid{grid-template-columns:1fr}.dash-hero h1{font-size:27px}}
+    @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}.dash-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:560px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-hero h1{font-size:27px}.progress-secondary{grid-template-columns:1fr}.quiz-attempt-row{grid-template-columns:1fr}.quiz-attempt-row a{justify-self:start}}
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script defer src="/assets/js/site-nav.js"></script>
@@ -84,18 +96,37 @@
       </div>
     </div>
     <div class="dash-grid">
-      <div class="dash-stat"><strong id="mocksStarted">0</strong><span>Mocks started</span></div>
-      <div class="dash-stat"><strong id="mocksCompleted">0</strong><span>Mocks completed</span></div>
-      <div class="dash-stat"><strong>Unlimited</strong><span>Mock attempts for registered learners</span></div>
+      <div class="dash-stat"><strong id="lessonsCompleted">0</strong><span>Lessons completed</span></div>
+      <div class="dash-stat"><strong id="quizzesStarted">0</strong><span>Quizzes attempted</span></div>
+      <div class="dash-stat"><strong id="quizzesCompleted">0</strong><span>Quizzes completed</span></div>
+      <div class="dash-stat"><strong id="mocksCompleted">0</strong><span>Mock tests completed</span></div>
     </div>
+    <section class="dash-panel">
+      <h2>Learning progress</h2>
+      <div class="progress-overview">
+        <div class="progress-head"><strong>Course lessons</strong><span id="lessonProgressText">0 of 0 completed</span></div>
+        <div class="progress-track"><span id="lessonProgressBar"></span></div>
+        <p class="account-muted">Completed lessons are saved to your account and synchronised across devices.</p>
+      </div>
+      <div class="progress-secondary">
+        <div><strong id="quizProgressText">0 quizzes completed</strong><span>Topic quiz practice</span></div>
+        <div><strong id="mockProgressText">0 mock tests completed</strong><span>Adaptive Quant mocks</span></div>
+      </div>
+    </section>
     <div class="dash-columns">
       <section class="dash-panel">
         <h2>Profile</h2>
         <div id="profileDetails" class="profile-list"></div>
       </section>
       <section class="dash-panel">
-        <h2>Mock history</h2>
-        <p class="account-muted" style="margin-top:-6px">Your 20 most recent mock attempts are shown below.</p>
+        <h2>Quiz history</h2>
+        <p class="account-muted" style="margin-top:-6px">Resume unfinished quizzes or view your recent results.</p>
+        <div id="quizHistory"></div>
+        <div style="margin-top:14px"><a class="dash-button" href="/quant/quiz.html">Create a topic quiz</a></div>
+      </section>
+      <section class="dash-panel">
+        <h2>Mock test history</h2>
+        <p class="account-muted" style="margin-top:-6px">Your 20 most recent adaptive mock attempts are shown below.</p>
         <div id="mockHistory"></div>
       </section>
     </div>
