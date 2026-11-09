@@ -387,17 +387,22 @@
   }
 
   function renderResults(review,secondsUsed) {
-    const items = review.map(item => ({
-      question:item.question,
-      response:item.response,
-      grade:{
-        correct:!!item.is_correct,
-        correct_answer:item.correct_answer,
-        explanation:item.explanation,
-        explanation_type:item.explanation_type || "text",
-        explanation_video_url:item.explanation_video_url
-      }
-    }));
+    const questionMap = new Map(questions.map(question => [String(question.id),question]));
+    const items = review.map(item => {
+      const savedQuestion = item.question || {};
+      const loadedQuestion = questionMap.get(String(savedQuestion.id)) || {};
+      return {
+        question:{...loadedQuestion,...savedQuestion},
+        response:item.response,
+        grade:{
+          correct:!!item.is_correct,
+          correct_answer:item.correct_answer,
+          explanation:item.explanation,
+          explanation_type:item.explanation_type || "text",
+          explanation_video_url:item.explanation_video_url
+        }
+      };
+    });
     const correct = items.filter(item => item.grade.correct).length;
     $("testPanel").hidden = true;
     $("reviewPanel").hidden = true;
