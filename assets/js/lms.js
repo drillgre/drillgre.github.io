@@ -27,6 +27,19 @@
       (Array.isArray(data) ? data : []).forEach(row => {
         if (row.lesson_id) remote["lesson-" + row.lesson_id] = true;
       });
+      // Carry locally completed guest lessons into the learner's account once signed in.
+      const localOnly = Object.keys(state).filter(key =>
+        key.startsWith("lesson-") && state[key] && !remote[key]
+      );
+      for (const key of localOnly) {
+        const lessonId = key.slice("lesson-".length);
+        if (/^[0-9a-f-]{36}$/i.test(lessonId)) {
+          const {error:syncError} = await db.rpc("set_gre_lesson_progress",{
+            p_lesson_id:lessonId,p_completed:true
+          });
+          if (!syncError) remote[key] = true;
+        }
+      }
       state = {...state,...remote};
       write();
       document.querySelectorAll("[data-progress-id]").forEach(el => {
