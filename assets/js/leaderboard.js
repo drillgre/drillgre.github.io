@@ -17,15 +17,16 @@
 
   function renderRows(rows) {
     if (!Array.isArray(rows) || !rows.length) {
-      $("leaderRows").innerHTML = '<div class="leader-empty">No learners have opted in yet. Complete a mock test and join the leaderboard to appear here.</div>';
+      $("leaderRows").innerHTML = '<div class="leader-empty">No learners have opted in yet. Complete a mock test or topic quiz and opt in to appear here.</div>';
       return;
     }
     $("leaderRows").innerHTML = rows.map(row => `
       <div class="leader-row">
         <span class="leader-rank">#${esc(row.rank)}</span>
         <span class="leader-name">${esc(row.first_name)}</span>
-        <span class="leader-score">${esc(row.best_score)}<span class="leader-sub"> / 170</span></span>
-        <span class="leader-attempts">${esc(row.mocks_completed)}</span>
+        <span class="leader-score">${row.best_score === null || row.best_score === undefined ? "—" : esc(row.best_score) + '<span class="leader-sub"> / 170</span>'}</span>
+        <span class="leader-attempts"><b>${esc(row.mocks_completed || 0)}</b><span class="leader-sub"> mocks</span></span>
+        <span class="leader-quizzes"><b>${esc(row.quizzes_completed || 0)}</b><span class="leader-sub"> quizzes</span></span>
       </div>
     `).join("");
   }
@@ -50,8 +51,8 @@
         optedIn = !!profile.leaderboard_opt_in;
         $("leaderOptTitle").textContent = optedIn ? "You are on the leaderboard" : "Join the leaderboard";
         $("leaderOptCopy").textContent = optedIn
-          ? "Your first name and best completed mock score are visible. You can remove yourself at any time."
-          : "Choose whether to display your first name and best completed mock score publicly. Your email address is never shown.";
+          ? "Your first name, best completed mock score, mock count, and completed quiz count are visible. You can remove yourself at any time."
+          : "Choose whether to display your first name, best mock score, and completed assessment counts publicly. Your email address is never shown.";
         $("leaderOptButton").textContent = optedIn ? "Remove me from leaderboard" : "Join leaderboard";
         $("leaderOptButton").classList.toggle("secondary", optedIn);
       } else {
@@ -73,7 +74,7 @@
       return;
     }
     renderRows(data || []);
-    status("Rankings show opted-in learners by their best completed mock score.");
+    status("Opted-in learners are ranked by their best mock score. Completed topic quizzes are shown as a separate participation count.");
   }
 
   $("leaderOptButton").addEventListener("click", async () => {
