@@ -139,7 +139,7 @@ begin
   from public.questions q
   where q.id::text = p_question_id;
 
-  insert into public.gre_question_bank_progress(
+  insert into public.gre_question_bank_progress as saved_progress(
     learner_id,question_id,completed_at,status,difficulty,attempts_count,
     first_attempt_correct,last_attempt_correct
   )
@@ -150,8 +150,8 @@ begin
   on conflict (learner_id,question_id) do update
   set completed_at = excluded.completed_at,
       status = excluded.status,
-      difficulty = coalesce(public.gre_question_bank_progress.difficulty,excluded.difficulty),
-      attempts_count = public.gre_question_bank_progress.attempts_count + 1,
+      difficulty = coalesce(saved_progress.difficulty,excluded.difficulty),
+      attempts_count = saved_progress.attempts_count + 1,
       last_attempt_correct = excluded.last_attempt_correct
   returning status,attempts_count
   into v_status,v_attempt_count;
