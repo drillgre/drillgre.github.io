@@ -191,7 +191,11 @@ function renderLoadedWords(){
 }
 function updateStatusTabs(){
   const counts={know:0,review:0,unknown:0};
-  S.available.forEach(word=>counts[wordStatus(word)]++);
+  S.available.forEach(word=>{
+    const status=wordStatus(word);
+    if(status!=="all")counts[status]++;
+  });
+  $("countAll").textContent=S.available.length;
   $("countKnow").textContent=counts.know;
   $("countReview").textContent=counts.review;
   $("countUnknown").textContent=counts.unknown;
