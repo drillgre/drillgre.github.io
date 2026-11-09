@@ -16,6 +16,7 @@
     .bank-count{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;min-width:150px;text-align:center}
     .bank-count strong{display:block;font-size:28px;color:var(--ink)}
     .bank-count span{font-size:11px;color:var(--muted)}
+    .bank-count small{display:block;margin-top:5px;font-size:11px;color:#168456;font-weight:750}
     .bank-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(4,minmax(130px,1fr));gap:10px;margin:20px 0 12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
     .bank-filters input,.bank-filters select{width:100%;min-width:0;padding:11px 12px;border:1px solid #d4dbe7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-size:13px}
     .bank-results-line{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:12px 2px}
@@ -123,6 +124,7 @@
     <div class="bank-count">
       <strong id="bankTotal">—</strong>
       <span>Practice questions</span>
+      <small id="bankCompletedSummary">0 completed by you</small>
     </div>
   </section>
 
