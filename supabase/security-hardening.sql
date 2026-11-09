@@ -203,8 +203,9 @@ commit;
 
 notify pgrst, 'reload schema';
 
--- Review the resulting Storage policies. Remove any older permissive policy
--- that allows general authenticated writes to the question-figures bucket.
+-- Review the resulting Storage policies. The restrictive rules above protect
+-- question-figures even when broader permissive policies exist for other
+-- buckets. Keep unrelated bucket policies scoped to their own bucket.
 select policyname, cmd, roles, qual, with_check
 from pg_policies
 where schemaname = 'storage'
