@@ -44,7 +44,7 @@ These changes reduce common exposure and privilege-escalation risks. They do not
 
 ## Vocab Mountain content management
 
-Run \`vocab-mountain.sql\` in the Supabase SQL Editor. It creates the \`vocab_words\` table, allows public visitors to read published words, and restricts inserts, edits, publication changes, and deletes to authenticated users whose profile role is \`admin\`.
+Run `vocab-mountain.sql` in the Supabase SQL Editor. It creates or updates the `vocab_words` table, including the `category` field immediately after `word`. Public visitors can read published vocabulary without querying the protected `profiles` table. Authenticated learners can read published words; administrators can also read drafts and manage vocabulary.
 
 In the Admin workspace, select **Vocab Mountain**. Administrators can:
 
@@ -55,7 +55,7 @@ In the Admin workspace, select **Vocab Mountain**. Administrators can:
 
 CSV columns are \`day\`, \`sn\`, \`word\`, \`meaning1\`, \`meaning2\`, \`meaning3\`, \`synonyms\`, \`example1\`, \`example2\`, \`example3\`, and \`is_published\`. Only \`day\`, \`word\`, and at least one meaning are required. Download the template from the Admin workspace or use [the CSV template](../templates/drillgre-vocabulary-template.csv).
 
-Vocab Mountain reads published words directly from Supabase. The former Excel workbook has been removed from the repository. The page opens on **All**, and unclassified words have white cards. Learners can explicitly classify words as **Know it** (green), **Seen but Review** (orange), or **Unknown** (red). Signed-in learners have all three classifications saved to Supabase and synced across devices; guests have status progress saved in their current browser.
+Vocab Mountain reads published words directly from Supabase and displays each word's category. Guests can browse, search, and study vocabulary, but their progress is not saved and the learning tracker is unavailable until they sign in. Signed-in learners can classify words as **Nailed It** (green), **Revisit** (orange), or **New to Me** (red). These classifications are saved to Supabase and synced across devices. Unclassified cards remain white in the **All** view.
 
 
 ## Email and password authentication
