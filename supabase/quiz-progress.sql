@@ -207,6 +207,7 @@ declare
   v_attempt public.gre_topic_quiz_attempts%rowtype;
   v_questions jsonb;
   v_responses jsonb;
+  v_review jsonb;
 begin
   select * into v_attempt
   from public.gre_topic_quiz_attempts a
@@ -219,9 +220,6 @@ begin
 
   if not found then
     raise exception 'Quiz attempt not found for this learner or browser session.';
-  end if;
-  if v_attempt.status <> 'in_progress' then
-    raise exception 'This quiz has already been completed.';
   end if;
 
   select coalesce(jsonb_agg(
@@ -237,6 +235,26 @@ begin
   from public.gre_topic_quiz_attempt_answers
   where attempt_id = v_attempt.id;
 
+  if v_attempt.status = 'completed' then
+    select coalesce(jsonb_agg(
+      jsonb_build_object(
+        'position',aq.position,
+        'question',aq.question_snapshot - 'correct_answer' - 'explanation' - 'explanation_type' - 'explanation_video_url',
+        'response',a.response,
+        'is_correct',coalesce(a.is_correct,false),
+        'correct_answer',aq.question_snapshot -> 'correct_answer',
+        'explanation',aq.question_snapshot -> 'explanation',
+        'explanation_type',coalesce(aq.question_snapshot ->> 'explanation_type','text'),
+        'explanation_video_url',aq.question_snapshot -> 'explanation_video_url'
+      ) order by aq.position
+    ),'[]'::jsonb)
+    into v_review
+    from public.gre_topic_quiz_attempt_questions aq
+    left join public.gre_topic_quiz_attempt_answers a
+      on a.attempt_id=aq.attempt_id and a.question_id=aq.question_id
+    where aq.attempt_id=v_attempt.id;
+  end if;
+
   return jsonb_build_object(
     'attempt_id',v_attempt.id,
     'session_token',v_attempt.session_token,
@@ -244,15 +262,19 @@ begin
     'topic_keys',to_jsonb(v_attempt.topic_keys),
     'timing_mode',v_attempt.timing_mode,
     'question_count',v_attempt.question_count,
+    'duration_seconds',v_attempt.duration_seconds,
+    'total_correct',v_attempt.total_correct,
     'started_at',v_attempt.started_at,
     'deadline_at',v_attempt.deadline_at,
     'current_position',v_attempt.current_position,
     'flagged_question_ids',to_jsonb(v_attempt.flagged_question_ids),
     'responses',coalesce(v_responses,'{}'::jsonb),
-    'questions',coalesce(v_questions,'[]'::jsonb)
+    'questions',coalesce(v_questions,'[]'::jsonb),
+    'review',case when v_attempt.status='completed' then coalesce(v_review,'[]'::jsonb) else null end
   );
 end;
 $$;
+
 
 -- Save all learner responses and navigation state. This is called as the learner
 -- moves between questions and periodically while an answer is being edited.
@@ -597,9 +619,14 @@ begin
     order by lp.completed_at desc
   ) x;
 
-  select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc),'[]'::jsonb),
-    count(*)::integer,count(*) filter(where status='completed')::integer
-  into v_quiz_attempts,v_quizzes_started,v_quizzes_completed
+  select count(*)::integer,
+    count(*) filter(where status='completed')::integer
+  into v_quizzes_started,v_quizzes_completed
+  from public.gre_topic_quiz_attempts
+  where learner_id=v_user_id;
+
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc),'[]'::jsonb)
+  into v_quiz_attempts
   from (
     select id,session_token,status,topic_keys,timing_mode,question_count,total_correct,
       created_at,completed_at,deadline_at,current_position
