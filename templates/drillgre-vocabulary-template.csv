@@ -1,2 +1,2 @@
-day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3,is_published
-1,1,abound,to exist in large numbers,to be plentiful,,,,,,TRUE
+day,sn,word,category,meaning1,meaning2,meaning3,synonyms,example1,example2,example3,is_published
+1,1,abound,Abundance,to exist in large numbers,to be plentiful,,plentiful; numerous,The flowers abound in the garden.,Opportunities abound for prepared students.,,TRUE
