@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Study GRE Quant concepts, watch lessons, and practise questions with DrillGRE.">
-  <title>Quant Academy | DrillGRE</title>
+  <meta name="description" content="Study GRE Quant concepts, watch lessons, and practise lesson-linked questions with DrillGRE.">
+  <title>Quant Lessons | DrillGRE</title>
   <link rel="stylesheet" href="../assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../assets/js/lms.js"></script>
   <script defer src="../assets/js/quant-catalog.js"></script>
-  <script defer src="../assets/js/topic-quiz.js"></script>
   <style>
     .catalog-status{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font-size:13px;margin:18px 0}
     .module-card{display:block}
@@ -129,77 +128,7 @@
   <div id="catalogStatus" class="catalog-status" role="status">Loading your course…</div>
   <section id="moduleGrid" class="module-grid" aria-live="polite"></section>
 
-  <section id="topicQuizSection" class="topic-quiz-section">
-    <div class="sectionhead" style="display:flex;justify-content:space-between;align-items:end;margin:34px 0 8px">
-      <div>
-        <h2>Topic quizzes</h2>
-        <p class="topic-quiz-intro">Build a short practice quiz by selecting one or more Quant topics and subtopics. Questions are selected randomly from the published practice question bank.</p>
-      </div>
-      <span id="quizBankCount" style="font-size:12px;color:#69758b"></span>
-    </div>
-    <div id="quizSetupStatus" class="quiz-status" role="status">Loading available practice questions…</div>
-    <div id="quizSetupPanel" hidden>
-      <div class="quiz-config">
-        <div id="quizTopicGroups" class="quiz-topic-groups" aria-label="Select topics and subtopics"></div>
-        <aside class="quiz-settings">
-          <label for="quizQuestionCount">Questions in this quiz</label>
-          <select id="quizQuestionCount">
-            <option value="10">10 questions</option>
-            <option value="11">11 questions</option>
-            <option value="12" selected>12 questions</option>
-            <option value="13">13 questions</option>
-            <option value="14">14 questions</option>
-            <option value="15">15 questions</option>
-          </select>
-          <label for="quizTimingMode" style="margin-top:16px">Time allowance</label>
-          <select id="quizTimingMode">
-            <option value="standard">Standard GRE timing</option>
-            <option value="time_and_half">50% extra time</option>
-            <option value="double">Double time</option>
-            <option value="untimed">Untimed practice</option>
-          </select>
-          <p>Standard time follows GRE Quant pacing: approximately 21 minutes for 12 questions. Extra-time and untimed options are also available.</p>
-          <p id="quizAvailability">Select one or more subtopics to see how many questions are available.</p>
-          <button id="startTopicQuiz" class="quiz-action" type="button" disabled>Start topic quiz in a new tab</button>
-          <p>Each quiz opens in a separate GRE-style test window with a countdown timer, question navigation, review marks, and a final answer review.</p>
-        </aside>
-      </div>
-    </div>
 
-    <section id="topicQuizRun" hidden>
-      <div class="hero" style="margin-top:18px">
-        <div>
-          <div class="eyebrow">Topic practice</div>
-          <h2 id="quizRunTitle">Quant topic quiz</h2>
-          <p>Answer all questions, review your selections, and submit to see how many you got correct.</p>
-        </div>
-        <div class="hero-side">
-          <strong id="quizAnswered">0 / 12</strong>
-          <span>Questions answered</span>
-          <div class="quiz-progress"><span id="quizProgressFill"></span></div>
-        </div>
-      </div>
-      <div id="quizQuestionStack"></div>
-      <div class="quiz-controls">
-        <span id="quizSubmitNote" class="mock-footer-note">You can change your answers before submitting. There is no GRE 130 to 170 scaled score in topic quizzes.</span>
-        <button id="submitTopicQuiz" class="quiz-action" type="button">Submit quiz</button>
-      </div>
-    </section>
-
-    <section id="topicQuizResults" hidden>
-      <div class="quiz-score">
-        <div class="eyebrow" style="background:#ffffff18;border-color:#ffffff30;color:#cbd7ff">Topic quiz result</div>
-        <strong id="quizCorrectScore">—</strong>
-        <p id="quizScoreDetail">Correct answers</p>
-      </div>
-      <div class="panel">
-        <h2>Answer review</h2>
-        <p>Review each response, the correct answer, and the explanation.</p>
-        <div id="quizReviewList"></div>
-      </div>
-      <button id="newTopicQuiz" class="quiz-action" type="button">Create another quiz</button>
-    </section>
-  </section>
 </main>
 <footer style="max-width:1240px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Quant Academy</footer>
 <script>
