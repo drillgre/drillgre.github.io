@@ -11,6 +11,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 5. `quiz-progress.sql`
 6. `question-bank-progress.sql`
 7. `vocab-mountain.sql`
+8. `vocab-word-progress.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -18,7 +19,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank completion tracking, the learner dashboard count, and leaderboard participation counts. The seventh script creates the Vocab Mountain vocabulary table and admin-only content-management policies.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank completion tracking, the learner dashboard count, and leaderboard participation counts. The seventh script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The eighth script adds each learner's Know it, Seen but Review, and Unknown classifications.
 
 ## Vocab Mountain content management
 
