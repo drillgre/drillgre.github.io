@@ -56,9 +56,12 @@
      .stimulus-label{font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:#3154c5}
      .stimulus-context{white-space:pre-line;color:var(--ink);line-height:1.65}
      .stimulus-instruction{font-size:12px;color:var(--muted);margin:8px 0 0}
-    .quantities{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-    .quantities>div{background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:12px}
-    .quantities p{white-space:pre-line;margin:6px 0 0;color:#354158;font-size:14px;line-height:1.6}
+
+    .qc-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,9vw,96px);width:100%;max-width:760px;margin:14px auto 18px;padding:3px 12px 14px}
+    .qc-column{min-width:0;text-align:center;padding:3px 8px}
+    .qc-label{display:inline-block;color:var(--ink);font-size:15px;font-weight:500;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;margin-bottom:7px}
+    .qc-value{color:var(--ink);font-size:17px;line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}
+
     .mock-option{display:flex;align-items:flex-start;gap:10px;padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;line-height:1.5}
     .mock-option:has(input:checked){border-color:#8aa5ff;background:#f3f6ff}
     .mock-option input{margin-top:4px}
@@ -82,7 +85,7 @@
     .review-explanation{white-space:pre-wrap;color:#38445a;font-size:13px;line-height:1.65;margin:10px 0}
     .review-video iframe{width:100%;max-width:560px;aspect-ratio:16/9;border:0;border-radius:10px}
     .mock-footer-note{font-size:12px;color:var(--muted);line-height:1.6}
-    @media(max-width:650px){.test-toolbar{align-items:stretch;flex-direction:column}.timer-card{flex:1;width:100%}.score-grid,.quantities{grid-template-columns:1fr}.topic{margin-left:0}.section-controls{align-items:flex-start;flex-direction:column}.section-controls button{width:100%}}
+    @media(max-width:650px){.test-toolbar{align-items:stretch;flex-direction:column}.timer-card{flex:1;width:100%}.score-grid{grid-template-columns:1fr}.topic{margin-left:0}.section-controls{align-items:flex-start;flex-direction:column}.section-controls button{width:100%}}
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script defer src="/assets/js/site-nav.js"></script>
