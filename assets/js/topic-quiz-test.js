@@ -6,16 +6,20 @@
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(window.location.search);
-  const attemptId = params.get("attempt") || (Date.now() + "-" + Math.random().toString(36).slice(2));
-  const STATE_KEY = "drillgre_topic_quiz_attempt_" + attemptId;
+  const savedAttemptId = params.get("attempt");
+  const sessionToken = params.get("token") || (crypto.randomUUID() + "-" + crypto.randomUUID());
+  const STATE_KEY = "drillgre_topic_quiz_" + (savedAttemptId || sessionToken);
   const requestedCount = Math.max(10, Math.min(15, Number(params.get("count") || 12)));
   const timingMode = ["standard","time_and_half","double","untimed"].includes(params.get("timing"))
     ? params.get("timing") : "standard";
 
+  let visitorKey = null;
   let selectedSubtopics = [];
   let questions = [];
   let state = null;
   let timerInterval = null;
+  let saveTimeout = null;
+  let saveQueue = Promise.resolve();
   let submitting = false;
   let timeoutTriggered = false;
 
@@ -43,33 +47,43 @@
     el.classList.toggle("error", !!error);
   }
 
+  function getVisitorKey() {
+    let key = localStorage.getItem("drillgre_guest_visitor_key_v1");
+    if (!key || key.length < 32) {
+      key = crypto.randomUUID() + "-" + crypto.randomUUID();
+      localStorage.setItem("drillgre_guest_visitor_key_v1", key);
+    }
+    return key;
+  }
+
   function standardSeconds(count) {
     const perQuestion = count <= 12 ? 21 * 60 / 12 : 26 * 60 / 15;
     return Math.round(count * perQuestion);
   }
 
-  function allowedSeconds() {
-    if (timingMode === "untimed") return null;
-    const standard = standardSeconds(questions.length);
-    const multiplier = timingMode === "time_and_half" ? 1.5 : timingMode === "double" ? 2 : 1;
-    return Math.round(standard * multiplier);
+  function durationFor(count, mode) {
+    if (mode === "untimed") return null;
+    const multiplier = mode === "time_and_half" ? 1.5 : mode === "double" ? 2 : 1;
+    return Math.round(standardSeconds(count) * multiplier);
   }
 
   function formatTime(seconds) {
-    const safe = Math.max(0, Math.floor(seconds));
+    const safe = Math.max(0,Math.floor(seconds));
     return String(Math.floor(safe / 60)).padStart(2,"0") + ":" + String(safe % 60).padStart(2,"0");
+  }
+
+  function timingLabel(mode = state?.timingMode || timingMode) {
+    return ({
+      standard:"Standard GRE timing",
+      time_and_half:"50% extra time",
+      double:"Double time",
+      untimed:"Untimed practice"
+    })[mode] || "Standard GRE timing";
   }
 
   function saveState() {
     if (!state) return;
-    try { sessionStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch {}
-  }
-
-  function loadSavedState() {
-    try {
-      const raw = sessionStorage.getItem(STATE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    try { sessionStorage.setItem(STATE_KEY,JSON.stringify(state)); } catch {}
   }
 
   function shuffle(items) {
@@ -108,11 +122,16 @@
     const {data,error} = await db.from("question_stimuli")
       .select("id,title,stimulus_text,figure_url")
       .in("id",ids);
-    if (error) throw new Error("Could not load a shared Data Interpretation table or figure. Confirm that topic-quiz.sql has been run in Supabase. " + error.message);
-    const map = new Map((data || []).map(s => [String(s.id),s]));
+    if (error) throw new Error("Could not load a shared Data Interpretation stimulus. " + error.message);
+    const map = new Map((data || []).map(item => [String(item.id),item]));
     return list.map(q => {
-      const s = map.get(String(q.stimulus_id)) || {};
-      return {...q,stimulus_title:s.title || "",stimulus_text:s.stimulus_text || "",stimulus_figure_url:s.figure_url || ""};
+      const stimulus = map.get(String(q.stimulus_id)) || {};
+      return {
+        ...q,
+        stimulus_title:stimulus.title || "",
+        stimulus_text:stimulus.stimulus_text || "",
+        stimulus_figure_url:stimulus.figure_url || ""
+      };
     });
   }
 
@@ -121,10 +140,8 @@
       ? '<img class="question-figure" src="' + esc(q.stimulus_figure_url) + '" alt="' + esc(q.stimulus_title || "Shared Data Interpretation figure") + '">'
       : "";
     const context = q.stimulus_text ? '<p class="stimulus-context">' + esc(q.stimulus_text) + '</p>' : "";
-    return '<section class="shared-stimulus">' +
-      '<div class="stimulus-label">Shared Data Interpretation stimulus</div>' +
-      '<h3>' + esc(q.stimulus_title || "Data set") + '</h3>' + context + figure +
-    '</section>';
+    return '<section class="shared-stimulus"><div class="stimulus-label">Shared Data Interpretation stimulus</div>' +
+      '<h3>' + esc(q.stimulus_title || "Data set") + '</h3>' + context + figure + '</section>';
   }
 
   function answerMarkup(q) {
@@ -162,9 +179,43 @@
       const value = $("numericAnswer")?.value.trim() || "";
       return value === "" ? null : value;
     }
-    const values = [...$("questionPanel").querySelectorAll('input[name="currentAnswer"]:checked')].map(x => x.value);
+    const values = [...$("questionPanel").querySelectorAll('input[name="currentAnswer"]:checked')].map(input => input.value);
     if (!values.length) return null;
     return q.question_type === "multiple_choice_multiple" ? values : values[0];
+  }
+
+  function responsePayload() {
+    return questions.map(q => ({
+      question_id:String(q.id),
+      response:state.responses[String(q.id)] === undefined ? null : state.responses[String(q.id)]
+    }));
+  }
+
+  function persistProgress() {
+    if (!state || state.status !== "in_progress") return Promise.resolve();
+    const payload = {
+      p_attempt_id:state.attemptId,
+      p_session_token:state.sessionToken,
+      p_visitor_key:visitorKey,
+      p_responses:responsePayload(),
+      p_flagged_question_ids:state.flagged,
+      p_current_position:state.currentIndex
+    };
+    saveQueue = saveQueue.catch(() => {}).then(async () => {
+      const {error} = await db.rpc("save_gre_topic_quiz_progress",payload);
+      if (error) throw error;
+      saveState();
+      return true;
+    });
+    return saveQueue;
+  }
+
+  function scheduleSave() {
+    saveState();
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      persistProgress().catch(error => setStatus("Your latest change could not be saved. " + error.message,true));
+    },350);
   }
 
   function storeCurrentResponse() {
@@ -172,7 +223,7 @@
     const q = questions[state.currentIndex];
     if (!q) return;
     state.responses[String(q.id)] = getResponseFromScreen(q);
-    saveState();
+    scheduleSave();
     renderNavigation();
     updateAnsweredSummary();
   }
@@ -192,13 +243,13 @@
   }
 
   function responseIsAnswered(q) {
-    const r = state.responses[String(q.id)];
-    if (Array.isArray(r)) return r.length > 0;
-    return r !== null && r !== undefined && String(r).trim() !== "";
+    const response = state.responses[String(q.id)];
+    if (Array.isArray(response)) return response.length > 0;
+    return response !== null && response !== undefined && String(response).trim() !== "";
   }
 
   function updateAnsweredSummary() {
-    const answered = questions.filter(q => responseIsAnswered(q)).length;
+    const answered = questions.filter(responseIsAnswered).length;
     $("answeredSummary").textContent = answered + " of " + questions.length + " answered";
   }
 
@@ -212,7 +263,7 @@
       return '<button type="button" class="' + classes + '" data-nav-question="' + index + '" aria-label="Go to question ' + (index+1) + '">' + (index+1) + '</button>';
     }).join("");
     $("questionNav").querySelectorAll("[data-nav-question]").forEach(button => {
-      button.addEventListener("click", () => goToQuestion(Number(button.dataset.navQuestion)));
+      button.addEventListener("click",() => goToQuestion(Number(button.dataset.navQuestion)));
     });
   }
 
@@ -224,11 +275,11 @@
       ? '<img class="question-figure" src="' + esc(q.figure_url) + '" alt="Question figure" loading="lazy">'
       : "";
     const stimulus = q.stimulus_id ? sharedStimulusMarkup(q) : "";
-    const flag = state.flagged.includes(String(q.id));
+    const flagged = state.flagged.includes(String(q.id));
     $("questionPanel").innerHTML =
       '<div class="question-panel-head">' +
         '<span class="question-count-label">Question ' + (index+1) + ' of ' + questions.length + '</span>' +
-        '<button id="flagQuestion" type="button" class="flag-button ' + (flag ? "active" : "") + '">' + (flag ? "Marked for Review" : "Mark for Review") + '</button>' +
+        '<button id="flagQuestion" type="button" class="flag-button ' + (flagged ? "active" : "") + '">' + (flagged ? "Marked for Review" : "Mark for Review") + '</button>' +
       '</div>' +
       '<div class="question-body">' + stimulus +
         '<div class="question-prompt">' + esc(q.question_text || "") + '</div>' +
@@ -241,12 +292,12 @@
       input.addEventListener("change",storeCurrentResponse);
     });
     restoreResponse(q);
-    $("flagQuestion").addEventListener("click", () => {
+    $("flagQuestion").addEventListener("click",() => {
       const id = String(q.id);
       state.flagged = state.flagged.includes(id)
-        ? state.flagged.filter(x => x !== id)
+        ? state.flagged.filter(value => value !== id)
         : [...state.flagged,id];
-      saveState();
+      scheduleSave();
       renderCurrentQuestion();
       renderNavigation();
     });
@@ -260,6 +311,7 @@
   function goToQuestion(index) {
     storeCurrentResponse();
     state.currentIndex = Math.max(0,Math.min(questions.length-1,index));
+    scheduleSave();
     $("reviewPanel").hidden = true;
     $("resultPanel").hidden = true;
     $("testPanel").hidden = false;
@@ -284,14 +336,12 @@
         '<td><button type="button" data-return-question="' + index + '">Review</button></td></tr>').join("") +
       '</tbody></table>';
     $("reviewSummary").querySelectorAll("[data-return-question]").forEach(button => {
-      button.addEventListener("click", () => goToQuestion(Number(button.dataset.returnQuestion)));
+      button.addEventListener("click",() => goToQuestion(Number(button.dataset.returnQuestion)));
     });
   }
 
   function correctAnswerText(q,answer) {
-    if (q.question_type === "numeric_entry") {
-      return String(answer && typeof answer === "object" ? answer.value : answer ?? "");
-    }
+    if (q.question_type === "numeric_entry") return String(answer && typeof answer === "object" ? answer.value : answer ?? "");
     if (Array.isArray(answer)) return answer.join(", ");
     if (q.question_type === "quantitative_comparison") {
       return ({
@@ -306,7 +356,7 @@
 
   function answerDisplay(answer) {
     if (answer === null || answer === undefined || answer === "") return "Not answered";
-    return Array.isArray(answer) ? answer.join(", ") : String(answer);
+    return Array.isArray(answer) ? (answer.length ? answer.join(", ") : "Not answered") : String(answer);
   }
 
   function reviewOptionsMarkup(q) {
@@ -317,10 +367,37 @@
       return '<div class="qc-comparison"><div class="qc-column"><div class="qc-label">Quantity A</div><div class="qc-value">' + esc(a) + '</div></div>' +
         '<div class="qc-column"><div class="qc-label">Quantity B</div><div class="qc-value">' + esc(b) + '</div></div></div>';
     }
-    return options.length ? '<ul>' + options.map((o,i) => '<li><b>' + esc(o.label || String.fromCharCode(65+i)) + '.</b> ' + esc(o.text ?? "") + '</li>').join("") + '</ul>' : "";
+    return options.length ? '<ul>' + options.map((option,index) =>
+      '<li><b>' + esc(option.label || String.fromCharCode(65+index)) + '.</b> ' + esc(option.text ?? "") + '</li>'
+    ).join("") + '</ul>' : "";
   }
 
-  function renderResults(items,secondsUsed) {
+  function videoEmbed(raw) {
+    if (!raw) return "";
+    try {
+      const url = new URL(raw.trim());
+      let id = "";
+      if (url.hostname === "youtu.be") id = url.pathname.split("/").filter(Boolean)[0] || "";
+      else if (["youtube.com","www.youtube.com","m.youtube.com","youtube-nocookie.com","www.youtube-nocookie.com"].includes(url.hostname)) {
+        if (url.pathname === "/watch") id = url.searchParams.get("v") || "";
+        else if (/^\/(embed|shorts)\//.test(url.pathname)) id = url.pathname.split("/")[2] || "";
+      }
+      return /^[A-Za-z0-9_-]{11}$/.test(id) ? "https://www.youtube-nocookie.com/embed/" + id : "";
+    } catch { return ""; }
+  }
+
+  function renderResults(review,secondsUsed) {
+    const items = review.map(item => ({
+      question:item.question,
+      response:item.response,
+      grade:{
+        correct:!!item.is_correct,
+        correct_answer:item.correct_answer,
+        explanation:item.explanation,
+        explanation_type:item.explanation_type || "text",
+        explanation_video_url:item.explanation_video_url
+      }
+    }));
     const correct = items.filter(item => item.grade.correct).length;
     $("testPanel").hidden = true;
     $("reviewPanel").hidden = true;
@@ -358,34 +435,12 @@
         explanation +
       '</article>';
     }).join("");
-    try { sessionStorage.removeItem(STATE_KEY); } catch {}
-  }
-
-  function videoEmbed(raw) {
-    if (!raw) return "";
-    try {
-      const url = new URL(raw.trim());
-      let id = "";
-      if (url.hostname === "youtu.be") id = url.pathname.split("/").filter(Boolean)[0] || "";
-      else if (["youtube.com","www.youtube.com","m.youtube.com","youtube-nocookie.com","www.youtube-nocookie.com"].includes(url.hostname)) {
-        if (url.pathname === "/watch") id = url.searchParams.get("v") || "";
-        else if (/^\/(embed|shorts)\//.test(url.pathname)) id = url.pathname.split("/")[2] || "";
-      }
-      return /^[A-Za-z0-9_-]{11}$/.test(id) ? "https://www.youtube-nocookie.com/embed/" + id : "";
-    } catch { return ""; }
-  }
-
-  function timingLabel() {
-    return ({
-      standard:"Standard GRE timing",
-      time_and_half:"50% extra time",
-      double:"Double time",
-      untimed:"Untimed practice"
-    })[timingMode] || "Standard GRE timing";
+    state.status = "completed";
+    saveState();
   }
 
   function renderTimer() {
-    if (state.deadlineAt === null) {
+    if (!state || state.deadlineAt === null) {
       $("quizTimer").textContent = "Untimed";
       $("timerCard").classList.remove("low-time");
       return;
@@ -410,26 +465,28 @@
     }
 
     if (timerInterval) clearInterval(timerInterval);
+    if (saveTimeout) clearTimeout(saveTimeout);
     submitting = true;
     $("finalSubmit").disabled = true;
     $("reviewQuiz").disabled = true;
     $("finalSubmit").textContent = "Submitting…";
     setStatus("Checking your answers…");
+    storeCurrentResponse();
 
     try {
-      const items = await Promise.all(questions.map(async q => {
-        const response = state.responses[String(q.id)] ?? null;
-        const {data,error} = await db.rpc("grade_gre_quiz_question", {
-          p_question_id:String(q.id),
-          p_response:response
-        });
-        if (error) throw error;
-        if (!data || data.error) throw new Error(data?.error || "A question could not be checked.");
-        return {question:q,response,grade:data};
-      }));
+      const {data,error} = await db.rpc("finish_gre_topic_quiz",{
+        p_attempt_id:state.attemptId,
+        p_session_token:state.sessionToken,
+        p_visitor_key:visitorKey,
+        p_responses:responsePayload(),
+        p_flagged_question_ids:state.flagged,
+        p_current_position:state.currentIndex
+      });
+      if (error) throw error;
+      if (!data || data.status !== "completed") throw new Error(data?.error || "The quiz could not be completed.");
 
-      const secondsUsed = Math.max(0,Math.round((Date.now() - state.startedAt)/1000));
-      renderResults(items,secondsUsed);
+      const secondsUsed = Math.max(0,Math.round((Date.now()-state.startedAt)/1000));
+      renderResults(data.review || [],secondsUsed);
       setStatus("");
       window.scrollTo({top:0,behavior:"smooth"});
     } catch (error) {
@@ -437,15 +494,14 @@
       timeoutTriggered = false;
       $("finalSubmit").disabled = false;
       $("reviewQuiz").disabled = false;
-      $("finalSubmit").textContent = "Submit quiz";
-      setStatus("Could not submit the quiz. " + (error.message || "Check the topic-quiz SQL setup and try again."),true);
-      if (state.deadlineAt !== null && state.deadlineAt <= Date.now()) {
-        $("finalSubmit").textContent = "Retry submission";
+      $("finalSubmit").textContent = "Retry submission";
+      setStatus("Could not submit the quiz. " + (error.message || "Check the Supabase quiz progress migration and try again."),true);
+      if (state.deadlineAt === null || state.deadlineAt > Date.now()) {
+        timerInterval = setInterval(renderTimer,1000);
+      } else {
         $("testPanel").hidden = true;
         $("reviewPanel").hidden = false;
         renderReviewSummary();
-      } else {
-        timerInterval = setInterval(renderTimer,1000);
       }
     }
   }
@@ -456,6 +512,7 @@
     $("testPanel").hidden = true;
     $("reviewPanel").hidden = false;
     window.scrollTo({top:0,behavior:"smooth"});
+    persistProgress().catch(error => setStatus("Progress could not be saved. " + error.message,true));
   }
 
   function startTimer() {
@@ -463,36 +520,34 @@
     if (state.deadlineAt !== null) timerInterval = setInterval(renderTimer,1000);
   }
 
-  function beginQuiz(list) {
-    questions = list;
-    const previous = loadSavedState();
-    if (previous && Array.isArray(previous.questionIds) &&
-        previous.questionIds.length === questions.length &&
-        previous.questionIds.every((id,index) => String(questions[index]?.id) === String(id))) {
-      state = previous;
-      state.responses = state.responses || {};
-      state.flagged = state.flagged || [];
-      state.currentIndex = Math.max(0,Math.min(questions.length-1,Number(state.currentIndex || 0)));
-    } else {
-      const duration = allowedSeconds();
-      state = {
-        attemptId,
-        questionIds:questions.map(q => String(q.id)),
-        timingMode,
-        durationSeconds:duration,
-        startedAt:Date.now(),
-        deadlineAt:duration === null ? null : Date.now() + duration*1000,
-        currentIndex:0,
-        responses:{},
-        flagged:[]
-      };
-      saveState();
-    }
+  async function beginQuiz(questionList,attemptData) {
+    questions = questionList;
+    state = {
+      attemptId:attemptData.attempt_id,
+      sessionToken:attemptData.session_token || sessionToken,
+      status:attemptData.status || "in_progress",
+      questionIds:questions.map(q => String(q.id)),
+      timingMode:attemptData.timing_mode || timingMode,
+      durationSeconds:attemptData.duration_seconds ?? durationFor(questions.length,attemptData.timing_mode || timingMode),
+      startedAt:new Date(attemptData.started_at || Date.now()).getTime(),
+      deadlineAt:attemptData.deadline_at ? new Date(attemptData.deadline_at).getTime() : null,
+      currentIndex:Math.max(0,Math.min(questions.length-1,Number(attemptData.current_position || 0))),
+      responses:attemptData.responses || {},
+      flagged:(attemptData.flagged_question_ids || []).map(String)
+    };
+    saveState();
+
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("attempt",state.attemptId);
+    url.searchParams.set("token",state.sessionToken);
+    window.history.replaceState({}, "", url.toString());
 
     $("loadingPanel").hidden = true;
     $("testPanel").hidden = false;
     $("quizSubtitle").textContent = "Topic practice · " + questions.length + " questions · " + timingLabel();
     renderCurrentQuestion();
+
     $("previousQuestion").addEventListener("click",() => goToQuestion(state.currentIndex-1));
     $("nextQuestion").addEventListener("click",() => goToQuestion(state.currentIndex+1));
     $("reviewQuiz").addEventListener("click",showReview);
@@ -502,32 +557,61 @@
       renderCurrentQuestion();
     });
     $("finalSubmit").addEventListener("click",() => submitQuiz(false));
+
+    document.addEventListener("visibilitychange",() => {
+      if (document.visibilityState === "hidden") persistProgress().catch(() => {});
+    });
+    window.addEventListener("pagehide",() => persistProgress().catch(() => {}));
     startTimer();
   }
 
-  async function init() {
-    try {
-      try { selectedSubtopics = JSON.parse(params.get("subtopics") || "[]"); }
-      catch { selectedSubtopics = []; }
-      if (!Array.isArray(selectedSubtopics) || !selectedSubtopics.length) {
-        throw new Error("No topics were selected. Close this tab and start a new quiz from Quant Academy.");
-      }
-      const pool = await fetchQuestionPool();
-      if (pool.length < requestedCount) {
-        throw new Error("Only " + pool.length + " eligible questions are available for your selections. Return to Quant Academy and select more subtopics or a smaller quiz.");
-      }
+  async function startNewAttempt() {
+    try { selectedSubtopics = JSON.parse(params.get("subtopics") || "[]"); }
+    catch { selectedSubtopics = []; }
+    if (!Array.isArray(selectedSubtopics) || !selectedSubtopics.length) {
+      throw new Error("No topics were selected. Close this tab and start a new quiz from Quant → Quiz.");
+    }
+    const pool = await fetchQuestionPool();
+    if (pool.length < requestedCount) {
+      throw new Error("Only " + pool.length + " eligible questions are available for your selections. Return to Quant → Quiz and select more subtopics or a smaller quiz.");
+    }
+    const selected = shuffle(pool).slice(0,requestedCount);
+    const duration = durationFor(requestedCount,timingMode);
+    const {data,error} = await db.rpc("start_gre_topic_quiz",{
+      p_session_token:sessionToken,
+      p_visitor_key:visitorKey,
+      p_question_ids:selected.map(q => String(q.id)),
+      p_topic_keys:selectedSubtopics,
+      p_timing_mode:timingMode,
+      p_duration_seconds:duration
+    });
+    if (error) throw error;
+    if (!data || !data.attempt_id) throw new Error(data?.error || "A quiz attempt could not be started.");
+    const questionList = await loadStimuli(data.questions || []);
+    await beginQuiz(questionList,{...data,duration_seconds:duration});
+  }
 
-      const saved = loadSavedState();
-      let selected;
-      if (saved && Array.isArray(saved.questionIds) && saved.questionIds.length === requestedCount) {
-        const byId = new Map(pool.map(q => [String(q.id),q]));
-        selected = saved.questionIds.map(id => byId.get(String(id))).filter(Boolean);
+  async function resumeAttempt() {
+    if (!sessionToken) throw new Error("The quiz resume link is missing its session token. Return to Quant → Quiz and use Resume quiz.");
+    const {data,error} = await db.rpc("get_gre_topic_quiz_attempt",{
+      p_attempt_id:savedAttemptId,
+      p_session_token:sessionToken,
+      p_visitor_key:visitorKey
+    });
+    if (error) throw error;
+    if (!data || data.status !== "in_progress") throw new Error("This quiz is no longer available to resume.");
+    const questionList = await loadStimuli(data.questions || []);
+    await beginQuiz(questionList,data);
+  }
+
+  async function init() {
+    visitorKey = getVisitorKey();
+    try {
+      if (savedAttemptId) {
+        await resumeAttempt();
+      } else {
+        await startNewAttempt();
       }
-      if (!selected || selected.length !== requestedCount) {
-        selected = shuffle(pool).slice(0,requestedCount);
-      }
-      questions = await loadStimuli(selected);
-      beginQuiz(questions);
     } catch (error) {
       $("loadingPanel").textContent = error.message || "Unable to load your topic quiz.";
       $("loadingPanel").classList.add("error");
