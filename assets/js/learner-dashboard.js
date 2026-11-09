@@ -62,6 +62,18 @@
     }).join("");
   }
 
+  function renderLessonProgress(items) {
+    const host = $("completedLessonList");
+    if (!items.length) {
+      host.innerHTML = '<span class="attempt-meta">No lessons completed yet. Start with the <a href="/quant/index.html">Quant lessons</a>.</span>';
+      return;
+    }
+    host.innerHTML = items.map(item =>
+      '<a href="/quant/lesson.html?id=' + encodeURIComponent(item.lesson_id) + '">' +
+      '✓ ' + escapeHtml(item.title || "Completed lesson") + '</a>'
+    ).join("");
+  }
+
   function renderQuizHistory(attempts) {
     if (!attempts.length) {
       $("quizHistory").innerHTML = '<div class="empty-state">No topic quizzes attempted yet. <a href="/quant/quiz.html">Create your first quiz</a>.</div>';
@@ -143,6 +155,7 @@
     $("quizProgressText").textContent = (data.quizzes_completed ?? 0) + " quizzes completed";
     $("mockProgressText").textContent = (data.mocks_completed ?? 0) + " mock tests completed";
     profileRows(profile);
+    renderLessonProgress(data.lesson_progress || []);
     renderQuizHistory(data.topic_quiz_attempts || []);
     renderAttempts(data.recent_attempts || []);
 
