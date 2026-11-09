@@ -1677,7 +1677,9 @@ function importQuestionRecord(rawRow, rowNumber) {
   let correct = parseImportJsonCell(row.correct_answer_json, "correct_answer_json", rowNumber, errors);
   if (correct === undefined && row.correct_answer !== undefined && row.correct_answer !== "") {
     const rawAnswer = row.correct_answer;
-    correct = typeof rawAnswer === "number" ? String(rawAnswer) : importText(rawAnswer);
+    correct = rawAnswer && typeof rawAnswer === "object"
+      ? rawAnswer
+      : typeof rawAnswer === "number" ? String(rawAnswer) : importText(rawAnswer);
   }
 
   if (type === "quantitative_comparison") {
