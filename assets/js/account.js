@@ -8,8 +8,21 @@
 
   let pendingEmail = "";
 
+  function postAuthDestination() {
+    const requested = new URLSearchParams(window.location.search).get("redirect") || "";
+    if (!requested || !requested.startsWith("/") || requested.startsWith("//") || requested.includes("\\")) {
+      return "/dashboard.html";
+    }
+    const target = new URL(requested, window.location.origin);
+    if (target.origin !== window.location.origin) return "/dashboard.html";
+    return target.pathname + target.search + target.hash;
+  }
+
   function accountPageUrl() {
-    return new URL("account.html", window.location.href).toString();
+    const url = new URL("account.html", window.location.href);
+    const requested = new URLSearchParams(window.location.search).get("redirect");
+    if (requested) url.searchParams.set("redirect", postAuthDestination());
+    return url.toString();
   }
 
   function showMessage(message, error = false) {
@@ -110,8 +123,10 @@
         return;
       }
     }
-    showMessage("Your account is ready. Opening your learner dashboard…");
-    window.location.replace("/dashboard.html");
+    const destination = postAuthDestination();
+    const isQuestionBank = destination.startsWith("/quant/question-bank.html");
+    showMessage(isQuestionBank ? "Your account is ready. Opening the Question Bank…" : "Your account is ready. Opening your learner dashboard…");
+    window.location.replace(destination);
   }
 
   $("loginTab").addEventListener("click", () => setMode("login"));
