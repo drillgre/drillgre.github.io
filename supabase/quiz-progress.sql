@@ -129,7 +129,7 @@ begin
     perform pg_advisory_xact_lock(hashtextextended(p_visitor_key || ':topic-quiz', 0));
     select count(*)::integer into v_guest_count
     from public.gre_topic_quiz_attempts
-    where visitor_key = p_visitor_key and learner_id is null;
+    where visitor_key = p_visitor_key;
 
     if v_guest_count >= 2 then
       raise exception 'You have used both free topic quiz attempts on this browser. Sign in for unlimited quizzes.';
@@ -467,7 +467,7 @@ begin
     end if;
     select count(*)::integer into v_used
     from public.gre_topic_quiz_attempts
-    where visitor_key=p_visitor_key and learner_id is null;
+    where visitor_key=p_visitor_key;
   end if;
 
   select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc),'[]'::jsonb)
@@ -507,8 +507,8 @@ begin
   if p_visitor_key is null or length(p_visitor_key) < 32 then return 0; end if;
 
   update public.gre_topic_quiz_attempts
-  set learner_id=v_user_id,visitor_key=null
-  where visitor_key=p_visitor_key and learner_id is null;
+  set learner_id=v_user_id
+  where visitor_key=p_visitor_key;
 
   get diagnostics v_claimed = row_count;
   return v_claimed;
