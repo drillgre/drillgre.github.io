@@ -77,21 +77,37 @@ function mapDatabaseWords(rows){
     syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
   })).filter(x=>x.word);
 }
-async function loadWorkbookFallback(reason){
+async function readWorkbookWords(){
+  const response=await fetch("assets/vocab_mountain.xlsx",{cache:"no-store"});
+  if(!response.ok)throw Error("Workbook not found.");
+  const bytes=await response.arrayBuffer();
+  const workbook=XLSX.read(bytes,{type:"array"});
+  const rows=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{defval:""});
+  return rows.map(r=>({
+    day:txt(r,"day"),sn:txt(r,"SN"),word:txt(r,"word"),
+    meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
+    syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
+  })).filter(x=>x.word);
+}
+async function loadWorkbookFallback(reason,primaryWords=[]){
   try{
-    const response=await fetch("assets/vocab_mountain.xlsx",{cache:"no-store"});
-    if(!response.ok)throw Error("Workbook not found.");
-    const bytes=await response.arrayBuffer();
-    const workbook=XLSX.read(bytes,{type:"array"});
-    const rows=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{defval:""});
-    S.all=rows.map(r=>({
-      day:txt(r,"day"),sn:txt(r,"SN"),word:txt(r,"word"),
-      meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
-      syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
-    })).filter(x=>x.word);
+    const workbookWords=await readWorkbookWords();
+    if(primaryWords.length){
+      const dbWords=new Set(primaryWords.map(x=>x.word.toLowerCase()));
+      S.all=[...primaryWords,...workbookWords.filter(x=>!dbWords.has(x.word.toLowerCase()))];
+      S.all.sort((a,b)=>(Number(a.day)||0)-(Number(b.day)||0)||(Number(a.sn)||0)-(Number(b.sn)||0));
+      renderLoadedWords(reason||"Database entries are combined with the existing workbook. Supabase entries take priority for duplicate words.");
+      return;
+    }
+    S.all=workbookWords;
     if(!S.all.length)throw Error("No vocabulary words were found.");
     renderLoadedWords(reason||"Showing the existing workbook while the vocabulary database is being set up.");
   }catch(error){
+    if(primaryWords.length){
+      S.all=primaryWords;
+      renderLoadedWords(reason||"Vocabulary loaded from the database.");
+      return;
+    }
     $("status").hidden=false;
     $("status").textContent=reason+" "+(error.message||"Vocabulary is not available.");
   }
@@ -115,8 +131,10 @@ async function load(){
       offset+=pageSize;
     }
     if(allRows.length){
-      S.all=mapDatabaseWords(allRows);
-      renderLoadedWords("");
+      await loadWorkbookFallback(
+        "Supabase entries are combined with the current workbook until all existing words are migrated. Database entries take priority for duplicates.",
+        mapDatabaseWords(allRows)
+      );
       return;
     }
     await loadWorkbookFallback("The vocabulary database is ready but has no imported words yet. Showing the current workbook.");
