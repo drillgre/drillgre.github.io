@@ -21,6 +21,9 @@ let figurePath = null;
 let lessonEditor = null;
 let stimulusFigureUrl = null;
 let stimulusGroupsCache = [];
+let vocabCache = [];
+let vocabImportRows = [];
+let vocabImportFileName = "";
 
 const typeNames = {
   quantitative_comparison: "Quantitative Comparison",
@@ -200,7 +203,8 @@ async function enter(u) {
     loadLessons(),
     loadQuestions(),
     loadLessonOptions(),
-    loadStimulusGroups()
+    loadStimulusGroups(),
+    loadVocabWords()
   ]);
 }
 
@@ -1995,6 +1999,365 @@ $("validateQuestionImport").addEventListener("click", validateQuestionImport);
 $("runQuestionImport").addEventListener("click", runQuestionImport);
 
 // ============================================================
+// Vocab Mountain management
+// ============================================================
+
+function vocabText(value) {
+  return String(value ?? "").trim();
+}
+
+function vocabNormalizeHeader(value) {
+  const key = String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    serial:"sn", serialnumber:"sn", daynumber:"day", synonym:"synonyms",
+    meaningone:"meaning1", meaningtwo:"meaning2", meaningthree:"meaning3",
+    exampleone:"example1", exampletwo:"example2", examplethree:"example3",
+    published:"ispublished"
+  };
+  return aliases[key] || key;
+}
+
+function vocabNormalizeRow(raw) {
+  const row = {};
+  Object.entries(raw || {}).forEach(([key,value]) => {
+    row[vocabNormalizeHeader(key)] = value;
+  });
+  return row;
+}
+
+function vocabBoolean(value, fallback = true) {
+  if (value === null || value === undefined || String(value).trim() === "") return fallback;
+  if (typeof value === "boolean") return value;
+  const v = String(value).trim().toLowerCase();
+  if (["true","1","yes","y","published"].includes(v)) return true;
+  if (["false","0","no","n","draft"].includes(v)) return false;
+  return null;
+}
+
+function vocabRecord(raw, rowNumber = 0) {
+  const row = vocabNormalizeRow(raw);
+  const errors = [];
+  const dayValue = vocabText(row.day);
+  const day = Number(dayValue);
+  const snValue = vocabText(row.sn);
+  const sn = snValue === "" ? null : Number(snValue);
+  const word = vocabText(row.word);
+  if (!Number.isInteger(day) || day < 1) errors.push("Day must be a positive whole number.");
+  if (sn !== null && (!Number.isInteger(sn) || sn < 1)) errors.push("SN must be a positive whole number when supplied.");
+  if (!word) errors.push("Word is required.");
+  if (![1,2,3].some(n => vocabText(row["meaning"+n]))) errors.push("At least one meaning is required.");
+  const published = vocabBoolean(row.ispublished, true);
+  if (published === null) errors.push("is_published must be TRUE or FALSE.");
+  const record = {
+    day, sn, word,
+    meaning1:vocabText(row.meaning1) || null,
+    meaning2:vocabText(row.meaning2) || null,
+    meaning3:vocabText(row.meaning3) || null,
+    synonyms:vocabText(row.synonyms) || null,
+    example1:vocabText(row.example1) || null,
+    example2:vocabText(row.example2) || null,
+    example3:vocabText(row.example3) || null,
+    is_published:published === null ? true : published,
+    updated_at:new Date().toISOString()
+  };
+  return {rowNumber,record,errors,duplicate:false,imported:false};
+}
+
+function vocabMeaningSummary(record) {
+  return [record.meaning1,record.meaning2,record.meaning3].filter(Boolean).join(" · ");
+}
+
+function renderVocabWords() {
+  const search = $("vocabSearch").value.trim().toLowerCase();
+  const day = $("vocabDayFilter").value;
+  const published = $("vocabPublishFilter").value;
+  const rows = vocabCache.filter(item => {
+    const text = [item.word,item.meaning1,item.meaning2,item.meaning3,item.synonyms].filter(Boolean).join(" ").toLowerCase();
+    return (!search || text.includes(search)) &&
+      (!day || String(item.day) === day) &&
+      (published === "" || String(item.is_published) === published);
+  });
+  $("vocabCount").textContent = rows.length + " shown · " + vocabCache.length + " vocabulary words in database";
+  $("vocabWordList").innerHTML = rows.length ? rows.map(item =>
+    '<div class="entry"><div><strong>' + esc(item.word) +
+    ' <span class="meta" style="font-weight:500">· Day ' + esc(item.day) +
+    (item.sn ? " · SN " + esc(item.sn) : "") + '</span></strong>' +
+    '<div class="meta">' + esc(vocabMeaningSummary(item)) + '</div>' +
+    '<div class="meta">' + (item.is_published ? "Published" : "Draft") +
+    (item.synonyms ? " · Synonyms: " + esc(item.synonyms) : "") + '</div></div>' +
+    '<div class="buttons"><button type="button" data-vocab-edit="' + esc(item.id) + '">Edit</button>' +
+    '<button type="button" data-vocab-publish="' + esc(item.id) + '" data-published="' + item.is_published + '">' +
+    (item.is_published ? "Unpublish" : "Publish") + '</button>' +
+    '<button type="button" class="del" data-vocab-delete="' + esc(item.id) + '">Delete</button></div></div>'
+  ).join("") : "<p>No vocabulary words match these filters.</p>";
+
+  $("vocabWordList").querySelectorAll("[data-vocab-edit]").forEach(button => {
+    button.onclick = () => editVocabWord(button.dataset.vocabEdit);
+  });
+  $("vocabWordList").querySelectorAll("[data-vocab-publish]").forEach(button => {
+    button.onclick = () => toggleVocabPublished(button.dataset.vocabPublish,button.dataset.published === "true");
+  });
+  $("vocabWordList").querySelectorAll("[data-vocab-delete]").forEach(button => {
+    button.onclick = () => deleteVocabWord(button.dataset.vocabDelete);
+  });
+}
+
+function populateVocabDayFilter() {
+  const current = $("vocabDayFilter").value;
+  const days = [...new Set(vocabCache.map(item => Number(item.day)).filter(Number.isInteger))].sort((a,b)=>a-b);
+  $("vocabDayFilter").innerHTML = '<option value="">All days</option>' +
+    days.map(day => '<option value="' + day + '">Day ' + day + '</option>').join("");
+  if (days.includes(Number(current))) $("vocabDayFilter").value = current;
+}
+
+async function loadVocabWords() {
+  const {data,error} = await db.from("vocab_words")
+    .select("id,day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3,is_published,created_at")
+    .order("day",{ascending:true})
+    .order("sn",{ascending:true,nullsFirst:false})
+    .limit(10000);
+  if (error) {
+    $("vocabStatus").textContent = "Vocab Mountain database is not ready. Run supabase/vocab-mountain.sql in the Supabase SQL Editor. " + error.message;
+    $("vocabStatus").style.color = "#b42318";
+    $("vocabCount").textContent = "Unable to load vocabulary";
+    return;
+  }
+  vocabCache = data || [];
+  populateVocabDayFilter();
+  renderVocabWords();
+  $("vocabStatus").textContent = vocabCache.length
+    ? "Vocabulary is connected to Supabase. Changes made here are saved to the database."
+    : "The database is ready but has no words yet. Add a word or import the existing vocabulary CSV.";
+  $("vocabStatus").style.color = "#147d54";
+}
+
+function resetVocabForm() {
+  $("vocabWordForm").reset();
+  $("vocabWordId").value = "";
+  $("vocabWordTitle").textContent = "Add vocabulary word";
+  $("vocabPublished").checked = true;
+  const maxDay = vocabCache.reduce((max,item)=>Math.max(max,Number(item.day)||0),0);
+  $("vocabDay").value = String(Math.max(1,maxDay || 1));
+  const maxSn = vocabCache.filter(item=>Number(item.day)===Number($("vocabDay").value))
+    .reduce((max,item)=>Math.max(max,Number(item.sn)||0),0);
+  $("vocabSn").value = maxSn ? String(maxSn+1) : "";
+  message("vocabWordMsg","");
+}
+
+function editVocabWord(id) {
+  const item = vocabCache.find(row => String(row.id) === String(id));
+  if (!item) return;
+  $("vocabWordForm").reset();
+  $("vocabWordId").value = item.id;
+  $("vocabWordTitle").textContent = "Edit vocabulary word";
+  $("vocabDay").value = item.day;
+  $("vocabSn").value = item.sn ?? "";
+  $("vocabWord").value = item.word || "";
+  $("vocabMeaning1").value = item.meaning1 || "";
+  $("vocabMeaning2").value = item.meaning2 || "";
+  $("vocabMeaning3").value = item.meaning3 || "";
+  $("vocabSynonyms").value = item.synonyms || "";
+  $("vocabExample1").value = item.example1 || "";
+  $("vocabExample2").value = item.example2 || "";
+  $("vocabExample3").value = item.example3 || "";
+  $("vocabPublished").checked = !!item.is_published;
+  message("vocabWordMsg","");
+  $("vocabWordDialog").showModal();
+}
+
+$("vocabWordForm").addEventListener("submit",async event => {
+  event.preventDefault();
+  const result = vocabRecord({
+    day:$("vocabDay").value, sn:$("vocabSn").value, word:$("vocabWord").value,
+    meaning1:$("vocabMeaning1").value, meaning2:$("vocabMeaning2").value,
+    meaning3:$("vocabMeaning3").value, synonyms:$("vocabSynonyms").value,
+    example1:$("vocabExample1").value, example2:$("vocabExample2").value,
+    example3:$("vocabExample3").value, is_published:$("vocabPublished").checked
+  });
+  if (result.errors.length) {
+    message("vocabWordMsg",result.errors.join(" "));
+    return;
+  }
+  const id = $("vocabWordId").value;
+  const button = $("saveVocabWord");
+  button.disabled = true;
+  button.textContent = "Saving…";
+  try {
+    const query = id
+      ? db.from("vocab_words").update(result.record).eq("id",id)
+      : db.from("vocab_words").insert(result.record);
+    const {error} = await query;
+    if (error) throw error;
+    $("vocabWordDialog").close();
+    await loadVocabWords();
+  } catch (error) {
+    message("vocabWordMsg",/duplicate key|unique/i.test(error.message)
+      ? "This word already exists. Edit the existing entry instead."
+      : "Could not save this word. " + error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Save word";
+  }
+});
+
+async function toggleVocabPublished(id,published) {
+  const {error} = await db.from("vocab_words")
+    .update({is_published:!published,updated_at:new Date().toISOString()})
+    .eq("id",id);
+  if (error) {
+    message("vocabStatus","Could not update publication status. " + error.message);
+    return;
+  }
+  await loadVocabWords();
+}
+
+async function deleteVocabWord(id) {
+  const item = vocabCache.find(row=>String(row.id)===String(id));
+  if (!item || !confirm('Delete "' + item.word + '" from Vocab Mountain?')) return;
+  const {error} = await db.from("vocab_words").delete().eq("id",id);
+  if (error) {
+    message("vocabStatus","Could not delete this word. " + error.message);
+    return;
+  }
+  await loadVocabWords();
+}
+
+function downloadVocabCsvTemplate() {
+  const headers = ["day","sn","word","meaning1","meaning2","meaning3","synonyms","example1","example2","example3","is_published"];
+  const sample = ["1","1","abound","to exist in large numbers","to be plentiful","","plentiful; numerous","The flowers abound in the garden.","Opportunities abound for prepared students.","","TRUE"];
+  const quote = value => '"' + String(value ?? "").replace(/"/g,'""') + '"';
+  const csv = [headers,sample].map(row=>row.map(quote).join(",")).join("\r\n") + "\r\n";
+  const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "drillgre-vocabulary-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function renderVocabImportPreview() {
+  const valid = vocabImportRows.filter(row=>!row.errors.length && !row.duplicate && !row.imported).length;
+  const duplicates = vocabImportRows.filter(row=>row.duplicate).length;
+  const invalid = vocabImportRows.filter(row=>row.errors.length).length;
+  const imported = vocabImportRows.filter(row=>row.imported).length;
+  $("vocabImportSummary").hidden = false;
+  $("vocabImportSummary").innerHTML =
+    '<div class="rule-grid" style="margin:12px 0">' +
+      '<div class="rule"><strong>' + valid + '</strong><span>Ready to import</span></div>' +
+      '<div class="rule"><strong>' + duplicates + '</strong><span>Duplicates skipped</span></div>' +
+      '<div class="rule"><strong>' + invalid + '</strong><span>Rows with errors</span></div>' +
+      '<div class="rule"><strong>' + imported + '</strong><span>Imported</span></div></div>';
+  const preview = vocabImportRows.slice(0,40);
+  $("vocabImportPreview").innerHTML = preview.length
+    ? '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>Row</th><th>Word</th><th>Day</th><th>Meaning</th><th>Status</th></tr></thead><tbody>' +
+      preview.map(row => {
+        const status = row.imported ? "Imported" : row.errors.length ? row.errors.join(" ") : row.duplicate ? "Duplicate, skipped" : "Ready";
+        const colour = row.imported ? "#147d54" : row.errors.length ? "#b42318" : row.duplicate ? "#8a5a00" : "#147d54";
+        return '<tr><td>' + row.rowNumber + '</td><td><strong>' + esc(row.record.word) + '</strong></td><td>' + esc(row.record.day) + '</td><td>' + esc(vocabMeaningSummary(row.record).slice(0,120)) + '</td><td style="color:' + colour + '">' + esc(status) + '</td></tr>';
+      }).join("") + '</tbody></table>' +
+      (vocabImportRows.length > preview.length ? '<p class="field-note">Showing the first ' + preview.length + ' of ' + vocabImportRows.length + ' rows.</p>' : '')
+    : '<p class="field-note">No vocabulary rows found.</p>';
+  $("runVocabImport").disabled = valid === 0;
+  $("runVocabImport").textContent = valid ? "Import " + valid + " valid words" : "No valid words to import";
+}
+
+async function validateVocabImport() {
+  const file = $("vocabImportFile").files[0];
+  if (!file) {
+    message("vocabImportStatus","Choose a CSV file first.");
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    message("vocabImportStatus","The CSV file must be 10 MB or smaller.");
+    return;
+  }
+  $("validateVocabImport").disabled = true;
+  $("runVocabImport").disabled = true;
+  message("vocabImportStatus","Reading and validating CSV…");
+  try {
+    if (!window.XLSX) throw new Error("The CSV reader could not load. Refresh the admin page and try again.");
+    const workbook = window.XLSX.read(await file.arrayBuffer(),{type:"array"});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    if (!sheet) throw new Error("The CSV file contains no data.");
+    const rawRows = window.XLSX.utils.sheet_to_json(sheet,{defval:"",raw:false});
+    if (!rawRows.length) throw new Error("The CSV file contains no vocabulary rows.");
+    const parsed = rawRows.map((row,index)=>vocabRecord(row,index+2))
+      .filter(item=>Object.values(item.record).some(value=>value!==null && value!=="" && value!==false));
+    const existing = new Set(vocabCache.map(item=>String(item.word||"").trim().toLowerCase()));
+    const seen = new Set();
+    parsed.forEach(item=>{
+      const key = String(item.record.word||"").trim().toLowerCase();
+      if (!item.errors.length && (existing.has(key)||seen.has(key))) item.duplicate=true;
+      if (!item.errors.length) seen.add(key);
+    });
+    vocabImportRows = parsed;
+    vocabImportFileName = file.name;
+    renderVocabImportPreview();
+    const valid = parsed.filter(item=>!item.errors.length&&!item.duplicate).length;
+    message("vocabImportStatus","Validated " + parsed.length + " rows from " + file.name + ". " + valid + " new words are ready to import.",true);
+  } catch (error) {
+    vocabImportRows = [];
+    $("vocabImportSummary").hidden = true;
+    $("vocabImportPreview").innerHTML = "";
+    message("vocabImportStatus",error.message || "Could not read this CSV file.");
+  } finally {
+    $("validateVocabImport").disabled = false;
+  }
+}
+
+async function runVocabImport() {
+  const rows = vocabImportRows.filter(item=>!item.errors.length&&!item.duplicate&&!item.imported);
+  if (!rows.length) return;
+  if (!confirm("Import " + rows.length + " new vocabulary words from " + vocabImportFileName + "? Existing words will be skipped.")) return;
+  $("runVocabImport").disabled = true;
+  $("validateVocabImport").disabled = true;
+  let imported = 0;
+  const failures = [];
+  for (let index=0; index<rows.length; index++) {
+    const item=rows[index];
+    $("runVocabImport").textContent="Importing " + (index+1) + " of " + rows.length + "…";
+    const {error}=await db.from("vocab_words").insert(item.record);
+    if(error) {
+      item.errors.push("Import failed: " + error.message);
+      failures.push("Row " + item.rowNumber + ": " + error.message);
+    } else {
+      item.imported=true;
+      imported++;
+    }
+    if(index%5===0) renderVocabImportPreview();
+  }
+  await loadVocabWords();
+  renderVocabImportPreview();
+  $("validateVocabImport").disabled=false;
+  $("runVocabImport").textContent="Import remaining valid words";
+  message("vocabImportStatus",imported + " words imported. " + failures.length + " rows failed. Review the preview for details.",failures.length===0);
+}
+
+$("newVocabWord").addEventListener("click",()=>{
+  resetVocabForm();
+  $("vocabWordDialog").showModal();
+});
+$("importVocab").addEventListener("click",()=>{
+  vocabImportRows=[];
+  vocabImportFileName="";
+  $("vocabImportFile").value="";
+  $("vocabImportSummary").hidden=true;
+  $("vocabImportPreview").innerHTML="";
+  $("runVocabImport").disabled=true;
+  $("runVocabImport").textContent="Import valid words";
+  message("vocabImportStatus","");
+  $("importVocabDialog").showModal();
+});
+$("downloadVocabTemplate").addEventListener("click",downloadVocabCsvTemplate);
+$("validateVocabImport").addEventListener("click",validateVocabImport);
+$("runVocabImport").addEventListener("click",runVocabImport);
+["vocabSearch","vocabDayFilter","vocabPublishFilter"].forEach(id=>{
+  $(id).addEventListener(id==="vocabSearch"?"input":"change",renderVocabWords);
+});
+
+// ============================================================
 // Dialog controls
 // ============================================================
 
@@ -2008,7 +2371,8 @@ document.querySelectorAll(".tab").forEach(b => {
       x.classList.toggle("selected", x === b);
     });
 
-    $("lessons").hidden = b.dataset.tab !== "lessons";
-    $("questions").hidden = b.dataset.tab !== "questions";
+    ["lessons", "questions", "vocabulary"].forEach(id => {
+      $(id).hidden = b.dataset.tab !== id;
+    });
   };
 });
