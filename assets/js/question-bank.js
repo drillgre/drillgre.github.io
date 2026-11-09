@@ -242,7 +242,8 @@
       '<div class="bank-feedback" id="questionBankFeedback" hidden></div>' +
       '<p class="attempt-meta" style="margin-top:12px">This question will be marked Done once you check your answer, whether it is correct or incorrect.</p>';
 
-    $("dialogQuestionTitle").textContent = "Question " + id;
+    const displayNumber = allQuestions.findIndex(item => String(item.id) === id) + 1;
+    $("dialogQuestionTitle").textContent = "Question " + (displayNumber || "details");
     attachImageFallback(body);
     $("checkQuestionBankAnswer").addEventListener("click",checkCurrentAnswer);
     if (!dialog.open) dialog.showModal();
@@ -396,6 +397,7 @@
     const {data,error} = await db.rpc("get_gre_question_bank_progress");
     if (error) throw error;
     completedIds = new Set((data?.question_ids || []).map(String));
+    $("bankCompletedSummary").textContent = completedIds.size.toLocaleString() + " completed by you";
   }
 
   async function fetchStimuli(questions) {
