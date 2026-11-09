@@ -425,32 +425,30 @@
     }).join("");
   }
 
-  async function startTopicQuiz() {
+  function startTopicQuiz() {
     const pool = selectedQuestionPool();
     const requested = Number($("quizQuestionCount").value || 12);
     if (pool.length < requested) return;
 
-    $("startTopicQuiz").disabled = true;
-    $("startTopicQuiz").textContent = "Preparing quiz…";
-    setStatus("Selecting a random set of questions…");
+    const subtopics = selectedSubtopicKeys();
+    const timing = $("quizTimingMode")?.value || "standard";
+    const attempt = crypto.randomUUID();
+    const query = new URLSearchParams({
+      subtopics: JSON.stringify(subtopics),
+      count: String(requested),
+      timing,
+      attempt
+    });
+    const quizUrl = "topic-quiz.html?" + query.toString();
 
-    try {
-      currentQuestions = await attachStimuli(shuffle(pool).slice(0, requested));
-      $("quizSetupPanel").hidden = true;
-      $("topicQuizResults").hidden = true;
-      $("topicQuizRun").hidden = false;
-      $("quizRunTitle").textContent = "Quant topic quiz · " + currentQuestions.length + " questions";
-      $("submitTopicQuiz").disabled = false;
-      $("submitTopicQuiz").textContent = "Submit quiz";
-      renderQuestions();
-      setStatus("");
-      $("topicQuizRun").scrollIntoView({behavior:"smooth", block:"start"});
-    } catch (error) {
-      setStatus(error.message || "Unable to prepare the quiz.", true);
-    } finally {
-      $("startTopicQuiz").disabled = selectedQuestionPool().length < Number($("quizQuestionCount").value || 12);
-      $("startTopicQuiz").textContent = "Start topic quiz";
+    // Open synchronously during the click event so popup blockers allow the new tab.
+    const quizWindow = window.open(quizUrl, "_blank");
+    if (!quizWindow) {
+      setStatus("Your browser blocked the new quiz tab. Allow pop-ups for drillgre.github.io, then select Start topic quiz again.", true);
+      return;
     }
+    try { quizWindow.opener = null; } catch {}
+    setStatus("Your topic quiz has opened in a new tab. You can return to this page to create another quiz.");
   }
 
   async function submitTopicQuiz() {
