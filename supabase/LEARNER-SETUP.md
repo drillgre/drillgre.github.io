@@ -26,7 +26,7 @@ Learners register with an email address and password. Supabase sends an email co
 1. Open **Authentication → Sign In / Providers → Email**. Enable email sign-ups and **Confirm email**.
 2. Keep the **Confirm signup** email template's default confirmation link, which uses `{{ .ConfirmationURL }}`. Do not replace it with `{{ .Token }}`, because this application uses a clickable confirmation link rather than a six-digit OTP.
 3. Open **Authentication → URL Configuration**. Set **Site URL** to `https://drillgre.github.io`.
-4. Under **Redirect URLs**, add the exact URL `https://drillgre.github.io/account.html`. Keep localhost only if you actively test locally.
+4. Under **Redirect URLs**, add `https://drillgre.github.io/account.html` and `https://drillgre.github.io/account.html**`. The wildcard entry preserves the return destination query string when a learner signs up from the protected Question Bank and confirms their email. Keep localhost only if you actively test locally.
 
 The app calls `signUp` with the user's email and password and passes `account.html` as the confirmation redirect. After the user clicks the link, Supabase returns them to the account page; the app detects the new session and opens the learner dashboard. Returning learners use `signInWithPassword`. The Forgot password link sends a password-reset email.
 
