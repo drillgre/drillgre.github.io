@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Timed GRE Quant topic quiz on DrillGRE.">
+  <title>GRE Quant Topic Quiz | DrillGRE</title>
+  <link rel="stylesheet" href="../assets/css/lms.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="../assets/js/topic-quiz-test.js"></script>
+  <style>
+    body{background:#f3f5f9}
+    .exam-header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #dce2ec;box-shadow:0 2px 9px #1d31500a}
+    .exam-header-inner{max-width:1320px;margin:auto;min-height:66px;padding:10px 22px;display:flex;align-items:center;gap:22px}
+    .exam-brand{font-weight:900;font-size:20px;letter-spacing:-.7px;color:#17233c;text-decoration:none;white-space:nowrap}
+    .exam-brand span{color:#3154c5}
+    .exam-section-name{font-size:13px;font-weight:800;color:#344158;border-left:1px solid #dce2ec;padding-left:20px}
+    .exam-header-spacer{flex:1}
+    .exam-timer{min-width:136px;text-align:center;border:1px solid #dce2ec;border-radius:10px;padding:6px 12px;background:#fff}
+    .exam-timer small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#68758c}
+    .exam-timer strong{display:block;font-size:24px;line-height:1.2;color:#17233c;font-variant-numeric:tabular-nums}
+    .exam-timer.low-time{background:#fff6f4;border-color:#e7aaa4}
+    .exam-timer.low-time strong{color:#b8322a}
+    .exam-shell{max-width:1320px;margin:24px auto;padding:0 20px 50px}
+    .exam-titlebar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 2px;border-bottom:1px solid #dce2ec}
+    .exam-titlebar h1{font-size:21px;margin:0;color:#17233c}
+    .exam-titlebar p{font-size:12px;color:#6b778c;margin:5px 0 0}
+    .exam-main{display:grid;grid-template-columns:205px minmax(0,1fr);gap:22px;margin-top:20px;align-items:start}
+    .exam-sidebar{position:sticky;top:92px;background:#fff;border:1px solid #dce2ec;border-radius:12px;padding:15px}
+    .exam-sidebar h2{font-size:13px;margin:0 0 5px;color:#17233c}
+    .exam-sidebar p{font-size:11px;color:#6b778c;margin:0 0 13px;line-height:1.5}
+    .question-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+    .question-nav button{aspect-ratio:1;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#344158;font-weight:750;cursor:pointer;font:inherit;font-size:12px}
+    .question-nav button.current{border:2px solid #3154c5;background:#eef2ff;color:#2344ad}
+    .question-nav button.answered{background:#eaf5ef;border-color:#91c8a8;color:#17683b}
+    .question-nav button.flagged{box-shadow:inset 0 -3px #e6a23c}
+    .nav-legend{display:grid;gap:7px;margin-top:14px;font-size:10px;color:#68758c}
+    .nav-legend span{display:flex;align-items:center;gap:7px}
+    .legend-dot{width:10px;height:10px;border:1px solid #cbd5e1;border-radius:3px;display:inline-block;background:#fff}
+    .legend-dot.done{background:#eaf5ef;border-color:#91c8a8}
+    .legend-dot.flag{background:#fff;border-color:#cbd5e1;box-shadow:inset 0 -3px #e6a23c}
+    .exam-content{min-width:0}
+    .exam-status{padding:11px 14px;border:1px solid #dce2ec;border-radius:9px;background:#fff;color:#5d6a80;font-size:12px;margin-bottom:12px}
+    .exam-status.error{background:#fff5f4;border-color:#f3d0cb;color:#9a2e20}
+    .question-panel{background:#fff;border:1px solid #dce2ec;border-radius:12px;min-height:440px;padding:clamp(18px,3vw,32px)}
+    .question-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid #e7ebf2}
+    .question-count-label{font-size:12px;font-weight:800;color:#3154c5}
+    .flag-button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:8px 11px;color:#39465e;font-size:12px;font-weight:750;cursor:pointer}
+    .flag-button.active{border-color:#d99b3d;background:#fff8eb;color:#8b5a10}
+    .question-body{padding:22px 4px 10px}
+    .question-prompt{white-space:pre-line;font-size:16px;line-height:1.8;color:#17233c;margin:0 0 18px}
+    .question-figure{display:block;max-width:100%;max-height:460px;object-fit:contain;margin:12px 0 20px}
+    .shared-stimulus{background:#f2f5ff;border:1px solid #d0d9fa;border-radius:10px;padding:16px;margin:0 0 20px}
+    .shared-stimulus h3{font-size:15px;margin:4px 0 8px;color:#17233c}
+    .stimulus-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:850;color:#3154c5}
+    .stimulus-context{white-space:pre-line;font-size:13px;line-height:1.7;color:#344158;margin:0}
+    .qc-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,9vw,96px);width:100%;max-width:760px;margin:18px auto 26px;padding:4px 12px 12px}
+    .qc-column{min-width:0;text-align:center;padding:3px 8px}
+    .qc-label{display:inline-block;color:#17233c;font-size:16px;font-weight:500;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;margin-bottom:7px}
+    .qc-value{color:#17233c;font-size:18px;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+    .answer-choice{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;margin:9px 0;border:1px solid #dce2ec;border-radius:9px;cursor:pointer;font-size:14px;line-height:1.6;color:#26334a}
+    .answer-choice:has(input:checked){border-color:#7795ef;background:#f2f5ff}
+    .answer-choice input{margin-top:4px;accent-color:#3154c5}
+    .numeric-wrap{display:grid;gap:8px;max-width:300px;font-size:13px;font-weight:750;color:#344158}
+    .numeric-answer{padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;width:100%}
+    .exam-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:14px 2px}
+    .exam-footer-note{font-size:11px;color:#6b778c}
+    .exam-button{border:1px solid #3154c5;border-radius:8px;background:#3154c5;color:#fff;padding:11px 18px;font-weight:800;font-size:13px;cursor:pointer}
+    .exam-button.secondary{background:#fff;color:#3154c5}
+    .exam-button:disabled{opacity:.45;cursor:not-allowed}
+    .review-panel,.result-panel{background:#fff;border:1px solid #dce2ec;border-radius:12px;padding:24px}
+    .review-panel h2,.result-panel h2{margin:0 0 8px;color:#17233c;font-size:21px}
+    .review-panel p,.result-panel>p{color:#68758c;font-size:13px;line-height:1.6}
+    .review-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+    .review-table th,.review-table td{padding:11px 8px;border-bottom:1px solid #e7ebf2;text-align:left}
+    .review-table th{font-size:11px;color:#68758c}
+    .review-table button{border:0;background:none;color:#3154c5;font-weight:800;cursor:pointer;padding:3px}
+    .result-score{font-size:52px;line-height:1.1;font-weight:900;letter-spacing:-1.5px;color:#17233c;margin:10px 0}
+    .result-score span{font-size:20px;color:#68758c;font-weight:650;letter-spacing:0}
+    .review-answer{background:#f6f8fb;border-radius:8px;padding:11px;margin:10px 0;font-size:12px;line-height:1.7}
+    .review-explanation{white-space:pre-wrap;color:#39465e;font-size:13px;line-height:1.7;margin:10px 0}
+    .result-question{border:1px solid #dce2ec;border-left:4px solid #d69b45;border-radius:9px;padding:16px;margin:12px 0}
+    .result-question.right{border-left-color:#269b61}
+    .result-question h3{font-size:12px;margin:0 0 10px;color:#344158}
+    .result-question .question-prompt{font-size:14px}
+    .screen-hidden{display:none!important}
+    @media(max-width:780px){.exam-main{grid-template-columns:1fr}.exam-sidebar{position:static;order:2}.question-nav{grid-template-columns:repeat(8,minmax(0,1fr))}.exam-sidebar p{margin-bottom:9px}}
+    @media(max-width:560px){.exam-header-inner{padding:9px 12px;gap:10px}.exam-section-name{padding-left:10px;font-size:11px}.exam-brand{font-size:17px}.exam-timer{min-width:90px;padding:5px 8px}.exam-timer strong{font-size:21px}.exam-shell{padding:0 12px 32px}.exam-titlebar h1{font-size:18px}.question-nav{grid-template-columns:repeat(5,minmax(0,1fr))}.exam-footer{flex-wrap:wrap}.exam-footer .exam-button{flex:1}}
+  </style>
+</head>
+<body>
+  <header class="exam-header">
+    <div class="exam-header-inner">
+      <a class="exam-brand" href="index.html">Drill<span>GRE</span></a>
+      <div class="exam-section-name">Quantitative Reasoning</div>
+      <div class="exam-header-spacer"></div>
+      <div class="exam-timer" id="timerCard">
+        <small>Time remaining</small>
+        <strong id="quizTimer">--:--</strong>
+      </div>
+    </div>
+  </header>
+
+  <main class="exam-shell">
+    <div id="loadingPanel" class="exam-status">Loading your quiz questions…</div>
+
+    <section id="testPanel" hidden>
+      <div class="exam-titlebar">
+        <div>
+          <h1>Quantitative Reasoning</h1>
+          <p id="quizSubtitle">Topic practice · 12 questions</p>
+        </div>
+        <div id="answeredSummary" style="font-size:12px;color:#68758c">0 answered</div>
+      </div>
+      <div class="exam-main">
+        <aside class="exam-sidebar">
+          <h2>Question navigation</h2>
+          <p>Select any question number to move through the quiz.</p>
+          <div id="questionNav" class="question-nav"></div>
+          <div class="nav-legend">
+            <span><i class="legend-dot done"></i> Answered</span>
+            <span><i class="legend-dot flag"></i> Marked for review</span>
+            <span><i class="legend-dot"></i> Not answered</span>
+          </div>
+        </aside>
+        <div class="exam-content">
+          <div id="quizStatus" class="exam-status" hidden role="status"></div>
+          <article id="questionPanel" class="question-panel"></article>
+          <div class="exam-footer">
+            <button id="previousQuestion" class="exam-button secondary" type="button">Previous</button>
+            <span class="exam-footer-note">You may move between questions and change answers before submitting.</span>
+            <button id="nextQuestion" class="exam-button" type="button">Next</button>
+            <button id="reviewQuiz" class="exam-button secondary" type="button">Review &amp; Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reviewPanel" class="review-panel" hidden>
+      <h2>Review your answers</h2>
+      <p>Check unanswered and marked questions before submitting. Select a question number to return to it.</p>
+      <div id="reviewSummary"></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px">
+        <button id="returnToQuiz" class="exam-button secondary" type="button">Return to quiz</button>
+        <button id="finalSubmit" class="exam-button" type="button">Submit quiz</button>
+      </div>
+    </section>
+
+    <section id="resultPanel" class="result-panel" hidden>
+      <h2>Quiz result</h2>
+      <p id="resultSubtitle">Your topic quiz is complete.</p>
+      <div id="resultScore" class="result-score">—</div>
+      <p id="resultDetail">Correct answers</p>
+      <h2 style="margin-top:26px">Answer review</h2>
+      <div id="resultReview"></div>
+      <div style="margin-top:20px"><a class="exam-button" href="index.html#topicQuizSection" style="display:inline-block;text-decoration:none">Create another quiz</a></div>
+    </section>
+  </main>
+</body>
+</html>
