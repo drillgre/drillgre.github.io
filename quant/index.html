@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../assets/js/lms.js"></script>
   <script defer src="../assets/js/quant-catalog.js"></script>
+  <script defer src="../assets/js/topic-quiz.js"></script>
   <style>
     .catalog-status{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font-size:13px;margin:18px 0}
     .module-card{display:block}
@@ -19,6 +20,59 @@
     .module-lessons .num{font-size:11px;color:#8b95a7;min-width:22px}
     .module-lessons .go{margin-left:auto;color:var(--blue)}
     .empty-state{background:white;border:1px dashed #cbd5e1;border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+    .topic-quiz-section{margin:38px 0 24px}
+    .topic-quiz-intro{color:var(--muted);font-size:13px;line-height:1.6;max-width:760px}
+    .quiz-config{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:18px;align-items:start;margin-top:18px}
+    .quiz-topic-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .quiz-topic-group,.quiz-settings{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px}
+    .quiz-category-row{display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer}
+    .quiz-category-row input,.quiz-subtopic-row input{accent-color:var(--blue);width:16px;height:16px}
+    .quiz-category-row strong{color:var(--ink)}
+    .quiz-category-count{margin-left:auto;color:var(--muted);font-size:11px}
+    .quiz-subtopic-list{display:grid;gap:8px;border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+    .quiz-subtopic-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;cursor:pointer}
+    .quiz-subtopic-row span:last-child{margin-left:auto;color:#8490a3;font-size:11px}
+    .quiz-settings label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}
+    .quiz-settings select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:var(--ink);font:inherit}
+    .quiz-settings p{font-size:12px;color:var(--muted);line-height:1.55}
+    .quiz-action{width:100%;border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 16px;font-weight:800;cursor:pointer}
+    .quiz-action:disabled{opacity:.5;cursor:not-allowed}
+    .quiz-action.secondary{background:#e9eefb;color:#263e91}
+    .quiz-status{padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:10px;color:var(--muted);font-size:13px;margin:12px 0}
+    .quiz-status.error{color:#9a2e20;border-color:#f3d0cb;background:#fff5f4}
+    .quiz-progress{height:7px;background:#e9edf5;border-radius:99px;overflow:hidden;margin:14px 0 5px}
+    .quiz-progress span{display:block;height:100%;width:0;background:var(--blue);transition:width .15s}
+    .quiz-question{background:#fff;border:1px solid var(--line);border-radius:15px;padding:20px;margin:14px 0}
+    .quiz-question.answered{border-color:#b8c7ff}
+    .quiz-question-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-bottom:12px}
+    .quiz-question-number{font-weight:850;color:#3154c5;background:#eef2ff;padding:5px 9px;border-radius:20px}
+    .quiz-question-prompt{white-space:pre-line;font-size:15px;line-height:1.75;color:var(--ink);margin:8px 0 15px}
+    .quiz-question-figure{display:block;max-width:100%;max-height:420px;object-fit:contain;margin:12px 0;border:1px solid var(--line);border-radius:10px}
+    .quiz-stimulus{background:#f0f4ff;border:1px solid #cbd5ff;border-radius:15px;padding:18px;margin:14px 0 8px}
+    .quiz-stimulus h3{margin:5px 0 8px;font-size:17px}
+    .quiz-stimulus-label{font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:#3154c5}
+    .quiz-stimulus-context{white-space:pre-line;color:var(--ink);line-height:1.65}
+    .quiz-quantities{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+    .quiz-quantities>div{background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:12px}
+    .quiz-quantities p{white-space:pre-line;margin:6px 0 0;color:#354158;font-size:14px;line-height:1.6}
+    .quiz-option{display:flex;align-items:flex-start;gap:10px;padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;line-height:1.5}
+    .quiz-option:has(input:checked){border-color:#8aa5ff;background:#f3f6ff}
+    .quiz-option input{margin-top:4px}
+    .quiz-numeric-wrap{display:grid;gap:8px;max-width:300px;font-size:13px;font-weight:700}
+    .quiz-numeric-answer{padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+    .quiz-controls{position:sticky;bottom:0;background:#f5f7fbf2;backdrop-filter:blur(8px);padding:14px 0;margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .quiz-review{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+    .quiz-review.right{border-left:4px solid #269b61}
+    .quiz-review.wrong{border-left:4px solid #d08a30}
+    .quiz-review .quiz-question-head strong{margin-left:auto}
+    .quiz-review-answer{background:#f7f8fb;border-radius:9px;padding:11px;font-size:13px;line-height:1.8;margin:10px 0}
+    .quiz-review-explanation{white-space:pre-wrap;color:#38445a;font-size:13px;line-height:1.65;margin:10px 0}
+    .quiz-score{background:var(--navy);color:white;border-radius:18px;padding:24px;margin-bottom:16px}
+    .quiz-score strong{display:block;font-size:46px;line-height:1.1;letter-spacing:-1px}
+    .quiz-score p{color:#dbe3f8;margin:6px 0 0}
+    @media(max-width:760px){.quiz-config{grid-template-columns:1fr}.quiz-topic-groups{grid-template-columns:1fr}.quiz-settings{order:-1}}
+    @media(max-width:650px){.quiz-quantities{grid-template-columns:1fr}.quiz-controls{align-items:flex-start;flex-direction:column}.quiz-controls .quiz-action{width:100%}}
+
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script defer src="/assets/js/site-nav.js"></script>
@@ -65,6 +119,70 @@
   </div>
   <div id="catalogStatus" class="catalog-status" role="status">Loading your course…</div>
   <section id="moduleGrid" class="module-grid" aria-live="polite"></section>
+
+  <section id="topicQuizSection" class="topic-quiz-section">
+    <div class="sectionhead" style="display:flex;justify-content:space-between;align-items:end;margin:34px 0 8px">
+      <div>
+        <h2>Topic quizzes</h2>
+        <p class="topic-quiz-intro">Build a short practice quiz by selecting one or more Quant topics and subtopics. Questions are selected randomly from the published practice question bank.</p>
+      </div>
+      <span id="quizBankCount" style="font-size:12px;color:#69758b"></span>
+    </div>
+    <div id="quizSetupStatus" class="quiz-status" role="status">Loading available practice questions…</div>
+    <div id="quizSetupPanel" hidden>
+      <div class="quiz-config">
+        <div id="quizTopicGroups" class="quiz-topic-groups" aria-label="Select topics and subtopics"></div>
+        <aside class="quiz-settings">
+          <label for="quizQuestionCount">Questions in this quiz</label>
+          <select id="quizQuestionCount">
+            <option value="10">10 questions</option>
+            <option value="11">11 questions</option>
+            <option value="12" selected>12 questions</option>
+            <option value="13">13 questions</option>
+            <option value="14">14 questions</option>
+            <option value="15">15 questions</option>
+          </select>
+          <p id="quizAvailability">Select one or more subtopics to see how many questions are available.</p>
+          <button id="startTopicQuiz" class="quiz-action" type="button" disabled>Start topic quiz</button>
+          <p>Questions are randomly selected without repetition in a quiz. You can move through the full set, change your answers, and submit when ready.</p>
+        </aside>
+      </div>
+    </div>
+
+    <section id="topicQuizRun" hidden>
+      <div class="hero" style="margin-top:18px">
+        <div>
+          <div class="eyebrow">Topic practice</div>
+          <h2 id="quizRunTitle">Quant topic quiz</h2>
+          <p>Answer all questions, review your selections, and submit to see how many you got correct.</p>
+        </div>
+        <div class="hero-side">
+          <strong id="quizAnswered">0 / 12</strong>
+          <span>Questions answered</span>
+          <div class="quiz-progress"><span id="quizProgressFill"></span></div>
+        </div>
+      </div>
+      <div id="quizQuestionStack"></div>
+      <div class="quiz-controls">
+        <span id="quizSubmitNote" class="mock-footer-note">You can change your answers before submitting. There is no GRE 130 to 170 scaled score in topic quizzes.</span>
+        <button id="submitTopicQuiz" class="quiz-action" type="button">Submit quiz</button>
+      </div>
+    </section>
+
+    <section id="topicQuizResults" hidden>
+      <div class="quiz-score">
+        <div class="eyebrow" style="background:#ffffff18;border-color:#ffffff30;color:#cbd7ff">Topic quiz result</div>
+        <strong id="quizCorrectScore">—</strong>
+        <p id="quizScoreDetail">Correct answers</p>
+      </div>
+      <div class="panel">
+        <h2>Answer review</h2>
+        <p>Review each response, the correct answer, and the explanation.</p>
+        <div id="quizReviewList"></div>
+      </div>
+      <button id="newTopicQuiz" class="quiz-action" type="button">Create another quiz</button>
+    </section>
+  </section>
 </main>
 <footer style="max-width:1240px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Quant Academy</footer>
 <script>
