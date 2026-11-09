@@ -8,6 +8,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 2. `learner-accounts.sql`
 3. `learner-read-policies.sql`
 4. `topic-quiz.sql`
+5. `quiz-progress.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -122,3 +123,16 @@ Topic quizzes show a simple correct-answer count and answer review. They do not 
 The learner selects the quiz timing option in Quant Academy. The quiz opens in a new browser tab with a GRE-style test interface, question navigation, Mark for Review, a countdown timer, and a final review screen. Standard timing follows the mock-test pace: 21 minutes for up to 12 questions and 26 minutes for 15 questions, scaled proportionally for other quiz lengths. The 50% extra-time, double-time, and untimed options are also available. The timer and answers are retained within the tab if the learner refreshes the page.
 
 Run `topic-quiz.sql` after the three core setup scripts. It enables published practice stimulus groups to be read on the topic quiz page and creates the `grade_gre_quiz_question` RPC. Correct answers and explanations are returned by this RPC only after each learner submits the quiz.
+
+
+## Persistent topic quizzes, lesson progress, and leaderboard participation
+
+Run `quiz-progress.sql` after `topic-quiz.sql`. It adds:
+
+- Two free guest topic quiz attempts per browser visitor key, enforced in PostgreSQL. Starting a quiz uses one allowance even when the quiz is left unfinished.
+- Unlimited topic quiz attempts for signed-in learners.
+- Server-side quiz attempt snapshots, answer autosaving, review flags, and resume support.
+- Quiz history on the Quant → Quiz page and the learner dashboard.
+- Account-level lesson completion, synchronised across devices.
+- Dashboard counts for lessons completed, quizzes attempted and completed, and mock tests completed.
+- Completed topic quiz counts on the opt-in leaderboard. Leaderboard ranking remains based on the best completed mock score because topic quiz results have different question counts and are not comparable to the 130–170 mock scale.
