@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Browse and practise every published GRE Quant question available for practice in the DrillGRE question bank.">
+  <title>Quant Question Bank | DrillGRE</title>
+  <link rel="stylesheet" href="../assets/css/lms.css">
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/assets/js/site-nav.js"></script>
+  <script defer src="/assets/js/question-bank.js"></script>
+  <style>
+    .bank-hero{display:flex;justify-content:space-between;align-items:center;gap:24px}
+    .bank-hero p{max-width:760px}
+    .bank-count{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;min-width:150px;text-align:center}
+    .bank-count strong{display:block;font-size:28px;color:var(--ink)}
+    .bank-count span{font-size:11px;color:var(--muted)}
+    .bank-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(4,minmax(130px,1fr));gap:10px;margin:20px 0 12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
+    .bank-filters input,.bank-filters select{width:100%;min-width:0;padding:11px 12px;border:1px solid #d4dbe7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-size:13px}
+    .bank-results-line{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:12px 2px}
+    .bank-question-list{display:grid;gap:14px}
+    .bank-question{background:#fff;border:1px solid var(--line);border-radius:15px;padding:19px 21px}
+    .bank-question-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;color:var(--muted);font-size:11px}
+    .bank-question-number{font-weight:850;color:#3154c5;background:#eef2ff;padding:5px 9px;border-radius:20px}
+    .bank-tag{padding:4px 8px;border-radius:20px;background:#f1f4f8;color:#536078}
+    .bank-prompt{white-space:pre-line;font-size:15px;line-height:1.75;color:var(--ink);margin:8px 0 14px}
+    .bank-figure{display:block;max-width:100%;max-height:440px;object-fit:contain;margin:12px 0 18px;border-radius:9px}
+    .bank-stimulus{background:#f2f5ff;border:1px solid #d0d9fa;border-radius:12px;padding:16px;margin:0 0 12px}
+    .bank-stimulus h3{font-size:15px;margin:4px 0 8px;color:#17233c}
+    .bank-stimulus-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:850;color:#3154c5}
+    .bank-stimulus-text{white-space:pre-line;font-size:13px;line-height:1.7;color:#344158;margin:0}
+    .bank-qc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,9vw,96px);max-width:760px;margin:18px auto 22px}
+    .bank-qc-col{text-align:center;min-width:0;padding:4px 8px}
+    .bank-qc-label{display:inline-block;font-size:15px;text-decoration:underline;text-underline-offset:3px;margin-bottom:7px}
+    .bank-qc-value{white-space:pre-line;overflow-wrap:anywhere;font-size:17px;line-height:1.6}
+    .bank-answer-option{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;margin:8px 0;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:13px;line-height:1.6}
+    .bank-answer-option:has(input:checked){border-color:#8aa5ff;background:#f3f6ff}
+    .bank-answer-option input{margin-top:4px;accent-color:var(--blue)}
+    .bank-numeric{display:block;width:min(100%,300px);padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+    .bank-check{margin-top:13px;border:0;border-radius:9px;background:var(--blue);color:#fff;padding:10px 15px;font-weight:800;font-size:12px}
+    .bank-check:disabled{opacity:.55;cursor:wait}
+    .bank-feedback{margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:10px;background:#f7f9fc;color:#354158;font-size:13px;line-height:1.7}
+    .bank-feedback.correct{border-color:#b9e2c8;background:#f0fbf4}
+    .bank-feedback.incorrect{border-color:#f0d0ca;background:#fff6f4}
+    .bank-explanation{white-space:pre-wrap;margin-top:8px}
+    .bank-video{position:relative;aspect-ratio:16/9;width:min(100%,640px);margin-top:12px}
+    .bank-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:9px}
+    .bank-empty{background:#fff;border:1px dashed #cbd5e1;border-radius:14px;padding:30px;text-align:center;color:var(--muted)}
+    .bank-status{padding:13px 15px;margin:14px 0;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-size:13px;line-height:1.6}
+    .bank-status.error{border-color:#f3d0cb;background:#fff5f4;color:#9a2e20}
+    @media(max-width:900px){.bank-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-filters input{grid-column:1/-1}}
+    @media(max-width:650px){.bank-hero{align-items:flex-start;flex-direction:column}.bank-count{width:100%}.bank-filters{grid-template-columns:1fr}.bank-filters input{grid-column:auto}.bank-question{padding:16px}.bank-results-line{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span>
+      <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      <span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <details class="drillgre-nav-dropdown">
+        <summary>Quant</summary>
+        <div class="drillgre-nav-submenu">
+          <a href="/quant/index.html">Lessons</a>
+          <a href="/quant/question-bank.html" aria-current="page">Question Bank</a>
+          <a href="/quant/quiz.html">Quiz</a>
+        </div>
+      </details>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions">
+      <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+      <a class="drillgre-start-link" href="/#practice">Start drilling <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="shell">
+  <div class="crumb"><a href="/">Home</a> / <a href="/quant/index.html">Quant</a> / Question Bank</div>
+
+  <section class="hero bank-hero">
+    <div>
+      <div class="eyebrow">GRE Quant practice library</div>
+      <h1>Question Bank</h1>
+      <p>Browse published questions made available for practice. Filter by topic, question format, or difficulty, then work through each question and check your answer. Correct answers and explanations are revealed only after you submit a response.</p>
+    </div>
+    <div class="bank-count">
+      <strong id="bankTotal">—</strong>
+      <span>Practice questions</span>
+    </div>
+  </section>
+
+  <div id="bankStatus" class="bank-status" role="status">Loading the practice question bank…</div>
+
+  <section class="bank-filters" aria-label="Filter question bank">
+    <input id="bankSearch" type="search" placeholder="Search question text or topic…" aria-label="Search questions">
+    <select id="bankCategory" aria-label="Filter by topic"><option value="">All topics</option></select>
+    <select id="bankSubtopic" aria-label="Filter by subtopic"><option value="">All subtopics</option></select>
+    <select id="bankType" aria-label="Filter by question type"><option value="">All question types</option></select>
+    <select id="bankDifficulty" aria-label="Filter by difficulty">
+      <option value="">All difficulty levels</option>
+      <option value="1">Difficulty 1</option>
+      <option value="2">Difficulty 2</option>
+      <option value="3">Difficulty 3</option>
+      <option value="4">Difficulty 4</option>
+      <option value="5">Difficulty 5</option>
+    </select>
+  </section>
+
+  <div class="bank-results-line">
+    <span id="bankResultCount">Preparing questions…</span>
+    <span>Showing published questions available for practice</span>
+  </div>
+  <section id="bankQuestionList" class="bank-question-list" aria-live="polite"></section>
+</main>
+
+<footer style="max-width:1240px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Quant Question Bank</footer>
+</body>
+</html>
