@@ -24,8 +24,8 @@
     .leader-status{font-size:13px;color:var(--muted);padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:15px 0}
     .leader-status.error{color:#9a2e20;border-color:#f3d0cb;background:#fff5f4}
     .leader-board{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
-    .leader-board-head{display:grid;grid-template-columns:75px 1fr 140px 160px;gap:12px;padding:14px 20px;background:#f7f9fd;color:#66738c;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850}
-    .leader-row{display:grid;grid-template-columns:75px 1fr 140px 160px;gap:12px;align-items:center;padding:17px 20px;border-top:1px solid #edf0f5;font-size:14px}
+    .leader-board-head{display:grid;grid-template-columns:75px 1fr 140px 120px 120px;gap:12px;padding:14px 20px;background:#f7f9fd;color:#66738c;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850}
+    .leader-row{display:grid;grid-template-columns:75px 1fr 140px 120px 120px;gap:12px;align-items:center;padding:17px 20px;border-top:1px solid #edf0f5;font-size:14px}
     .leader-rank{font-weight:850;color:#365fca}
     .leader-name{font-weight:800;color:#1a2740}
     .leader-score{font-weight:900;color:#2454d7;font-size:17px}
@@ -35,7 +35,7 @@
     @media(max-width:650px){
       .leader-board-head{display:none}
       .leader-row{grid-template-columns:42px 1fr auto;gap:8px;padding:14px}
-      .leader-attempts{grid-column:2/4}
+      .leader-attempts{grid-column:2/4}.leader-quizzes{grid-column:2/4}
       .leader-hero{padding:23px}
     }
   </style>
