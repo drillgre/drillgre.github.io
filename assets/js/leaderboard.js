@@ -17,7 +17,7 @@
 
   function renderRows(rows) {
     if (!Array.isArray(rows) || !rows.length) {
-      $("leaderRows").innerHTML = '<div class="leader-empty">No learners have opted in yet. Complete a mock test or topic quiz and opt in to appear here.</div>';
+      $("leaderRows").innerHTML = '<div class="leader-empty">No learners have opted in yet. Complete a mock test, topic quiz, or Question Bank question and opt in to appear here.</div>';
       return;
     }
     $("leaderRows").innerHTML = rows.map(row => `
