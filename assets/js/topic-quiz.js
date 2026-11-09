@@ -35,6 +35,8 @@
   let questionBank = [];
   let currentQuestions = [];
   let submitting = false;
+  let isAuthenticated = false;
+  let guestQuizzesRemaining = 2;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
@@ -187,6 +189,9 @@
       $("startTopicQuiz").disabled = true;
     } else if (available < requested) {
       note.textContent = available + " questions available. Select more subtopics or choose a smaller quiz size.";
+      $("startTopicQuiz").disabled = true;
+    } else if (!isAuthenticated && guestQuizzesRemaining <= 0) {
+      note.textContent = "You have used both free guest quiz attempts. Sign in for unlimited quizzes.";
       $("startTopicQuiz").disabled = true;
     } else {
       note.textContent = available + " eligible questions available. " + requested + " will be selected randomly.";
@@ -432,12 +437,12 @@
 
     const subtopics = selectedSubtopicKeys();
     const timing = $("quizTimingMode")?.value || "standard";
-    const attempt = crypto.randomUUID();
+    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
     const query = new URLSearchParams({
       subtopics: JSON.stringify(subtopics),
       count: String(requested),
       timing,
-      attempt
+      token
     });
     const quizUrl = "topic-quiz.html?" + query.toString();
 
@@ -448,7 +453,8 @@
       return;
     }
     try { quizWindow.opener = null; } catch {}
-    setStatus("Your topic quiz has opened in a new tab. You can return to this page to create another quiz.");
+    setStatus("Your topic quiz has opened in a new tab. Your attempt is recorded when the test opens. Unfinished quizzes are saved in Your quizzes below.");
+    window.setTimeout(loadQuizHistory, 1800);
   }
 
   async function submitTopicQuiz() {
@@ -501,11 +507,98 @@
     $("topicQuizSection").scrollIntoView({behavior:"smooth", block:"start"});
   }
 
+  function visitorKey() {
+    let key = localStorage.getItem("drillgre_guest_visitor_key_v1");
+    if (!key || key.length < 32) {
+      key = crypto.randomUUID() + "-" + crypto.randomUUID();
+      localStorage.setItem("drillgre_guest_visitor_key_v1", key);
+    }
+    return key;
+  }
+
+  function topicSummary(keys) {
+    return (keys || []).map(key => {
+      const parts = String(key).split("::");
+      return categoryLabel(parts[0]) + " · " + subtopicLabel(parts[1]);
+    }).join(", ");
+  }
+
+  function renderQuizHistory(attempts) {
+    const host = $("quizHistoryList");
+    if (!attempts.length) {
+      host.innerHTML = '<div class="quiz-empty">No quiz attempts yet. Choose your topics above to create your first quiz.</div>';
+      return;
+    }
+
+    host.innerHTML = attempts.map(attempt => {
+      const date = new Date(attempt.created_at).toLocaleString(undefined, {
+        year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"
+      });
+      const completed = attempt.status === "completed";
+      const title = completed
+        ? "Completed topic quiz"
+        : "Unfinished topic quiz";
+      const score = completed
+        ? '<div class="quiz-history-score">' + esc(attempt.total_correct ?? 0) + ' / ' + esc(attempt.question_count) + ' correct</div>'
+        : '<div class="quiz-history-score" style="color:#b7791f">In progress</div>';
+      const action = !completed
+        ? '<a class="quiz-history-action" target="_blank" rel="noopener" href="topic-quiz.html?attempt=' +
+          encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Resume quiz</a>'
+        : '<span class="quiz-history-action" style="opacity:.6;border-color:#cbd5e1;color:#64748b">Completed</span>';
+      return '<article class="quiz-history-row">' +
+        '<div><div class="quiz-history-title">' + title + '</div>' +
+        '<div class="quiz-history-meta">' + esc(date) + ' · ' + esc(attempt.question_count) + ' questions · ' +
+        esc(topicSummary(attempt.topic_keys)) + '</div></div>' +
+        '<div style="display:grid;justify-items:end;gap:8px">' + score + action + '</div>' +
+      '</article>';
+    }).join("");
+  }
+
+  async function loadQuizHistory() {
+    const status = $("quizHistoryStatus");
+    try {
+      const [{data:sessionData}, key] = await Promise.all([
+        db.auth.getSession(),
+        Promise.resolve(visitorKey())
+      ]);
+      isAuthenticated = !!sessionData?.session?.user;
+
+      if (isAuthenticated) {
+        const {error:claimError} = await db.rpc("claim_guest_topic_quiz_attempts", {p_visitor_key:key});
+        if (claimError) throw claimError;
+      }
+
+      const {data,error} = await db.rpc("get_gre_topic_quiz_history", {p_visitor_key:key});
+      if (error) throw error;
+
+      if (isAuthenticated) {
+        $("quizQuotaNote").textContent = "You are signed in. Unlimited topic quiz attempts are available, and your quiz history is saved to your learner profile.";
+      } else {
+        guestQuizzesRemaining = Number(data?.guest_quizzes_remaining ?? 2);
+        const used = Number(data?.guest_quizzes_used ?? 0);
+        $("quizQuotaNote").textContent = guestQuizzesRemaining + " of 2 free guest quiz attempts remaining. " +
+          (guestQuizzesRemaining === 0 ? "Sign in for unlimited quizzes." : "Sign in at any time to unlock unlimited quizzes and keep your history with your account.");
+      }
+
+      renderQuizHistory(data?.attempts || []);
+      if (status) { status.hidden = true; status.textContent = ""; }
+      updateQuizAvailability();
+    } catch (error) {
+      if (status) {
+        status.hidden = false;
+        status.classList.add("error");
+        status.textContent = "Quiz history and guest limits require the latest Supabase quiz progress migration. " + (error.message || "");
+      }
+      $("quizQuotaNote").textContent = "Unable to verify your quiz allowance until the quiz progress migration is applied in Supabase.";
+      // Do not disable all local selection while migration setup is pending.
+      guestQuizzesRemaining = 2;
+      updateQuizAvailability();
+    }
+  }
+
   async function init() {
     $("quizQuestionCount").addEventListener("change", updateQuizAvailability);
     $("startTopicQuiz").addEventListener("click", startTopicQuiz);
-    $("submitTopicQuiz").addEventListener("click", submitTopicQuiz);
-    $("newTopicQuiz").addEventListener("click", resetTopicQuiz);
 
     try {
       questionBank = await fetchQuestionBank();
@@ -517,6 +610,8 @@
       renderTopicGroups();
       $("quizSetupPanel").hidden = false;
       setStatus("");
+      await loadQuizHistory();
+      window.addEventListener("focus", loadQuizHistory);
     } catch (error) {
       setStatus("Unable to load the practice question bank. " + (error.message || ""), true);
     }
