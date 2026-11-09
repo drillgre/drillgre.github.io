@@ -7,6 +7,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 1. `gre-mock-tests.sql`
 2. `learner-accounts.sql`
 3. `learner-read-policies.sql`
+4. `topic-quiz.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -110,3 +111,12 @@ For shared Data Interpretation groups, create the stimulus in the admin workspac
 Question figures must already be uploaded and reachable by a public HTTP/HTTPS URL. Use the existing single-question editor to upload figure files to Supabase Storage, or host them at a stable public image URL. The spreadsheet importer does not extract images embedded inside Excel cells.
 
 A JSON file may instead contain an array of question records using the database field names, including `options` and `correct_answer` as JSON arrays or objects.
+
+
+## Topic and subtopic quizzes
+
+The Quant Academy page includes a topic-quiz builder below the course modules. Learners can select multiple GRE categories and subtopics, choose a quiz length from 10 to 15 questions, and receive a random set from the published practice bank. All supported question formats are used, including Quantitative Comparison, single-answer, multiple-answer, numeric-entry, and Data Interpretation questions.
+
+Topic quizzes show a simple correct-answer count and answer review. They do not calculate the mock-test 130–170 practice scale.
+
+Run `topic-quiz.sql` after the three core setup scripts. It enables published practice stimulus groups to be read on the topic quiz page and creates the `grade_gre_quiz_question` RPC. Correct answers and explanations are returned by this RPC only after each learner submits the quiz.
