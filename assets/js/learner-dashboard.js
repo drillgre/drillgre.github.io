@@ -149,6 +149,7 @@
     $("quizzesCompleted").textContent = data.quizzes_completed ?? 0;
     $("mocksStarted").textContent = data.mocks_started ?? 0;
     $("mocksCompleted").textContent = data.mocks_completed ?? 0;
+    $("questionBankCompleted").textContent = data.question_bank_completed ?? 0;
     const lessonTotal = Number(data.lessons_total || 0);
     const lessonDone = Number(data.lessons_completed || 0);
     $("lessonProgressText").textContent = lessonDone + " of " + lessonTotal + " lessons completed";
