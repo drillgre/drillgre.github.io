@@ -477,8 +477,11 @@
     $("finalSubmit").textContent = "Submitting…";
     setStatus("Checking your answers…");
     storeCurrentResponse();
+    if (saveTimeout) clearTimeout(saveTimeout);
 
     try {
+      // Let any previously queued autosave finish before the final submission RPC.
+      await saveQueue.catch(() => {});
       const {data,error} = await db.rpc("finish_gre_topic_quiz",{
         p_attempt_id:state.attemptId,
         p_session_token:state.sessionToken,
