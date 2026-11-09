@@ -81,7 +81,7 @@ The Quant mock uses standard GRE timing by default: 21 minutes for the first Qua
 
 ## Bulk question import
 
-The admin workspace includes **Import questions** in the Question bank tab. Sign in at `/admin.html` using your own administrator account. No credentials need to be shared with anyone.
+The admin workspace includes **Import questions** in the Question bank tab. Sign in at `/admin.html` using your own administrator account. No credentials need to be shared with anyone. A blank [CSV template](../templates/drillgre-question-import-template.csv) is also available in the repository.
 
 Supported file formats are `.xlsx`, `.xls`, `.csv`, and `.json`. The importer previews rows, validates required fields and answer formats, checks existing questions for duplicates, and allows valid rows to be imported while invalid or duplicate rows are skipped. New questions default to unpublished unless the spreadsheet explicitly sets `published` to TRUE.
 
@@ -107,6 +107,6 @@ Other supported columns are `figure_url`, `explanation`, `explanation_type` (`te
 
 For shared Data Interpretation groups, create the stimulus in the admin workspace first, then put its `stimulus_id` on each linked question. The database allows no more than three questions in a group and requires all linked questions to use the same lesson assignment. Import the three questions together or complete the group in separate imports.
 
-Question figures must already be uploaded and reachable by a public HTTP/HTTPS URL. Use the existing single-question editor to upload figure files to Supabase Storage, or host them at a stable public image URL.
+Question figures must already be uploaded and reachable by a public HTTP/HTTPS URL. Use the existing single-question editor to upload figure files to Supabase Storage, or host them at a stable public image URL. The spreadsheet importer does not extract images embedded inside Excel cells.
 
 A JSON file may instead contain an array of question records using the database field names, including `options` and `correct_answer` as JSON arrays or objects.
