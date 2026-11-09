@@ -22,6 +22,8 @@
 
   let allQuestions = [];
   let stimulusById = new Map();
+  let completedIds = new Set();
+  let currentQuestion = null;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -80,7 +82,7 @@
     }
 
     if (type === "numeric_entry") {
-      return '<input class="bank-numeric" type="number" step="any" inputmode="decimal" id="numeric-' + esc(id) + '" placeholder="Enter your answer">';
+      return '<label class="numeric-wrap">Your answer<input class="bank-numeric" type="number" step="any" inputmode="decimal" id="numeric-' + esc(id) + '" placeholder="Enter your answer"></label>';
     }
 
     const options = parseOptions(question.options);
@@ -130,113 +132,183 @@
     return parts.join("");
   }
 
-  function orderedQuestions(questions) {
-    const ordered = [];
-    const visited = new Set();
-    questions.forEach(question => {
-      if (!question.stimulus_id) {
-        ordered.push(question);
-        return;
-      }
-      const key = String(question.stimulus_id);
-      if (visited.has(key)) return;
-      visited.add(key);
-      ordered.push(...questions.filter(item => String(item.stimulus_id) === key));
+  function getStimulus(question) {
+    return question.stimulus_id ? stimulusById.get(String(question.stimulus_id)) || null : null;
+  }
+
+  function figureMarkup(url, alt, className) {
+    const src = safeImageUrl(url);
+    return src
+      ? '<img class="' + className + '" src="' + esc(src) + '" alt="' + esc(alt || "Question figure") + '" loading="lazy">'
+      : "";
+  }
+
+  function attachImageFallback(host) {
+    host.querySelectorAll("img").forEach(image => {
+      image.addEventListener("error", () => {
+        image.hidden = true;
+      }, { once:true });
     });
-    return ordered;
+  }
+
+  function stimulusMarkup(question, modal = false) {
+    const stimulus = getStimulus(question);
+    if (!stimulus) return "";
+    const image = figureMarkup(stimulus.figure_url,stimulus.title || "Shared Data Analysis figure",modal ? "bank-modal-figure" : "bank-figure");
+    const text = stimulus.stimulus_text ? '<p>' + esc(stimulus.stimulus_text) + '</p>' : "";
+    // Do not show an empty stimulus box when neither its text nor figure exists.
+    if (!image && !text) return "";
+    return '<section class="' + (modal ? "bank-modal-stimulus" : "bank-stimulus") + '">' +
+      '<div class="bank-stimulus-label">Shared Data Analysis material</div>' +
+      (stimulus.title ? '<h3>' + esc(stimulus.title) + '</h3>' : "") +
+      text + image +
+    '</section>';
+  }
+
+  function renderCard(question,index) {
+    const id = String(question.id);
+    const category = CATEGORY_LABELS[question.topic_category] || question.topic || "GRE Quant";
+    const subtopic = humanize(question.subtopic);
+    const excerpt = String(question.question_text || "").replace(/\s+/g," ").trim();
+    const shortened = excerpt.length > 230 ? excerpt.slice(0,227).trimEnd() + "…" : excerpt;
+    const isDone = completedIds.has(id);
+    const stimulus = getStimulus(question);
+    const cardFigureUrl = question.figure_url || stimulus?.figure_url;
+    const cardFigure = figureMarkup(cardFigureUrl,question.question_text || "Question figure","bank-card-figure");
+    return '<article class="bank-card" data-question-card="' + esc(id) + '">' +
+      '<div class="bank-card-main">' +
+        '<div class="bank-question-head">' +
+          '<span class="bank-question-number">Question ' + (index+1) + '</span>' +
+          '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
+          '<span class="bank-tag">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
+          '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
+          '<span class="bank-done" data-done-badge ' + (isDone ? "" : "hidden") + '>✓ Done</span>' +
+        '</div>' +
+        '<p class="bank-excerpt">' + esc(shortened || "Question text unavailable.") + '</p>' +
+        '<div class="bank-card-actions">' +
+          '<button class="bank-open" type="button" data-open-question="' + esc(id) + '">Open full question</button>' +
+          '<span class="attempt-meta">' + (question.stimulus_id ? "Includes shared Data Analysis material" : "Practice question") + '</span>' +
+        '</div>' +
+      '</div>' +
+      cardFigure +
+    '</article>';
   }
 
   function renderQuestions(questions) {
     const host = $("bankQuestionList");
-    const ordered = orderedQuestions(questions);
-    if (!ordered.length) {
+    if (!questions.length) {
       host.innerHTML = '<div class="bank-empty">No questions match these filters. Try another topic or clear your search.</div>';
       return;
     }
 
-    const renderedStimuli = new Set();
-    host.innerHTML = ordered.map((question,index) => {
-      const id = String(question.id);
-      let stimulusMarkup = "";
-      if (question.stimulus_id && !renderedStimuli.has(String(question.stimulus_id))) {
-        renderedStimuli.add(String(question.stimulus_id));
-        const stimulus = stimulusById.get(String(question.stimulus_id)) || {};
-        const image = safeImageUrl(stimulus.figure_url);
-        stimulusMarkup = '<section class="bank-stimulus">' +
-          '<div class="bank-stimulus-label">Shared Data Analysis material</div>' +
-          '<h3>' + esc(stimulus.title || "Shared data or figure") + '</h3>' +
-          (stimulus.stimulus_text ? '<p class="bank-stimulus-text">' + esc(stimulus.stimulus_text) + '</p>' : '') +
-          (image ? '<img class="bank-figure" src="' + esc(image) + '" alt="' + esc(stimulus.title || "Shared Data Analysis figure") + '" loading="lazy">' : '') +
-        '</section>';
-      }
-      const figureUrl = !question.stimulus_id ? safeImageUrl(question.figure_url) : "";
-      const category = CATEGORY_LABELS[question.topic_category] || question.topic || "GRE Quant";
-      const subtopic = humanize(question.subtopic);
-      return stimulusMarkup +
-        '<article class="bank-question" data-question-card="' + esc(id) + '">' +
-          '<div class="bank-question-head">' +
-            '<span class="bank-question-number">Question ' + (index+1) + '</span>' +
-            '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
-            '<span class="bank-tag">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
-            '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
-          '</div>' +
-          '<div class="bank-prompt">' + esc(question.question_text || "") + '</div>' +
-          (figureUrl ? '<img class="bank-figure" src="' + esc(figureUrl) + '" alt="Question figure" loading="lazy">' : '') +
-          '<div class="bank-options">' + optionMarkup(question) + '</div>' +
-          '<button class="bank-check" type="button" data-check-answer="' + esc(id) + '">Check answer</button>' +
-          '<div class="bank-feedback" id="feedback-' + esc(id) + '" hidden></div>' +
-        '</article>';
-    }).join("");
-
-    ordered.forEach(question => {
-      const id = String(question.id);
-      const card = host.querySelector('[data-question-card="' + CSS.escape(id) + '"]');
-      const button = card?.querySelector("[data-check-answer]");
-      if (!button) return;
-      button.addEventListener("click", async () => {
-        let response;
-        if (question.question_type === "numeric_entry") {
-          response = card.querySelector("#numeric-" + CSS.escape(id))?.value ?? "";
-          if (String(response).trim() === "") {
-            alert("Please enter a numerical answer.");
-            return;
-          }
-        } else {
-          const selected = [...card.querySelectorAll('input[name="answer-' + CSS.escape(id) + '"]:checked')].map(input => input.value);
-          if (!selected.length) {
-            alert("Please select an answer.");
-            return;
-          }
-          response = question.question_type === "multiple_choice_multiple" ? selected : selected[0];
-        }
-
-        button.disabled = true;
-        button.textContent = "Checking…";
-        const feedback = card.querySelector("#feedback-" + CSS.escape(id));
-        feedback.hidden = false;
-        try {
-          const {data:grade,error} = await db.rpc("grade_gre_quiz_question", {
-            p_question_id:id,
-            p_response:response
-          });
-          if (error) throw error;
-          if (grade?.error) throw new Error(grade.error);
-          const correct = !!grade?.correct;
-          feedback.className = "bank-feedback " + (correct ? "correct" : "incorrect");
-          feedback.innerHTML = '<strong>' + (correct ? "Correct!" : "Not quite.") + '</strong>' +
-            '<div>Correct answer: ' + esc(answerLabel(grade?.correct_answer)) + '</div>' +
-            explanationMarkup(grade);
-          button.textContent = "Answer checked";
-          button.disabled = true;
-          card.querySelectorAll("input").forEach(input => input.disabled = true);
-        } catch (error) {
-          feedback.className = "bank-feedback incorrect";
-          feedback.textContent = "We could not check this answer. " + (error.message || "Please try again.");
-          button.disabled = false;
-          button.textContent = "Check answer";
-        }
+    host.innerHTML = questions.map(renderCard).join("");
+    attachImageFallback(host);
+    host.querySelectorAll("[data-open-question]").forEach(button => {
+      button.addEventListener("click", () => {
+        const question = allQuestions.find(item => String(item.id) === button.dataset.openQuestion);
+        if (question) openQuestion(question);
       });
     });
+  }
+
+  function openQuestion(question) {
+    currentQuestion = question;
+    const id = String(question.id);
+    const category = CATEGORY_LABELS[question.topic_category] || question.topic || "GRE Quant";
+    const subtopic = humanize(question.subtopic);
+    const done = completedIds.has(id);
+    const dialog = $("questionDialog");
+    const body = $("questionDialogBody");
+    const figure = figureMarkup(question.figure_url,question.question_text || "Question figure","bank-modal-figure");
+
+    body.innerHTML =
+      '<div class="bank-question-head">' +
+        '<span class="bank-question-number">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
+        '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
+        '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
+        (done ? '<span class="bank-done">✓ Previously completed</span>' : "") +
+      '</div>' +
+      stimulusMarkup(question,true) +
+      '<div class="bank-modal-prompt">' + esc(question.question_text || "") + '</div>' +
+      figure +
+      '<div class="bank-options">' + optionMarkup(question) + '</div>' +
+      '<button class="bank-check" id="checkQuestionBankAnswer" type="button">Check answer</button>' +
+      '<div class="bank-feedback" id="questionBankFeedback" hidden></div>' +
+      '<p class="attempt-meta" style="margin-top:12px">This question will be marked Done once you check your answer, whether it is correct or incorrect.</p>';
+
+    $("dialogQuestionTitle").textContent = "Question " + id;
+    attachImageFallback(body);
+    $("checkQuestionBankAnswer").addEventListener("click",checkCurrentAnswer);
+    if (!dialog.open) dialog.showModal();
+  }
+
+  function getResponse(question) {
+    const id = String(question.id);
+    if (question.question_type === "numeric_entry") {
+      const response = $("numeric-" + id)?.value ?? "";
+      if (String(response).trim() === "") throw new Error("Please enter a numerical answer.");
+      return response;
+    }
+    const selected = [...$("questionDialogBody").querySelectorAll('input[name="answer-' + CSS.escape(id) + '"]:checked')]
+      .map(input => input.value);
+    if (!selected.length) throw new Error("Please select an answer.");
+    return question.question_type === "multiple_choice_multiple" ? selected : selected[0];
+  }
+
+  function markCardDone(id) {
+    completedIds.add(String(id));
+    const card = $("bankQuestionList").querySelector('[data-question-card="' + CSS.escape(String(id)) + '"]');
+    const badge = card?.querySelector("[data-done-badge]");
+    if (badge) badge.hidden = false;
+  }
+
+  async function checkCurrentAnswer() {
+    if (!currentQuestion) return;
+    const button = $("checkQuestionBankAnswer");
+    const feedback = $("questionBankFeedback");
+    let response;
+    try {
+      response = getResponse(currentQuestion);
+    } catch (error) {
+      feedback.hidden = false;
+      feedback.className = "bank-feedback incorrect";
+      feedback.textContent = error.message;
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Checking…";
+    feedback.hidden = false;
+    feedback.className = "bank-feedback";
+    feedback.textContent = "Checking your answer and saving progress…";
+
+    try {
+      const {data:grade,error} = await db.rpc("grade_gre_question_bank_item", {
+        p_question_id:String(currentQuestion.id),
+        p_response:response
+      });
+      if (error) throw error;
+      if (grade?.error) throw new Error(grade.error);
+
+      markCardDone(currentQuestion.id);
+      feedback.className = "bank-feedback " + (grade.correct ? "correct" : "incorrect");
+      feedback.innerHTML = '<strong>' + (grade.correct ? "Correct!" : "Not quite.") + '</strong>' +
+        '<div>Correct answer: ' + esc(answerLabel(grade.correct_answer)) + '</div>' +
+        explanationMarkup(grade);
+      button.textContent = "✓ Done";
+      button.disabled = true;
+      $("questionDialogBody").querySelectorAll("input").forEach(input => input.disabled = true);
+      const card = $("bankQuestionList").querySelector('[data-question-card="' + CSS.escape(String(currentQuestion.id)) + '"]');
+      if (card) {
+        const status = card.querySelector(".attempt-meta");
+        if (status) status.textContent = "Completed";
+      }
+    } catch (error) {
+      feedback.className = "bank-feedback incorrect";
+      feedback.textContent = "We could not check or save this question. " + (error.message || "Please try again.");
+      button.disabled = false;
+      button.textContent = "Try again";
+    }
   }
 
   function populateFilters() {
@@ -314,6 +386,12 @@
     return collected;
   }
 
+  async function fetchProgress() {
+    const {data,error} = await db.rpc("get_gre_question_bank_progress");
+    if (error) throw error;
+    completedIds = new Set((data?.question_ids || []).map(String));
+  }
+
   async function fetchStimuli(questions) {
     const ids = [...new Set(questions.map(q => q.stimulus_id).filter(Boolean).map(String))];
     if (!ids.length) return;
@@ -322,7 +400,7 @@
       .in("id",ids);
     if (error) {
       $("bankStatus").hidden = false;
-      $("bankStatus").textContent = "Questions loaded, but some shared Data Analysis figures could not be retrieved. " + error.message;
+      $("bankStatus").textContent = "Questions loaded, but some shared Data Analysis material could not be retrieved. " + error.message;
       $("bankStatus").classList.add("error");
       return;
     }
@@ -330,6 +408,21 @@
   }
 
   async function init() {
+    const {data:sessionData,error:sessionError} = await db.auth.getSession();
+    if (sessionError) {
+      $("bankStatus").hidden = false;
+      $("bankStatus").classList.add("error");
+      $("bankStatus").textContent = "Unable to verify your sign-in. " + sessionError.message;
+      $("bankWorkspace").hidden = false;
+      return;
+    }
+
+    if (!sessionData?.session?.user) {
+      $("bankAuthGate").hidden = false;
+      return;
+    }
+
+    $("bankWorkspace").hidden = false;
     ["bankSearch","bankCategory","bankSubtopic","bankType","bankDifficulty"].forEach(id => {
       $(id).addEventListener(id === "bankSearch" ? "input" : "change",() => {
         if (id === "bankCategory") updateSubtopicFilter();
@@ -337,7 +430,16 @@
       });
     });
 
+    const dialog = $("questionDialog");
+    $("closeQuestionDialog").addEventListener("click",() => dialog.close());
+    dialog.addEventListener("click",event => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close",() => { currentQuestion = null; });
+
     try {
+      // Read the learner's saved completion state before rendering the list.
+      await fetchProgress();
       allQuestions = await fetchAllQuestions();
       $("bankTotal").textContent = allQuestions.length.toLocaleString();
       $("bankStatus").hidden = true;
@@ -355,7 +457,7 @@
     } catch (error) {
       $("bankStatus").hidden = false;
       $("bankStatus").classList.add("error");
-      $("bankStatus").textContent = "The question bank could not be loaded. " + (error.message || "Check the Supabase learner read policies.");
+      $("bankStatus").textContent = "The Question Bank could not be loaded. " + (error.message || "Check that supabase/question-bank-progress.sql has been run.");
       $("bankResultCount").textContent = "Unable to load questions";
     }
   }
