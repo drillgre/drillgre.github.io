@@ -33,6 +33,23 @@
     const lessons = lessonsResult.data || [];
     $("lessonCount").textContent = lessons.length;
 
+    // Synchronise completed lessons to the learner account where available.
+    const {data:authData} = await db.auth.getSession();
+    if (authData?.session?.user) {
+      const localCompleted = lessons.filter(item =>
+        window.DrillGREProgress?.isDone("lesson-" + item.id)
+      );
+      for (const item of localCompleted) {
+        await db.rpc("set_gre_lesson_progress", {p_lesson_id:item.id,p_completed:true});
+      }
+      const {data:remoteProgress,error:progressError} = await db.rpc("get_gre_lesson_progress");
+      if (!progressError) {
+        (remoteProgress || []).forEach(item =>
+          window.DrillGREProgress?.markDone("lesson-" + item.lesson_id, true)
+        );
+      }
+    }
+
     const visibleModules = modules
       .map(module => ({
         ...module,
