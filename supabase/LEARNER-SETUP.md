@@ -116,7 +116,7 @@ A JSON file may instead contain an array of question records using the database 
 
 ## Topic and subtopic quizzes
 
-The Quant Academy page includes a topic-quiz builder below the course modules. Learners can select multiple GRE categories and subtopics, choose a quiz length from 10 to 15 questions, and receive a random set from the published practice bank. All supported question formats are used, including Quantitative Comparison, single-answer, multiple-answer, numeric-entry, and Data Interpretation questions.
+The Quant navigation has separate Lessons and Quiz pages. The Quiz page includes a topic-quiz builder. Learners can select multiple GRE categories and subtopics, choose a quiz length from 10 to 15 questions, and receive a random set from the published practice bank. All supported question formats are used, including Quantitative Comparison, single-answer, multiple-answer, numeric-entry, and Data Interpretation questions.
 
 Topic quizzes show a simple correct-answer count and answer review. They do not calculate the mock-test 130–170 practice scale.
 
