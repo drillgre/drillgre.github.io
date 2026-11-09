@@ -23,6 +23,7 @@
   let allQuestions = [];
   let stimulusById = new Map();
   let completedIds = new Set();
+  let progressById = new Map();
   let currentQuestion = null;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -170,13 +171,25 @@
     '</section>';
   }
 
+  function statusBadgeMarkup(status) {
+    if (status === "done") return '<span class="bank-done">Done</span>';
+    if (status === "review") return '<span class="bank-review">Review</span>';
+    return "";
+  }
+
+  function updateCompletedSummary() {
+    const count = [...progressById.values()].filter(item => item.status === "done").length;
+    completedIds = new Set([...progressById.entries()].filter(([,item]) => item.status === "done").map(([id]) => id));
+    $("bankCompletedSummary").textContent = count.toLocaleString() + " completed by you";
+  }
+
   function renderCard(question,index) {
     const id = String(question.id);
     const category = CATEGORY_LABELS[question.topic_category] || question.topic || "GRE Quant";
     const subtopic = humanize(question.subtopic);
     const excerpt = String(question.question_text || "").replace(/\s+/g," ").trim();
     const shortened = excerpt.length > 230 ? excerpt.slice(0,227).trimEnd() + "…" : excerpt;
-    const isDone = completedIds.has(id);
+    const progress = progressById.get(id);
     const stimulus = getStimulus(question);
     const cardFigureUrl = question.figure_url || stimulus?.figure_url;
     const hasFigure = !!safeImageUrl(cardFigureUrl);
@@ -188,7 +201,7 @@
           '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
           '<span class="bank-tag">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
           '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
-          '<span class="bank-done" data-done-badge ' + (isDone ? "" : "hidden") + '>✓ Done</span>' +
+          '<span data-question-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
         '</div>' +
         '<p class="bank-excerpt">' + esc(shortened || "Question text unavailable.") + '</p>' +
         '<div class="bank-card-actions">' +
@@ -222,7 +235,7 @@
     const id = String(question.id);
     const category = CATEGORY_LABELS[question.topic_category] || question.topic || "GRE Quant";
     const subtopic = humanize(question.subtopic);
-    const done = completedIds.has(id);
+    const progress = progressById.get(id);
     const dialog = $("questionDialog");
     const body = $("questionDialogBody");
     const figure = figureMarkup(question.figure_url,question.question_text || "Question figure","bank-modal-figure");
@@ -232,7 +245,7 @@
         '<span class="bank-question-number">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
         '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
         '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
-        (done ? '<span class="bank-done">✓ Previously completed</span>' : "") +
+        '<span data-dialog-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
       '</div>' +
       stimulusMarkup(question,true) +
       '<div class="bank-modal-prompt">' + esc(question.question_text || "") + '</div>' +
@@ -240,7 +253,7 @@
       '<div class="bank-options">' + optionMarkup(question) + '</div>' +
       '<button class="bank-check" id="checkQuestionBankAnswer" type="button">Check answer</button>' +
       '<div class="bank-feedback" id="questionBankFeedback" hidden></div>' +
-      '<p class="attempt-meta" style="margin-top:12px">This question will be marked Done once you check your answer, whether it is correct or incorrect.</p>';
+      '<p class="attempt-meta" id="questionStatusHelp" style="margin-top:12px">A correct answer is marked Done. An incorrect answer is marked Review until you answer correctly.</p>';
 
     const displayNumber = allQuestions.findIndex(item => String(item.id) === id) + 1;
     $("dialogQuestionTitle").textContent = "Question " + (displayNumber || "details");
@@ -262,11 +275,29 @@
     return question.question_type === "multiple_choice_multiple" ? selected : selected[0];
   }
 
-  function markCardDone(id) {
-    completedIds.add(String(id));
-    const card = $("bankQuestionList").querySelector('[data-question-card="' + CSS.escape(String(id)) + '"]');
-    const badge = card?.querySelector("[data-done-badge]");
-    if (badge) badge.hidden = false;
+  function markCardStatus(id, status, grade) {
+    const key = String(id);
+    const previous = progressById.get(key) || {};
+    progressById.set(key, {
+      ...previous,
+      status,
+      attempts_count: Number(grade?.attempt_count ?? previous.attempts_count ?? 1),
+      first_attempt_correct: grade?.first_attempt_correct ?? previous.first_attempt_correct ?? null
+    });
+    updateCompletedSummary();
+
+    const markup = statusBadgeMarkup(status);
+    const card = $("bankQuestionList").querySelector('[data-question-card="' + CSS.escape(key) + '"]');
+    const cardStatus = card?.querySelector("[data-question-status]");
+    if (cardStatus) cardStatus.innerHTML = markup;
+    const dialogStatus = $("questionDialogBody").querySelector("[data-dialog-status]");
+    if (dialogStatus) dialogStatus.innerHTML = markup;
+    const cardMeta = card?.querySelector(".attempt-meta");
+    if (cardMeta) cardMeta.textContent = status === "done" ? "Correctly answered" : "Needs another attempt";
+    const help = $("questionStatusHelp");
+    if (help) help.textContent = status === "done"
+      ? "Correctly answered. This question is marked Done."
+      : "Your answer was incorrect. This question is marked Review. Try again when you are ready.";
   }
 
   async function checkCurrentAnswer() {
@@ -297,19 +328,15 @@
       if (error) throw error;
       if (grade?.error) throw new Error(grade.error);
 
-      markCardDone(currentQuestion.id);
+      const status = grade.status || (grade.correct ? "done" : "review");
+      markCardStatus(currentQuestion.id, status, grade);
       feedback.className = "bank-feedback " + (grade.correct ? "correct" : "incorrect");
       feedback.innerHTML = '<strong>' + (grade.correct ? "Correct!" : "Not quite.") + '</strong>' +
         '<div>Correct answer: ' + esc(answerLabel(grade.correct_answer)) + '</div>' +
         explanationMarkup(grade);
-      button.textContent = "✓ Done";
-      button.disabled = true;
-      $("questionDialogBody").querySelectorAll("input").forEach(input => input.disabled = true);
-      const card = $("bankQuestionList").querySelector('[data-question-card="' + CSS.escape(String(currentQuestion.id)) + '"]');
-      if (card) {
-        const status = card.querySelector(".attempt-meta");
-        if (status) status.textContent = "Completed";
-      }
+      button.textContent = grade.correct ? "Done" : "Try again";
+      button.disabled = !!grade.correct;
+      $("questionDialogBody").querySelectorAll("input").forEach(input => input.disabled = !!grade.correct);
     } catch (error) {
       feedback.className = "bank-feedback incorrect";
       feedback.textContent = "We could not check or save this question. " + (error.message || "Please try again.");
@@ -396,8 +423,68 @@
   async function fetchProgress() {
     const {data,error} = await db.rpc("get_gre_question_bank_progress");
     if (error) throw error;
-    completedIds = new Set((data?.question_ids || []).map(String));
-    $("bankCompletedSummary").textContent = completedIds.size.toLocaleString() + " completed by you";
+    const rows = Array.isArray(data?.question_statuses) ? data.question_statuses : [];
+    progressById = new Map(rows.map(row => [String(row.question_id), {
+      status: row.status,
+      attempts_count: Number(row.attempts_count || 0),
+      first_attempt_correct: row.first_attempt_correct ?? null,
+      difficulty: row.difficulty ?? null
+    }]));
+
+    // Older installations return only question_ids. Treat those legacy records
+    // as Review because their original answer correctness was not retained.
+    if (!rows.length && Array.isArray(data?.question_ids)) {
+      progressById = new Map(data.question_ids.map(id => [String(id), {
+        status: "review", attempts_count: 1, first_attempt_correct: null
+      }]));
+    }
+    updateCompletedSummary();
+  }
+
+  function renderDiagnostics(data) {
+    const body = $("bankDiagnosticsBody");
+    const totalAttempted = Number(data?.total_attempted || 0);
+    const totalCompleted = Number(data?.total_completed || 0);
+    const totalRate = data?.total_first_attempt_success_rate;
+    const rateLabel = totalRate === null || totalRate === undefined
+      ? "—"
+      : Number(totalRate).toFixed(1) + "%";
+    const rows = Array.isArray(data?.by_difficulty) ? data.by_difficulty : [];
+
+    body.innerHTML =
+      '<div class="bank-diagnostics-summary">' +
+        '<div class="bank-diagnostic-stat"><span>Questions attempted</span><strong>' + totalAttempted.toLocaleString() + '</strong></div>' +
+        '<div class="bank-diagnostic-stat"><span>Correctly answered</span><strong>' + totalCompleted.toLocaleString() + '</strong></div>' +
+        '<div class="bank-diagnostic-stat"><span>First-attempt success</span><strong>' + rateLabel + '</strong><small>' + Number(data?.total_first_attempts_recorded || 0).toLocaleString() + ' first attempts recorded</small></div>' +
+      '</div>' +
+      '<h3 class="bank-diagnostics-subtitle">Performance by difficulty</h3>' +
+      '<div class="bank-diagnostics-table-wrap"><table class="bank-diagnostics-table">' +
+        '<thead><tr><th>Difficulty</th><th>Questions attempted</th><th>First attempts recorded</th><th>Correct first attempts</th><th>Success rate</th></tr></thead>' +
+        '<tbody>' + rows.map(row => {
+          const rate = row.first_attempt_success_rate;
+          const rateText = rate === null || rate === undefined ? "—" : Number(rate).toFixed(1) + "%";
+          return '<tr><td><strong>' + esc(row.difficulty) + '/5</strong></td>' +
+            '<td>' + Number(row.questions_attempted || 0).toLocaleString() + '</td>' +
+            '<td>' + Number(row.first_attempts_recorded || 0).toLocaleString() + '</td>' +
+            '<td>' + Number(row.first_attempt_correct || 0).toLocaleString() + '</td>' +
+            '<td><strong>' + rateText + '</strong></td></tr>';
+        }).join("") + '</tbody>' +
+      '</table></div>' +
+      '<p class="bank-diagnostics-note">First-attempt success is calculated from recorded first submissions. Questions attempted before this diagnostics update remain in the attempted counts, but their first-answer correctness is unknown and is excluded from the success-rate calculation.</p>';
+  }
+
+  async function openDiagnostics() {
+    const dialog = $("bankDiagnosticsDialog");
+    const body = $("bankDiagnosticsBody");
+    body.innerHTML = '<p class="bank-status">Loading your diagnostics…</p>';
+    if (!dialog.open) dialog.showModal();
+    try {
+      const {data,error} = await db.rpc("get_gre_question_bank_diagnostics");
+      if (error) throw error;
+      renderDiagnostics(data || {});
+    } catch (error) {
+      body.innerHTML = '<div class="bank-status error">Diagnostics could not be loaded. Run <code>supabase/question-bank-diagnostics.sql</code> in your Supabase SQL Editor. ' + esc(error.message || "") + '</div>';
+    }
   }
 
   async function fetchStimuli(questions) {
@@ -439,6 +526,12 @@
     });
 
     const dialog = $("questionDialog");
+    const diagnosticsDialog = $("bankDiagnosticsDialog");
+    $("openBankDiagnostics").addEventListener("click",openDiagnostics);
+    $("closeBankDiagnostics").addEventListener("click",() => diagnosticsDialog.close());
+    diagnosticsDialog.addEventListener("click",event => {
+      if (event.target === diagnosticsDialog) diagnosticsDialog.close();
+    });
     $("closeQuestionDialog").addEventListener("click",() => dialog.close());
     dialog.addEventListener("click",event => {
       if (event.target === dialog) dialog.close();
