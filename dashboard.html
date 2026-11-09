@@ -15,7 +15,7 @@
     .dash-hero h1{font-size:32px;letter-spacing:-1.2px;margin:6px 0}
     .dash-hero p{color:var(--muted);margin:0;font-size:13px}
     .dash-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--blue);color:#fff;padding:12px 17px;font-weight:800;white-space:nowrap}
-    .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+    .dash-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:18px 0}
     .progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
     .progress-track{height:10px;border-radius:99px;background:#e9edf5;overflow:hidden;margin:11px 0 8px}
     .progress-track span{display:block;height:100%;width:0;background:var(--blue);transition:width .2s}
@@ -48,6 +48,7 @@
     .dash-status{padding:13px 15px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;margin:15px 0}
     .dash-status.error{color:#9c3023;background:#fff4f2;border-color:#f0c9c3}
     .dash-actions{display:flex;gap:9px;flex-wrap:wrap}
+    @media(max-width:950px){.dash-grid{grid-template-columns:repeat(3,1fr)}}
     @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}.dash-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:560px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-hero h1{font-size:27px}.progress-secondary{grid-template-columns:1fr}.quiz-attempt-row{grid-template-columns:1fr}.quiz-attempt-row a{justify-self:start}}
   </style>
@@ -102,6 +103,7 @@
       <div class="dash-stat"><strong id="lessonsCompleted">0</strong><span>Lessons completed</span></div>
       <div class="dash-stat"><strong id="quizzesStarted">0</strong><span>Quizzes attempted</span></div>
       <div class="dash-stat"><strong id="quizzesCompleted">0</strong><span>Quizzes completed</span></div>
+      <div class="dash-stat"><strong id="mocksStarted">0</strong><span>Mock tests attempted</span></div>
       <div class="dash-stat"><strong id="mocksCompleted">0</strong><span>Mock tests completed</span></div>
     </div>
     <section class="dash-panel">
