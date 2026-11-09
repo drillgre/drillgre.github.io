@@ -91,7 +91,11 @@ Required columns:
 
 - `topic`: readable label, such as Algebra or Number properties
 - `topic_category`: `arithmetic`, `data_analysis`, `algebra`, or `geometry`
-- `subtopic`: the exact subtopic key used by DrillGRE, such as `algebra_core`, `probability`, or `geometry`
+- `subtopic`: use the exact key for the selected category:
+  - Arithmetic: `number_properties`, `fractions_decimals`, `percentages`, `ratios_proportions`, `exponents_roots`, `absolute_values`, `arithmetic_other`
+  - Data Analysis: `data_interpretation`, `probability`, `counting`, `statistics`
+  - Algebra: `algebra_core`, `inequalities`, `word_problems`
+  - Geometry: `geometry`, `coordinate_geometry`
 - `question_type`: `multiple_choice_single`, `multiple_choice_multiple`, `quantitative_comparison`, `numeric_entry`, or `data_interpretation`
 - `difficulty`: integer from 1 through 5
 - `question_text`: question prompt
