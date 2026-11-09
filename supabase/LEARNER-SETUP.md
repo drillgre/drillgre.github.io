@@ -13,6 +13,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 7. `question-bank-diagnostics.sql`
 8. `vocab-mountain.sql`
 9. `vocab-word-progress.sql`
+10. `security-hardening.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -20,7 +21,26 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's Know it, Seen but Review, and Unknown classifications.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's Know it, Seen but Review, and Unknown classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins.
+
+## Production security checklist
+
+Run `security-hardening.sql` after the other nine database scripts. It removes direct browser-side profile write access, restricts profile reads to the signed-in owner, disables public-schema object creation for client roles, and restricts the public question-figure bucket to administrator uploads. The figure bucket remains public-read so published question images can display without a learner account.
+
+The browser contains only the Supabase **publishable** key. This key is expected to be public and is not an administrator credential. Never put a Supabase `service_role` key, secret key, database password, or personal access token in HTML, JavaScript, GitHub, or any client download.
+
+Before opening registration to the public, review these project settings in the Supabase Dashboard:
+
+1. **Authentication → URL Configuration:** keep the Site URL at `https://drillgre.github.io` and keep the redirect allow-list limited to the account confirmation and recovery URLs actually used by the site.
+2. **Authentication → Sign In / Providers:** keep email confirmation enabled. Set a strong password policy, use at least 12 characters where feasible, and enable leaked-password protection if available on your plan. Coordinate any policy change with existing learners.
+3. **Authentication → Rate Limits and CAPTCHA:** review sign-up, password recovery, and token-endpoint rate limits. Enable CAPTCHA/bot protection if the project is exposed to public sign-ups.
+4. **Admin accounts:** use unique long passwords and enable MFA for every administrator where supported. Do not share admin accounts. Assign `profiles.role = 'admin'` manually only to trusted accounts.
+5. **Database → Advisors / Security:** review RLS and exposed-schema warnings after each migration. Test with a separate learner account and a signed-out browser. A learner must not be able to alter a profile role, edit questions, upload figures, or read another learner's private progress.
+6. **Storage → Policies:** check for older broad policies on `storage.objects`. PostgreSQL policies are permissive by default when combined, so any old policy that allows all authenticated users to write to every bucket can override the narrow question-figure policies in the new migration. Remove broad write policies for `question-figures`.
+
+GitHub Pages serves the static site over HTTPS, but it does not provide a repository-level mechanism for configuring arbitrary HTTP response security headers. The account, dashboard, admin, and quiz pages now use a no-referrer policy as a browser-side safeguard. For full Content-Security-Policy, frame protection, HSTS, and other response headers, put the site behind a host or proxy that can set HTTP headers. Cloudflare Pages supports a `_headers` file for this purpose.
+
+These changes reduce common exposure and privilege-escalation risks. They do not make any public website impossible to attack. Keep Supabase, dependencies, and access policies updated, and review logs for unusual activity.
 
 ## Vocab Mountain content management
 
