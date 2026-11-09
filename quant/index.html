@@ -145,9 +145,17 @@
             <option value="14">14 questions</option>
             <option value="15">15 questions</option>
           </select>
+          <label for="quizTimingMode" style="margin-top:16px">Time allowance</label>
+          <select id="quizTimingMode">
+            <option value="standard">Standard GRE timing</option>
+            <option value="time_and_half">50% extra time</option>
+            <option value="double">Double time</option>
+            <option value="untimed">Untimed practice</option>
+          </select>
+          <p>Standard time follows GRE Quant pacing: approximately 21 minutes for 12 questions. Extra-time and untimed options are also available.</p>
           <p id="quizAvailability">Select one or more subtopics to see how many questions are available.</p>
-          <button id="startTopicQuiz" class="quiz-action" type="button" disabled>Start topic quiz</button>
-          <p>Questions are randomly selected without repetition in a quiz. You can move through the full set, change your answers, and submit when ready.</p>
+          <button id="startTopicQuiz" class="quiz-action" type="button" disabled>Start topic quiz in a new tab</button>
+          <p>Each quiz opens in a separate GRE-style test window with a countdown timer, question navigation, review marks, and a final answer review.</p>
         </aside>
       </div>
     </div>
