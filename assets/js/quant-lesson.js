@@ -372,20 +372,46 @@
 
     $("backToCourse").href = "../index.html";
 
-    // Mark lesson completion using the existing browser-local LMS progress store.
+    // Keep a browser-local copy for guests, and synchronise signed-in learner progress to Supabase.
     const completeButton = $("completeLesson");
     const progressKey = "lesson-" + lesson.id;
+    const {data:authData} = await db.auth.getSession();
+    const learnerSignedIn = !!authData?.session?.user;
+    if (learnerSignedIn) {
+      const {data:remoteProgress,error:progressError} = await db.rpc("get_gre_lesson_progress");
+      if (!progressError) {
+        const remoteDone = (remoteProgress || []).some(item => String(item.lesson_id) === String(lesson.id));
+        const localDone = window.DrillGREProgress?.isDone(progressKey) || false;
+        if (remoteDone) {
+          window.DrillGREProgress?.markDone(progressKey, true);
+        } else if (localDone) {
+          // Preserve locally completed lessons from before account synchronisation.
+          await db.rpc("set_gre_lesson_progress", {p_lesson_id:lesson.id,p_completed:true});
+        }
+      }
+    }
     const syncCompletion = () => {
       const done = window.DrillGREProgress?.isDone(progressKey) || false;
       completeButton.textContent = done ? "✓ Lesson completed" : "Mark lesson complete";
       completeButton.classList.toggle("primary", !done);
     };
-    completeButton.onclick = () => {
+    completeButton.onclick = async () => {
       const done = window.DrillGREProgress?.isDone(progressKey) || false;
-      window.DrillGREProgress?.markDone(progressKey, !done);
+      const nextDone = !done;
+      if (learnerSignedIn) {
+        const {error} = await db.rpc("set_gre_lesson_progress", {
+          p_lesson_id:lesson.id,
+          p_completed:nextDone
+        });
+        if (error) {
+          alert("Lesson progress could not be saved to your account. " + error.message);
+          return;
+        }
+      }
+      window.DrillGREProgress?.markDone(progressKey, nextDone);
       syncCompletion();
       const marker = $("sideLessons").querySelector(`a[href="lesson.html?id=${encodeURIComponent(lesson.id)}"] .check`);
-      if (marker) marker.textContent = !done ? "✓" : "";
+      if (marker) marker.textContent = nextDone ? "✓" : "";
     };
     syncCompletion();
     document.addEventListener("drillgre:progress", () => {
