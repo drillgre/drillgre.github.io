@@ -52,18 +52,102 @@
 <div class="actions" id="actions" style="display:none"><button class="btn" id="prev">← Previous</button><button class="btn primary" id="next">Next →</button></div></main>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+const VOCAB_SUPABASE_URL="https://aayzpcfryixauwsytphd.supabase.co";
+const VOCAB_SUPABASE_KEY="sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
+const vocabDb=window.supabase.createClient(VOCAB_SUPABASE_URL,VOCAB_SUPABASE_KEY);
+</script>
+<script>
 const S={all:[],items:[],page:0,n:1,shuffled:false},$=id=>document.getElementById(id);
 const txt=(r,k)=>r[k]==null?"":String(r[k]).trim();
-const esc=t=>t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function load(){fetch("assets/vocab_mountain.xlsx",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Workbook not found. Upload vocab_mountain.xlsx beside vocab.html.");return r.arrayBuffer()}).then(b=>{let wb=XLSX.read(b,{type:"array"}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});S.all=rows.map(r=>({day:txt(r,"day"),sn:txt(r,"SN"),word:txt(r,"word"),meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)})).filter(x=>x.word);if(!S.all.length)throw Error("No vocabulary words found. Ensure the column is named word.");[...new Set(S.all.map(x=>x.day).filter(Boolean))].sort((a,b)=>+a-+b).forEach(d=>{let o=document.createElement("option");o.value=d;o.textContent="Day "+d;$("dayFilter").append(o)});filter();$("status").hidden=true;$("tiles").style.display="grid";$("actions").style.display="flex"}).catch(e=>$("status").textContent=e.message)}
-function filter(){let q=$("search").value.toLowerCase().trim(),d=$("dayFilter").value;
-let dayNum=d==="all"?Infinity:Number(d);
-S.items=S.all.filter(x=>(d==="all"||(!Number.isNaN(dayNum)&&Number(x.day)<=dayNum)||x.day===d)&&(!q||x.word.toLowerCase().includes(q)));
-if(S.shuffled)shuffleList(false);S.page=0;render()}
+const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function renderLoadedWords(sourceMessage=""){
+  [...new Set(S.all.map(x=>x.day).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)).forEach(d=>{
+    let o=document.createElement("option");o.value=d;o.textContent="Day "+d;$("dayFilter").append(o);
+  });
+  filter();
+  $("status").hidden=!sourceMessage;
+  $("status").textContent=sourceMessage;
+  $("tiles").style.display="grid";
+  $("actions").style.display="flex";
+}
+function mapDatabaseWords(rows){
+  return (rows||[]).map(r=>({
+    day:txt(r,"day"),sn:txt(r,"sn"),word:txt(r,"word"),
+    meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
+    syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
+  })).filter(x=>x.word);
+}
+async function loadWorkbookFallback(reason){
+  try{
+    const response=await fetch("assets/vocab_mountain.xlsx",{cache:"no-store"});
+    if(!response.ok)throw Error("Workbook not found.");
+    const bytes=await response.arrayBuffer();
+    const workbook=XLSX.read(bytes,{type:"array"});
+    const rows=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{defval:""});
+    S.all=rows.map(r=>({
+      day:txt(r,"day"),sn:txt(r,"SN"),word:txt(r,"word"),
+      meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
+      syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
+    })).filter(x=>x.word);
+    if(!S.all.length)throw Error("No vocabulary words were found.");
+    renderLoadedWords(reason||"Showing the existing workbook while the vocabulary database is being set up.");
+  }catch(error){
+    $("status").hidden=false;
+    $("status").textContent=reason+" "+(error.message||"Vocabulary is not available.");
+  }
+}
+async function load(){
+  try{
+    const {data,error}=await vocabDb.from("vocab_words")
+      .select("day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
+      .eq("is_published",true)
+      .order("day",{ascending:true})
+      .order("sn",{ascending:true,nullsFirst:false});
+    if(error)throw error;
+    if(data&&data.length){
+      S.all=mapDatabaseWords(data);
+      renderLoadedWords("");
+      return;
+    }
+    await loadWorkbookFallback("The vocabulary database is ready but has no imported words yet. Showing the current workbook.");
+  }catch(error){
+    await loadWorkbookFallback("The vocabulary database is not available yet. Showing the current workbook. "+(error.message||""));
+  }
+}
+function filter(){
+  let q=$("search").value.toLowerCase().trim(),d=$("dayFilter").value;
+  let dayNum=d==="all"?Infinity:Number(d);
+  S.items=S.all.filter(x=>(d==="all"||(!Number.isNaN(dayNum)&&Number(x.day)<=dayNum)||x.day===d)&&(!q||x.word.toLowerCase().includes(q)));
+  if(S.shuffled)shuffleList(false);S.page=0;render();
+}
 function shuffleList(toggle=true){if(toggle)S.shuffled=true;for(let i=S.items.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[S.items[i],S.items[j]]=[S.items[j],S.items[i]];}S.page=0;render()}
-function card(x,number){let el=document.createElement("article");el.className="tile";el.tabIndex=0;el.setAttribute("role","button");el.innerHTML=`<div class="tilehead"><span>WORD ${esc(x.sn||number)}</span><span class="tag">DAY ${esc(x.day||"—")}</span></div><div class="word">${esc(x.word)}</div><p class="hint">Tap to flip to meanings</p><div class="details"><div class="meaningText"><b>Meanings</b>${x.meanings.length?`<ol>${x.meanings.map(m=>`<li>${esc(m)}</li>`).join("")}</ol>`:"<p>No meanings entered.</p>"}${x.syn?`<div class="syn"><b>Synonyms:</b> ${esc(x.syn)}</div>`:""}</div><div class="examplesText"><div class="label">Examples</div>${x.examples.map(e=>`<p>${esc(e)}</p>`).join("")||"<p>No examples entered.</p>"}</div></div>`;let stage=0;function tap(){stage=(stage+1)%3;el.classList.toggle("meaning",stage===1);el.classList.toggle("examples",stage===2);el.querySelector(".word").textContent=x.word;el.querySelector(".hint").textContent=stage===0?"Tap to flip to meanings":stage===1?"Tap to flip to examples":"Tap to return to word";}el.addEventListener("click",tap);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tap()}});return el}
-function render(){let total=S.items.length,pages=Math.max(1,Math.ceil(total/S.n));S.page=Math.min(S.page,pages-1);let start=S.page*S.n,shown=S.items.slice(start,start+S.n);$("counter").textContent=total?`${start+1}–${start+shown.length} of ${total} words`:"0 words";$("bar").style.width=total?`${(start+shown.length)/total*100}%`:"0%";$("tiles").innerHTML="";$("tiles").dataset.count=S.n;if(!total){$("tiles").style.display="none";$("actions").style.display="none";$("status").hidden=false;$("status").textContent="No matching words. Adjust your search or day filter.";return}$("status").hidden=true;$("tiles").style.display="grid";$("actions").style.display="flex";shown.forEach((x,i)=>$("tiles").append(card(x,start+i+1)));$("prev").disabled=S.page===0;$("next").disabled=S.page>=pages-1;$("next").textContent=S.page===pages-1?"End":"Next →"}
-$("prev").onclick=()=>{if(S.page>0){S.page--;render()}};$("next").onclick=()=>{if(S.page<Math.ceil(S.items.length/S.n)-1){S.page++;render()}};
+function card(x,number){
+  let el=document.createElement("article");el.className="tile";el.tabIndex=0;el.setAttribute("role","button");
+  el.innerHTML='<div class="tilehead"><span>WORD '+esc(x.sn||number)+'</span><span class="tag">DAY '+esc(x.day||"—")+'</span></div><div class="word">'+esc(x.word)+'</div><p class="hint">Tap to flip to meanings</p><div class="details"><div class="meaningText"><b>Meanings</b>'+
+    (x.meanings.length?'<ol>'+x.meanings.map(m=>'<li>'+esc(m)+'</li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
+    (x.syn?'<div class="syn"><b>Synonyms:</b> '+esc(x.syn)+'</div>':"")+
+    '</div><div class="examplesText"><div class="label">Examples</div>'+(x.examples.map(e=>'<p>'+esc(e)+'</p>').join("")||"<p>No examples entered.</p>")+'</div></div>';
+  let stage=0;
+  function tap(){stage=(stage+1)%3;el.classList.toggle("meaning",stage===1);el.classList.toggle("examples",stage===2);el.querySelector(".word").textContent=x.word;el.querySelector(".hint").textContent=stage===0?"Tap to flip to meanings":stage===1?"Tap to flip to examples":"Tap to return to word";}
+  el.addEventListener("click",tap);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tap()}});
+  return el;
+}
+function render(){
+  let total=S.items.length,pages=Math.max(1,Math.ceil(total/S.n));S.page=Math.min(S.page,pages-1);
+  let start=S.page*S.n,shown=S.items.slice(start,start+S.n);
+  $("counter").textContent=total?(start+1)+"–"+(start+shown.length)+" of "+total+" words":"0 words";
+  $("bar").style.width=total?((start+shown.length)/total*100)+"%":"0%";
+  $("tiles").innerHTML="";$("tiles").dataset.count=S.n;
+  if(!total){$("tiles").style.display="none";$("actions").style.display="none";$("status").hidden=false;$("status").textContent="No matching words. Adjust your search or day filter.";return}
+  $("status").hidden=true;$("tiles").style.display="grid";$("actions").style.display="flex";
+  shown.forEach((x,i)=>$("tiles").append(card(x,start+i+1)));
+  $("prev").disabled=S.page===0;$("next").disabled=S.page>=pages-1;$("next").textContent=S.page===pages-1?"End":"Next →";
+}
+$("prev").onclick=()=>{if(S.page>0){S.page--;render()}};
+$("next").onclick=()=>{if(S.page<Math.ceil(S.items.length/S.n)-1){S.page++;render()}};
 document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{S.n=+b.dataset.n;S.page=0;document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("active",x===b));render()});
-$("search").addEventListener("input",filter);$("dayFilter").addEventListener("change",()=>{S.shuffled=false;filter()});$("shuffle").onclick=()=>shuffleList(true);load();
+$("search").addEventListener("input",filter);
+$("dayFilter").addEventListener("change",()=>{S.shuffled=false;filter()});
+$("shuffle").onclick=()=>shuffleList(true);
+load();
 </script></body></html>
