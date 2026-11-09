@@ -398,20 +398,21 @@
     completeButton.onclick = async () => {
       const done = window.DrillGREProgress?.isDone(progressKey) || false;
       const nextDone = !done;
+      // Update immediately in this browser. If account sync is unavailable,
+      // the local completion remains available and can be synchronised later.
+      window.DrillGREProgress?.markDone(progressKey, nextDone);
+      syncCompletion();
+      const marker = $("sideLessons").querySelector(`a[href="lesson.html?id=${encodeURIComponent(lesson.id)}"] .check`);
+      if (marker) marker.textContent = nextDone ? "✓" : "";
       if (learnerSignedIn) {
         const {error} = await db.rpc("set_gre_lesson_progress", {
           p_lesson_id:lesson.id,
           p_completed:nextDone
         });
         if (error) {
-          alert("Lesson progress could not be saved to your account. " + error.message);
-          return;
+          alert("This lesson was marked on this device, but account synchronisation failed. Your progress will be retried when the database setup is complete. " + error.message);
         }
       }
-      window.DrillGREProgress?.markDone(progressKey, nextDone);
-      syncCompletion();
-      const marker = $("sideLessons").querySelector(`a[href="lesson.html?id=${encodeURIComponent(lesson.id)}"] .check`);
-      if (marker) marker.textContent = nextDone ? "✓" : "";
     };
     syncCompletion();
     document.addEventListener("drillgre:progress", () => {
