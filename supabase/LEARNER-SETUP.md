@@ -21,7 +21,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's Know it, Seen but Review, and Unknown classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket.
 
 ## Production security checklist
 
@@ -53,7 +53,7 @@ In the Admin workspace, select **Vocab Mountain**. Administrators can:
 - See and skip duplicate words rather than replacing existing entries.
 - Publish, unpublish, or delete entries.
 
-CSV columns are \`day\`, \`sn\`, \`word\`, \`meaning1\`, \`meaning2\`, \`meaning3\`, \`synonyms\`, \`example1\`, \`example2\`, \`example3\`, and \`is_published\`. Only \`day\`, \`word\`, and at least one meaning are required. Download the template from the Admin workspace or use [the CSV template](../templates/drillgre-vocabulary-template.csv).
+CSV columns are \`day\`, \`sn\`, \`word\`, \`category\`, \`meaning1\`, \`meaning2\`, \`meaning3\`, \`synonyms\`, \`example1\`, \`example2\`, \`example3\`, and \`is_published\`. Only \`day\`, \`word\`, and at least one meaning are required; \`category\` is optional. Download the template from the Admin workspace or use [the CSV template](../templates/drillgre-vocabulary-template.csv).
 
 Vocab Mountain reads published words directly from Supabase and displays each word's category. Guests can browse, search, and study vocabulary, but their progress is not saved and the learning tracker is unavailable until they sign in. Signed-in learners can classify words as **Nailed It** (green), **Revisit** (orange), or **New to Me** (red). These classifications are saved to Supabase and synced across devices. Unclassified cards remain white in the **All** view.
 
