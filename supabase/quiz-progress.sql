@@ -648,26 +648,26 @@ select coalesce(jsonb_agg(to_jsonb(r) order by r.rank),'[]'::jsonb)
 from (
   select
     row_number() over (
-      order by max(a.scaled_score) desc,
+      order by max(a.scaled_score) desc nulls last,
         count(distinct q.id) desc,
-        count(distinct a.id) desc,
-        min(a.completed_at) asc
+        count(distinct a.id) desc
     )::integer as rank,
     split_part(coalesce(nullif(trim(p.name),''),'Learner'),' ',1) as first_name,
     max(a.scaled_score)::integer as best_score,
     count(distinct a.id)::integer as mocks_completed,
     count(distinct q.id)::integer as quizzes_completed
   from public.profiles p
-  join public.gre_mock_attempts a
+  left join public.gre_mock_attempts a
     on a.learner_id=p.id and a.status='completed'
   left join public.gre_topic_quiz_attempts q
     on q.learner_id=p.id and q.status='completed'
-  where p.role='learner' and p.leaderboard_opt_in=true
+  where p.role='learner'
+    and p.leaderboard_opt_in=true
+    and (a.id is not null or q.id is not null)
   group by p.id,p.name
-  order by max(a.scaled_score) desc,
+  order by max(a.scaled_score) desc nulls last,
     count(distinct q.id) desc,
-    count(distinct a.id) desc,
-    min(a.completed_at) asc
+    count(distinct a.id) desc
   limit greatest(1,least(coalesce(p_limit,50),100))
 ) r;
 $$;
