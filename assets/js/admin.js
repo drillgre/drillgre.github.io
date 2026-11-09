@@ -2064,6 +2064,7 @@ function vocabRecord(raw, rowNumber = 0) {
   if (published === null) errors.push("is_published must be TRUE or FALSE.");
   const record = {
     day, sn, word,
+    category:vocabText(row.category) || null,
     meaning1:vocabText(row.meaning1) || null,
     meaning2:vocabText(row.meaning2) || null,
     meaning3:vocabText(row.meaning3) || null,
@@ -2086,7 +2087,7 @@ function renderVocabWords() {
   const day = $("vocabDayFilter").value;
   const published = $("vocabPublishFilter").value;
   const rows = vocabCache.filter(item => {
-    const text = [item.word,item.meaning1,item.meaning2,item.meaning3,item.synonyms].filter(Boolean).join(" ").toLowerCase();
+    const text = [item.word,item.category,item.meaning1,item.meaning2,item.meaning3,item.synonyms].filter(Boolean).join(" ").toLowerCase();
     return (!search || text.includes(search)) &&
       (!day || String(item.day) === day) &&
       (published === "" || String(item.is_published) === published);
@@ -2096,7 +2097,7 @@ function renderVocabWords() {
     '<div class="entry"><div><strong>' + esc(item.word) +
     ' <span class="meta" style="font-weight:500">· Day ' + esc(item.day) +
     (item.sn ? " · SN " + esc(item.sn) : "") + '</span></strong>' +
-    '<div class="meta">' + esc(vocabMeaningSummary(item)) + '</div>' +
+    '<div class="meta">' + (item.category ? "Category: " + esc(item.category) + " · " : "") + esc(vocabMeaningSummary(item)) + '</div>' +
     '<div class="meta">' + (item.is_published ? "Published" : "Draft") +
     (item.synonyms ? " · Synonyms: " + esc(item.synonyms) : "") + '</div></div>' +
     '<div class="buttons"><button type="button" data-vocab-edit="' + esc(item.id) + '">Edit</button>' +
@@ -2126,7 +2127,7 @@ function populateVocabDayFilter() {
 
 async function loadVocabWords() {
   const {data,error} = await db.from("vocab_words")
-    .select("id,day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3,is_published,created_at")
+    .select("id,day,sn,word,category,meaning1,meaning2,meaning3,synonyms,example1,example2,example3,is_published,created_at")
     .order("day",{ascending:true})
     .order("sn",{ascending:true,nullsFirst:false})
     .limit(10000);
@@ -2167,6 +2168,7 @@ function editVocabWord(id) {
   $("vocabDay").value = item.day;
   $("vocabSn").value = item.sn ?? "";
   $("vocabWord").value = item.word || "";
+  $("vocabCategory").value = item.category || "";
   $("vocabMeaning1").value = item.meaning1 || "";
   $("vocabMeaning2").value = item.meaning2 || "";
   $("vocabMeaning3").value = item.meaning3 || "";
@@ -2183,6 +2185,7 @@ $("vocabWordForm").addEventListener("submit",async event => {
   event.preventDefault();
   const result = vocabRecord({
     day:$("vocabDay").value, sn:$("vocabSn").value, word:$("vocabWord").value,
+    category:$("vocabCategory").value,
     meaning1:$("vocabMeaning1").value, meaning2:$("vocabMeaning2").value,
     meaning3:$("vocabMeaning3").value, synonyms:$("vocabSynonyms").value,
     example1:$("vocabExample1").value, example2:$("vocabExample2").value,
@@ -2237,8 +2240,8 @@ async function deleteVocabWord(id) {
 }
 
 function downloadVocabCsvTemplate() {
-  const headers = ["day","sn","word","meaning1","meaning2","meaning3","synonyms","example1","example2","example3","is_published"];
-  const sample = ["1","1","abound","to exist in large numbers","to be plentiful","","plentiful; numerous","The flowers abound in the garden.","Opportunities abound for prepared students.","","TRUE"];
+  const headers = ["day","sn","word","category","meaning1","meaning2","meaning3","synonyms","example1","example2","example3","is_published"];
+  const sample = ["1","1","abound","Abundance","to exist in large numbers","to be plentiful","","plentiful; numerous","The flowers abound in the garden.","Opportunities abound for prepared students.","","TRUE"];
   const quote = value => '"' + String(value ?? "").replace(/"/g,'""') + '"';
   const csv = [headers,sample].map(row=>row.map(quote).join(",")).join("\r\n") + "\r\n";
   const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
@@ -2265,11 +2268,11 @@ function renderVocabImportPreview() {
       '<div class="rule"><strong>' + imported + '</strong><span>Imported</span></div></div>';
   const preview = vocabImportRows.slice(0,40);
   $("vocabImportPreview").innerHTML = preview.length
-    ? '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>Row</th><th>Word</th><th>Day</th><th>Meaning</th><th>Status</th></tr></thead><tbody>' +
+    ? '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>Row</th><th>Word</th><th>Category</th><th>Day</th><th>Meaning</th><th>Status</th></tr></thead><tbody>' +
       preview.map(row => {
         const status = row.imported ? "Imported" : row.errors.length ? row.errors.join(" ") : row.duplicate ? "Duplicate, skipped" : "Ready";
         const colour = row.imported ? "#147d54" : row.errors.length ? "#b42318" : row.duplicate ? "#8a5a00" : "#147d54";
-        return '<tr><td>' + row.rowNumber + '</td><td><strong>' + esc(row.record.word) + '</strong></td><td>' + esc(row.record.day) + '</td><td>' + esc(vocabMeaningSummary(row.record).slice(0,120)) + '</td><td style="color:' + colour + '">' + esc(status) + '</td></tr>';
+        return '<tr><td>' + row.rowNumber + '</td><td><strong>' + esc(row.record.word) + '</strong></td><td>' + esc(row.record.category || "—") + '</td><td>' + esc(row.record.day) + '</td><td>' + esc(vocabMeaningSummary(row.record).slice(0,120)) + '</td><td style="color:' + colour + '">' + esc(status) + '</td></tr>';
       }).join("") + '</tbody></table>' +
       (vocabImportRows.length > preview.length ? '<p class="field-note">Showing the first ' + preview.length + ' of ' + vocabImportRows.length + ' rows.</p>' : '')
     : '<p class="field-note">No vocabulary rows found.</p>';
