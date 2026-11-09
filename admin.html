@@ -29,6 +29,11 @@
     #stimulusPanel { padding:14px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; }
     #stimulusPanel h3 { margin:0 0 6px; }
     #stimulusEditor { margin-top:12px; }
+    #vocabulary .entry{align-items:flex-start}
+    #vocabulary .entry .buttons{flex:0 0 auto}
+    #vocabWordDialog textarea{min-height:64px;resize:vertical}
+    #importVocabDialog .panel{background:#f8fafc}
+    #vocabImportPreview table th,#vocabImportPreview table td{padding:8px;text-align:left;vertical-align:top;border-bottom:1px solid #e2e8f0}
     #stimulusPanel { padding:14px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; }
     #stimulusPanel h3 { margin:0 0 6px; }
     #stimulusEditor { margin-top:12px; }
@@ -98,6 +103,10 @@
 
         <button class="tab" data-tab="questions">
           Question bank
+        </button>
+
+        <button class="tab" data-tab="vocabulary">
+          Vocab Mountain
         </button>
       </nav>
 
@@ -182,6 +191,33 @@
 
         <div id="questionList"></div>
 
+      </section>
+
+      <!-- Vocab Mountain -->
+      <section id="vocabulary" class="panel" hidden>
+        <div class="sectionhead">
+          <div>
+            <h2>Vocab Mountain</h2>
+            <p>Manage words by day. Add entries individually or import a CSV file.</p>
+          </div>
+          <div class="actions" style="margin:0;gap:8px;flex-wrap:wrap">
+            <button type="button" class="secondary" id="importVocab">Import CSV</button>
+            <button type="button" id="newVocabWord">+ Add word</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input id="vocabSearch" type="search" placeholder="Search words or meanings">
+          <select id="vocabDayFilter"><option value="">All days</option></select>
+          <select id="vocabPublishFilter">
+            <option value="">All statuses</option>
+            <option value="true">Published</option>
+            <option value="false">Draft</option>
+          </select>
+        </div>
+        <div class="meta" id="vocabCount" style="margin:8px 0">Loading vocabulary…</div>
+        <p id="vocabStatus" class="msg" aria-live="polite"></p>
+        <div id="vocabWordList"></div>
       </section>
 
     </section>
@@ -625,6 +661,86 @@
     <div class="actions">
       <button type="button" class="secondary" data-close="importQuestionsDialog">Close</button>
       <button type="button" id="runQuestionImport" disabled>Import valid questions</button>
+    </div>
+  </dialog>
+
+  <!-- Vocab Mountain word form -->
+  <dialog id="vocabWordDialog" style="width:min(900px,calc(100% - 24px))">
+    <form id="vocabWordForm">
+      <div class="dialoghead">
+        <h2 id="vocabWordTitle">Add vocabulary word</h2>
+        <button type="button" class="x" data-close="vocabWordDialog">×</button>
+      </div>
+      <input id="vocabWordId" type="hidden">
+      <div class="grid">
+        <label>Day
+          <input id="vocabDay" type="number" min="1" step="1" required placeholder="1">
+        </label>
+        <label>Serial number (optional)
+          <input id="vocabSn" type="number" min="1" step="1" placeholder="1">
+        </label>
+        <label class="full">Word
+          <input id="vocabWord" required maxlength="120" placeholder="e.g. Abound">
+        </label>
+        <label>Meaning 1
+          <textarea id="vocabMeaning1" rows="2" placeholder="First meaning"></textarea>
+        </label>
+        <label>Meaning 2
+          <textarea id="vocabMeaning2" rows="2" placeholder="Second meaning (optional)"></textarea>
+        </label>
+        <label class="full">Meaning 3
+          <textarea id="vocabMeaning3" rows="2" placeholder="Third meaning (optional)"></textarea>
+        </label>
+        <label class="full">Synonyms
+          <input id="vocabSynonyms" placeholder="e.g. plentiful, numerous, ample">
+        </label>
+        <label>Example 1
+          <textarea id="vocabExample1" rows="2" placeholder="Example sentence"></textarea>
+        </label>
+        <label>Example 2
+          <textarea id="vocabExample2" rows="2" placeholder="Optional"></textarea>
+        </label>
+        <label class="full">Example 3
+          <textarea id="vocabExample3" rows="2" placeholder="Optional"></textarea>
+        </label>
+        <label class="check full">
+          <input id="vocabPublished" type="checkbox" checked>
+          Publish this word on Vocab Mountain
+        </label>
+      </div>
+      <p id="vocabWordMsg" class="msg"></p>
+      <div class="actions">
+        <button type="button" class="secondary" data-close="vocabWordDialog">Cancel</button>
+        <button type="submit" id="saveVocabWord">Save word</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Vocab Mountain CSV import -->
+  <dialog id="importVocabDialog" style="width:min(1000px,calc(100% - 24px));max-width:1000px">
+    <div class="dialoghead">
+      <div>
+        <h2>Import vocabulary from CSV</h2>
+        <p class="field-note">Upload a CSV file, review validation, then import the valid new words.</p>
+      </div>
+      <button type="button" class="x" data-close="importVocabDialog">×</button>
+    </div>
+    <div class="panel" style="padding:14px;margin:12px 0">
+      <div class="actions" style="justify-content:flex-start;margin-top:0">
+        <button type="button" class="secondary" id="downloadVocabTemplate">Download CSV template</button>
+      </div>
+      <label style="display:block;margin-top:12px">Vocabulary CSV file
+        <input id="vocabImportFile" type="file" accept=".csv,text/csv" style="display:block;margin-top:6px">
+      </label>
+      <p class="field-note">Required columns: day, word, and at least one meaning field. Optional columns: sn, synonyms, example1 to example3, and is_published. Existing words are skipped rather than replaced.</p>
+      <button type="button" id="validateVocabImport">Preview and validate</button>
+      <p id="vocabImportStatus" class="msg" aria-live="polite"></p>
+    </div>
+    <div id="vocabImportSummary" hidden></div>
+    <div id="vocabImportPreview" style="max-height:420px;overflow:auto"></div>
+    <div class="actions">
+      <button type="button" class="secondary" data-close="importVocabDialog">Close</button>
+      <button type="button" id="runVocabImport" disabled>Import valid words</button>
     </div>
   </dialog>
 
