@@ -47,6 +47,33 @@
     .bank-video{position:relative;aspect-ratio:16/9;width:min(100%,640px);margin-top:12px}
     .bank-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:9px}
     .bank-empty{background:#fff;border:1px dashed #cbd5e1;border-radius:14px;padding:30px;text-align:center;color:var(--muted)}
+    .bank-empty h2{margin:0 0 8px;color:var(--ink)}
+    .bank-empty p{max-width:620px;margin:0 auto 16px;line-height:1.65}
+    .bank-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px 19px;display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:18px;align-items:center}
+    .bank-card-main{min-width:0}
+    .bank-card-title{font-size:14px;font-weight:850;color:#26344c;margin:0 0 8px}
+    .bank-excerpt{font-size:13px;line-height:1.65;color:#56637a;margin:0 0 13px;white-space:pre-line}
+    .bank-card-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .bank-open{border:0;border-radius:8px;background:var(--blue);color:#fff;padding:9px 13px;font-weight:800;font-size:12px;cursor:pointer}
+    .bank-done{display:inline-flex;align-items:center;gap:5px;border:1px solid #b9e2c8;border-radius:99px;background:#f0fbf4;color:#187447;padding:5px 9px;font-size:11px;font-weight:800}
+    .bank-card-figure{display:block;width:100%;max-height:115px;object-fit:contain;border-radius:8px;background:#f8fafc}
+    .bank-card-figure[hidden]{display:none}
+    .bank-dialog{width:min(900px,calc(100% - 28px));max-width:900px;max-height:88vh;padding:0;border:0;border-radius:16px;box-shadow:0 24px 90px rgba(14,27,52,.28);overflow:hidden}
+    .bank-dialog::backdrop{background:rgba(11,20,38,.64);backdrop-filter:blur(3px)}
+    .bank-dialog-shell{display:flex;flex-direction:column;max-height:88vh;background:#fff}
+    .bank-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:17px 22px;border-bottom:1px solid var(--line);background:#fbfcff}
+    .bank-dialog-head .eyebrow{font-size:10px}
+    .bank-dialog-head h2{margin:4px 0 0;font-size:19px;color:var(--ink)}
+    .bank-dialog-close{width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:25px;line-height:1;color:#526078;cursor:pointer;flex:0 0 auto}
+    .bank-dialog-body{padding:20px 22px 26px;overflow:auto}
+    .bank-modal-prompt{white-space:pre-line;font-size:15px;line-height:1.8;color:var(--ink);margin:12px 0 17px}
+    .bank-modal-figure{display:block;max-width:100%;max-height:430px;object-fit:contain;margin:14px auto 18px;border-radius:9px}
+    .bank-modal-figure[hidden]{display:none}
+    .bank-modal-stimulus{background:#f2f5ff;border:1px solid #d0d9fa;border-radius:12px;padding:16px;margin:12px 0}
+    .bank-modal-stimulus h3{font-size:15px;margin:4px 0 8px;color:#17233c}
+    .bank-modal-stimulus p{white-space:pre-line;font-size:13px;line-height:1.7;color:#344158;margin:0}
+    .bank-card:focus-within{border-color:#9db5ff}
+    @media(max-width:650px){.bank-card{grid-template-columns:1fr}.bank-card-figure{max-height:180px}.bank-dialog-head{padding:14px}.bank-dialog-body{padding:16px}}
     .bank-status{padding:13px 15px;margin:14px 0;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-size:13px;line-height:1.6}
     .bank-status.error{border-color:#f3d0cb;background:#fff5f4;color:#9a2e20}
     @media(max-width:900px){.bank-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-filters input{grid-column:1/-1}}
@@ -98,6 +125,13 @@
     </div>
   </section>
 
+  <section id="bankAuthGate" class="bank-empty" hidden>
+    <h2>Sign in to access the Question Bank</h2>
+    <p>The practice Question Bank is available to registered DrillGRE learners. Sign in or create a free account to browse questions and save your progress.</p>
+    <a class="btn primary" href="/account.html?redirect=%2Fquant%2Fquestion-bank.html">Sign in or create an account</a>
+  </section>
+
+  <div id="bankWorkspace" hidden>
   <div id="bankStatus" class="bank-status" role="status">Loading the practice question bank…</div>
 
   <section class="bank-filters" aria-label="Filter question bank">
@@ -120,6 +154,20 @@
     <span>Showing published questions available for practice</span>
   </div>
   <section id="bankQuestionList" class="bank-question-list" aria-live="polite"></section>
+  </div>
+
+  <dialog id="questionDialog" class="bank-dialog" aria-labelledby="dialogQuestionTitle">
+    <div class="bank-dialog-shell">
+      <div class="bank-dialog-head">
+        <div>
+          <div class="eyebrow">Question Bank practice</div>
+          <h2 id="dialogQuestionTitle">Full question</h2>
+        </div>
+        <button id="closeQuestionDialog" class="bank-dialog-close" type="button" aria-label="Close question">×</button>
+      </div>
+      <div id="questionDialogBody" class="bank-dialog-body"></div>
+    </div>
+  </dialog>
 </main>
 
 <footer style="max-width:1240px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Quant Question Bank</footer>
