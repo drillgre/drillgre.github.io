@@ -1683,8 +1683,14 @@ function importQuestionRecord(rawRow, rowNumber) {
   }
 
   if (type === "quantitative_comparison") {
-    const qa = importText(row.quantity_a);
-    const qb = importText(row.quantity_b);
+    const existingQuantityA = Array.isArray(options)
+      ? options.find(item => String(item.label || "").toLowerCase() === "quantity a")?.text
+      : "";
+    const existingQuantityB = Array.isArray(options)
+      ? options.find(item => String(item.label || "").toLowerCase() === "quantity b")?.text
+      : "";
+    const qa = importText(row.quantity_a || existingQuantityA || (Array.isArray(options) ? options[0]?.text : ""));
+    const qb = importText(row.quantity_b || existingQuantityB || (Array.isArray(options) ? options[1]?.text : ""));
     if (!qa || !qb) errors.push("Quantitative Comparison requires quantity_a and quantity_b.");
     options = [
       { label: "Quantity A", text: qa },
