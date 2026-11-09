@@ -27,6 +27,7 @@
         <span class="leader-score">${row.best_score === null || row.best_score === undefined ? "—" : esc(row.best_score) + '<span class="leader-sub"> / 170</span>'}</span>
         <span class="leader-attempts"><b>${esc(row.mocks_completed || 0)}</b><span class="leader-sub"> mocks</span></span>
         <span class="leader-quizzes"><b>${esc(row.quizzes_completed || 0)}</b><span class="leader-sub"> quizzes</span></span>
+        <span class="leader-question-bank"><b>${esc(row.question_bank_completed || 0)}</b><span class="leader-sub"> questions</span></span>
       </div>
     `).join("");
   }
@@ -51,8 +52,8 @@
         optedIn = !!profile.leaderboard_opt_in;
         $("leaderOptTitle").textContent = optedIn ? "You are on the leaderboard" : "Join the leaderboard";
         $("leaderOptCopy").textContent = optedIn
-          ? "Your first name, best completed mock score, mock count, and completed quiz count are visible. You can remove yourself at any time."
-          : "Choose whether to display your first name, best mock score, and completed assessment counts publicly. Your email address is never shown.";
+          ? "Your first name, best mock score, mock count, completed quiz count, and completed Question Bank count are visible. You can remove yourself at any time."
+          : "Choose whether to display your first name, best mock score, and completed assessment and Question Bank counts publicly. Your email address is never shown.";
         $("leaderOptButton").textContent = optedIn ? "Remove me from leaderboard" : "Join leaderboard";
         $("leaderOptButton").classList.toggle("secondary", optedIn);
       } else {
@@ -74,7 +75,7 @@
       return;
     }
     renderRows(data || []);
-    status("Opted-in learners are ranked primarily by their best mock score. Completed topic quiz counts are displayed separately and used as a tie-breaker.");
+    status("Opted-in learners are ranked primarily by their best mock score. Completed topic quizzes and Question Bank questions are displayed separately and used as participation tie-breakers.");
   }
 
   $("leaderOptButton").addEventListener("click", async () => {
