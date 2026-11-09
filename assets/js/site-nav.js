@@ -14,6 +14,19 @@
   const toggle = document.querySelector("[data-site-nav-toggle]");
   const links = document.querySelector("[data-site-nav-links]");
 
+  // Native <details> state can be restored when users return through browser
+  // history. Keep the Quant menu closed on page entry and after navigation.
+  const navDropdowns = [...document.querySelectorAll(".drillgre-nav-dropdown")];
+  const closeDropdowns = () => navDropdowns.forEach(dropdown => { dropdown.open = false; });
+  closeDropdowns();
+  window.addEventListener("pageshow", closeDropdowns);
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeDropdowns();
+  });
+  document.addEventListener("click", event => {
+    if (!event.target.closest(".drillgre-nav-dropdown")) closeDropdowns();
+  });
+
   if (toggle && links) {
     toggle.addEventListener("click", () => {
       const isOpen = links.classList.toggle("is-open");
@@ -23,6 +36,7 @@
     });
     links.querySelectorAll("a").forEach(link => {
       link.addEventListener("click", () => {
+        closeDropdowns();
         links.classList.remove("is-open");
         toggle.setAttribute("aria-expanded", "false");
         toggle.setAttribute("aria-label", "Open navigation");
