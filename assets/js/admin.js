@@ -1596,6 +1596,396 @@ async function deleteQuestion(id) {
 }
 
 
+
+/* ============================================================
+   Bulk question import
+   Accepts CSV / Excel with the template columns, or JSON records.
+   ============================================================ */
+
+let questionImportRows = [];
+let questionImportFileName = "";
+
+const questionImportTypes = new Set([
+  "quantitative_comparison",
+  "multiple_choice_single",
+  "multiple_choice_multiple",
+  "numeric_entry",
+  "data_interpretation"
+]);
+
+function importText(value) {
+  return String(value ?? "").trim();
+}
+
+function importHeaderRow(row) {
+  const result = {};
+  Object.entries(row || {}).forEach(([key, value]) => {
+    result[String(key).trim().toLowerCase().replace(/[\s-]+/g, "_")] = value;
+  });
+  return result;
+}
+
+function parseImportJsonCell(value, label, rowNumber, errors) {
+  if (value === null || value === undefined || value === "") return undefined;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(String(value));
+  } catch (_) {
+    errors.push("Row " + rowNumber + ": " + label + " must contain valid JSON.");
+    return undefined;
+  }
+}
+
+function importBoolean(value, defaultValue = false) {
+  if (value === null || value === undefined || String(value).trim() === "") return defaultValue;
+  if (typeof value === "boolean") return value;
+  const text = String(value).trim().toLowerCase();
+  if (["true", "1", "yes", "y", "published"].includes(text)) return true;
+  if (["false", "0", "no", "n", "draft"].includes(text)) return false;
+  return null;
+}
+
+function importQuestionRecord(rawRow, rowNumber) {
+  const row = importHeaderRow(rawRow);
+  const errors = [];
+
+  const category = importText(row.topic_category).toLowerCase();
+  const subtopic = importText(row.subtopic).toLowerCase();
+  const type = importText(row.question_type).toLowerCase();
+  const difficulty = Number(row.difficulty);
+  const questionText = importText(row.question_text);
+  const topic = importText(row.topic);
+  const usage = importText(row.question_usage || "both").toLowerCase();
+  const explanationType = importText(row.explanation_type || "text").toLowerCase();
+
+  if (!topic) errors.push("Topic is required.");
+  if (!categorySubtopics[category]) errors.push("Invalid topic_category. Use arithmetic, data_analysis, algebra, or geometry.");
+  if (categorySubtopics[category] && !categorySubtopics[category].some(item => item[0] === subtopic)) {
+    errors.push("Invalid subtopic for " + category + ".");
+  }
+  if (!questionImportTypes.has(type)) errors.push("Invalid question_type.");
+  if (!Number.isInteger(difficulty) || difficulty < 1 || difficulty > 5) errors.push("Difficulty must be an integer from 1 to 5.");
+  if (!questionText) errors.push("Question text is required.");
+  if (!["mock", "practice", "both"].includes(usage)) errors.push("question_usage must be mock, practice, or both.");
+  if (!["text", "video", "both"].includes(explanationType)) errors.push("explanation_type must be text, video, or both.");
+
+  let options = parseImportJsonCell(row.options_json, "options_json", rowNumber, errors);
+  if (options === undefined && row.options !== undefined && row.options !== "") {
+    options = parseImportJsonCell(row.options, "options", rowNumber, errors);
+  }
+
+  let correct = parseImportJsonCell(row.correct_answer_json, "correct_answer_json", rowNumber, errors);
+  if (correct === undefined && row.correct_answer !== undefined && row.correct_answer !== "") {
+    const rawAnswer = row.correct_answer;
+    correct = typeof rawAnswer === "number" ? String(rawAnswer) : importText(rawAnswer);
+  }
+
+  if (type === "quantitative_comparison") {
+    const qa = importText(row.quantity_a);
+    const qb = importText(row.quantity_b);
+    if (!qa || !qb) errors.push("Quantitative Comparison requires quantity_a and quantity_b.");
+    options = [
+      { label: "Quantity A", text: qa },
+      { label: "Quantity B", text: qb }
+    ];
+    const answer = importText(correct).toUpperCase();
+    if (!["A", "B", "C", "D"].includes(answer)) errors.push("Quantitative Comparison correct_answer must be A, B, C, or D.");
+    correct = answer;
+  } else if (type === "numeric_entry") {
+    const numericValue = row.numeric_answer !== undefined && row.numeric_answer !== ""
+      ? row.numeric_answer
+      : (correct && typeof correct === "object" ? correct.value : correct);
+    const toleranceValue = row.numeric_tolerance !== undefined && row.numeric_tolerance !== ""
+      ? row.numeric_tolerance
+      : (correct && typeof correct === "object" ? correct.tolerance : null);
+    if (numericValue === null || numericValue === undefined || importText(numericValue) === "" || !Number.isFinite(Number(numericValue))) {
+      errors.push("Numeric Entry requires a valid numeric_answer.");
+    }
+    if (toleranceValue !== null && toleranceValue !== undefined && toleranceValue !== "" &&
+        (!Number.isFinite(Number(toleranceValue)) || Number(toleranceValue) < 0)) {
+      errors.push("numeric_tolerance must be a non-negative number.");
+    }
+    correct = {
+      value: importText(numericValue),
+      tolerance: toleranceValue === null || toleranceValue === undefined || toleranceValue === "" ? null : Number(toleranceValue)
+    };
+    options = [];
+  } else {
+    if (!Array.isArray(options) || !options.length) {
+      options = [];
+      for (let i = 0; i < 6; i++) {
+        const label = String.fromCharCode(65 + i);
+        const value = importText(row["option_" + label.toLowerCase()]);
+        if (value) options.push({ label, text: value });
+      }
+    }
+    options = Array.isArray(options) ? options.map((item, index) => {
+      if (typeof item === "string") return { label: String.fromCharCode(65 + index), text: item };
+      return {
+        label: importText(item.label || String.fromCharCode(65 + index)),
+        text: importText(item.text)
+      };
+    }) : [];
+
+    if (options.length < 2) errors.push("Multiple-choice questions require at least two options.");
+    if (options.some(item => !item.text)) errors.push("Every supplied option must have text.");
+
+    if (correct === undefined || correct === null || correct === "") {
+      errors.push("correct_answer is required.");
+    } else {
+      const answers = Array.isArray(correct)
+        ? correct.map(x => importText(x).toUpperCase())
+        : importText(correct).split(",").map(x => x.trim().toUpperCase()).filter(Boolean);
+      const labels = options.map(item => item.label.toUpperCase());
+      if (!answers.length || answers.some(x => !labels.includes(x))) errors.push("correct_answer must reference existing option labels, such as A or A,C.");
+      else if (type === "multiple_choice_multiple") correct = answers;
+      else {
+        if (answers.length !== 1) errors.push("This question type requires exactly one correct option.");
+        correct = answers[0] || "";
+      }
+    }
+  }
+
+  const explanation = importText(row.explanation);
+  const explanationVideoInput = importText(row.explanation_video_url);
+  const explanationVideoUrl = explanationVideoInput ? getYouTubeEmbedUrl(explanationVideoInput) : null;
+
+  if ((explanationType === "text" || explanationType === "both") && !explanation) {
+    errors.push("Written explanation is required for the selected explanation_type.");
+  }
+  if ((explanationType === "video" || explanationType === "both") && !explanationVideoUrl) {
+    errors.push("A valid YouTube explanation URL is required for the selected explanation_type.");
+  }
+
+  let figureUrl = importText(row.figure_url) || null;
+  if (figureUrl) {
+    try {
+      const parsed = new URL(figureUrl);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("invalid protocol");
+    } catch (_) {
+      errors.push("figure_url must be a valid http or https URL.");
+    }
+  }
+
+  const published = importBoolean(row.published, false);
+  if (published === null) errors.push("published must be TRUE or FALSE.");
+
+  const lessonId = importText(row.lesson_id) || null;
+  const stimulusId = importText(row.stimulus_id) || null;
+  if (stimulusId && (category !== "data_analysis" || subtopic !== "data_interpretation")) {
+    errors.push("stimulus_id can only be used with Data Analysis / Data Interpretation questions.");
+  }
+
+  const record = {
+    topic,
+    topic_category: category,
+    subtopic,
+    stimulus_id: stimulusId,
+    question_usage: usage,
+    question_type: type,
+    difficulty,
+    lesson_id: lessonId,
+    question_text: questionText,
+    options: Array.isArray(options) ? options : [],
+    correct_answer: correct,
+    figure_url: figureUrl,
+    explanation,
+    explanation_type: explanationType,
+    explanation_video_url: explanationVideoUrl,
+    published: published === null ? false : published,
+    updated_at: new Date().toISOString()
+  };
+
+  return { rowNumber, record, errors, duplicate: false, imported: false };
+}
+
+function renderQuestionImportPreview() {
+  const rows = questionImportRows;
+  const valid = rows.filter(row => !row.errors.length && !row.duplicate && !row.imported).length;
+  const duplicates = rows.filter(row => row.duplicate).length;
+  const invalid = rows.filter(row => row.errors.length).length;
+  const imported = rows.filter(row => row.imported).length;
+
+  $("questionImportSummary").hidden = false;
+  $("questionImportSummary").innerHTML =
+    '<div class="rule-grid" style="margin:12px 0">' +
+      '<div class="rule"><strong>' + valid + '</strong><span>Ready to import</span></div>' +
+      '<div class="rule"><strong>' + duplicates + '</strong><span>Duplicates skipped</span></div>' +
+      '<div class="rule"><strong>' + invalid + '</strong><span>Rows with errors</span></div>' +
+      '<div class="rule"><strong>' + imported + '</strong><span>Imported</span></div>' +
+    '</div>';
+
+  const preview = rows.slice(0, 30);
+  $("questionImportPreview").innerHTML = preview.length
+    ? '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
+      '<thead><tr><th style="text-align:left;padding:8px">Row</th><th style="text-align:left;padding:8px">Question</th><th style="text-align:left;padding:8px">Category / type</th><th style="text-align:left;padding:8px">Status</th></tr></thead>' +
+      '<tbody>' + preview.map(row => {
+        const status = row.imported ? "Imported" : row.errors.length ? row.errors.join(" ") : row.duplicate ? "Duplicate of an existing question" : "Ready";
+        const colour = row.imported ? "#147d54" : row.errors.length ? "#b42318" : row.duplicate ? "#8a5a00" : "#147d54";
+        return '<tr style="border-top:1px solid #e2e8f0">' +
+          '<td style="padding:8px;vertical-align:top">' + row.rowNumber + '</td>' +
+          '<td style="padding:8px;vertical-align:top;min-width:260px">' + esc(row.record.question_text.slice(0, 150)) + '</td>' +
+          '<td style="padding:8px;vertical-align:top">' + esc(row.record.topic_category) + ' · ' + esc(row.record.question_type) + ' · L' + esc(row.record.difficulty) + '</td>' +
+          '<td style="padding:8px;vertical-align:top;color:' + colour + ';min-width:180px">' + esc(status) + '</td>' +
+        '</tr>';
+      }).join("") + '</tbody></table>' +
+      (rows.length > preview.length ? '<p class="field-note">Showing the first ' + preview.length + ' of ' + rows.length + ' rows.</p>' : '')
+    : '<p class="field-note">No question rows found.</p>';
+
+  $("runQuestionImport").disabled = valid === 0;
+  $("runQuestionImport").textContent = valid ? "Import " + valid + " valid questions" : "No valid questions to import";
+}
+
+function downloadQuestionCsvTemplate() {
+  const headers = [
+    "topic","topic_category","subtopic","question_type","difficulty","question_text",
+    "option_a","option_b","option_c","option_d","option_e","option_f",
+    "quantity_a","quantity_b","correct_answer","numeric_answer","numeric_tolerance",
+    "figure_url","explanation","explanation_type","explanation_video_url",
+    "question_usage","published","lesson_id","stimulus_id"
+  ];
+  const csv = headers.join(",") + "\r\n";
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "drillgre-question-import-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function readQuestionImportFile(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".json")) {
+    const parsed = JSON.parse(await file.text());
+    if (!Array.isArray(parsed)) throw new Error("JSON import must be an array of question records.");
+    return parsed;
+  }
+
+  if (!window.XLSX) throw new Error("The spreadsheet reader could not load. Refresh the admin page and try again.");
+  const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!firstSheet) throw new Error("The workbook does not contain a worksheet.");
+  return window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: false });
+}
+
+async function validateQuestionImport() {
+  const file = $("questionImportFile").files[0];
+  if (!file) {
+    message("questionImportStatus", "Choose an .xlsx, .xls, .csv, or .json file first.");
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    message("questionImportStatus", "The import file must be 10 MB or smaller.");
+    return;
+  }
+
+  $("validateQuestionImport").disabled = true;
+  $("runQuestionImport").disabled = true;
+  message("questionImportStatus", "Reading and validating the file…");
+
+  try {
+    const rawRows = await readQuestionImportFile(file);
+    if (!rawRows.length) throw new Error("The file contains no question rows.");
+
+    const parsedRows = rawRows
+      .map((row, index) => ({ row, index }))
+      .filter(item => item.row && Object.values(item.row).some(value => String(value ?? "").trim() !== ""))
+      .map(item => importQuestionRecord(item.row, item.index + 2));
+
+    if (!parsedRows.length) throw new Error("No non-empty question rows were found.");
+
+    message("questionImportStatus", "Checking for existing questions…");
+    const existing = new Set();
+    let offset = 0;
+    while (true) {
+      const { data, error } = await db
+        .from("questions")
+        .select("question_type,question_text")
+        .range(offset, offset + 999);
+      if (error) throw new Error("Could not check existing questions for duplicates: " + error.message);
+      (data || []).forEach(item => {
+        existing.add(String(item.question_type) + "::" + String(item.question_text || "").trim().toLowerCase().replace(/\s+/g, " "));
+      });
+      if (!data || data.length < 1000) break;
+      offset += 1000;
+    }
+
+    const seen = new Set();
+    parsedRows.forEach(item => {
+      const key = String(item.record.question_type) + "::" +
+        String(item.record.question_text || "").trim().toLowerCase().replace(/\s+/g, " ");
+      if (!item.errors.length && (existing.has(key) || seen.has(key))) item.duplicate = true;
+      if (!item.errors.length) seen.add(key);
+    });
+
+    questionImportRows = parsedRows;
+    questionImportFileName = file.name;
+    renderQuestionImportPreview();
+    const valid = questionImportRows.filter(item => !item.errors.length && !item.duplicate).length;
+    message("questionImportStatus", "Validated " + parsedRows.length + " rows from " + file.name + ". " + valid + " are ready to import.", true);
+  } catch (error) {
+    questionImportRows = [];
+    $("questionImportSummary").hidden = true;
+    $("questionImportPreview").innerHTML = "";
+    message("questionImportStatus", error.message || "Could not read this file.");
+  } finally {
+    $("validateQuestionImport").disabled = false;
+  }
+}
+
+async function runQuestionImport() {
+  const rows = questionImportRows.filter(item => !item.errors.length && !item.duplicate && !item.imported);
+  if (!rows.length) return;
+  if (!confirm("Import " + rows.length + " questions from " + questionImportFileName + "? Existing and invalid rows will be skipped.")) return;
+
+  $("runQuestionImport").disabled = true;
+  $("validateQuestionImport").disabled = true;
+  let imported = 0;
+  const failures = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const item = rows[i];
+    $("runQuestionImport").textContent = "Importing " + (i + 1) + " of " + rows.length + "…";
+    const { error } = await db.from("questions").insert(item.record);
+    if (error) {
+      item.errors.push("Import failed: " + error.message);
+      failures.push("Row " + item.rowNumber + ": " + error.message);
+    } else {
+      item.imported = true;
+      imported++;
+    }
+    if (i % 5 === 0) renderQuestionImportPreview();
+  }
+
+  await Promise.all([loadQuestions(), loadStimulusGroups()]);
+  renderQuestionImportPreview();
+  $("validateQuestionImport").disabled = false;
+  message(
+    "questionImportStatus",
+    imported + " questions imported successfully. " + failures.length + " rows failed. Review the preview for details.",
+    failures.length === 0
+  );
+  $("runQuestionImport").textContent = "Import remaining valid questions";
+}
+
+$("importQuestions").addEventListener("click", () => {
+  questionImportRows = [];
+  questionImportFileName = "";
+  $("questionImportFile").value = "";
+  $("questionImportSummary").hidden = true;
+  $("questionImportPreview").innerHTML = "";
+  $("runQuestionImport").disabled = true;
+  $("runQuestionImport").textContent = "Import valid questions";
+  message("questionImportStatus", "");
+  $("importQuestionsDialog").showModal();
+});
+$("downloadQuestionTemplate").addEventListener("click", downloadQuestionCsvTemplate);
+$("validateQuestionImport").addEventListener("click", validateQuestionImport);
+$("runQuestionImport").addEventListener("click", runQuestionImport);
+
 // ============================================================
 // Dialog controls
 // ============================================================
