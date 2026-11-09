@@ -62,6 +62,26 @@
     }).join("");
   }
 
+  function renderQuizHistory(attempts) {
+    if (!attempts.length) {
+      $("quizHistory").innerHTML = '<div class="empty-state">No topic quizzes attempted yet. <a href="/quant/quiz.html">Create your first quiz</a>.</div>';
+      return;
+    }
+    $("quizHistory").innerHTML = attempts.map(attempt => {
+      const completed = attempt.status === "completed";
+      const date = new Date(attempt.created_at).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+      const topic = (attempt.topic_keys || []).map(key => String(key).split("::").join(" · ").replaceAll("_"," ")).join(", ");
+      const score = completed
+        ? '<strong class="attempt-score">' + escapeHtml(attempt.total_correct ?? 0) + ' / ' + escapeHtml(attempt.question_count) + ' correct</strong>'
+        : '<strong class="attempt-status">In progress</strong>';
+      const action = completed
+        ? '<span class="attempt-meta">Completed</span>'
+        : '<a target="_blank" rel="noopener" href="/quant/topic-quiz.html?attempt=' + encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Resume quiz →</a>';
+      return '<article class="quiz-attempt-row"><div><strong>Quant topic quiz</strong><div class="attempt-meta">' + escapeHtml(date) + '</div><div class="attempt-meta">' + escapeHtml(topic) + ' · ' + escapeHtml(attempt.question_count) + ' questions</div></div>' +
+        '<div style="text-align:right;display:grid;justify-items:end;gap:5px">' + score + action + '</div></article>';
+    }).join("");
+  }
+
   async function loadDashboard() {
     const { data:sessionData, error:sessionError } = await db.auth.getSession();
     const session = sessionData?.session;
@@ -81,7 +101,7 @@
       return;
     }
 
-    setStatus("Loading your learner profile and mock history…");
+    setStatus("Loading your learner profile, learning progress, and assessment history…");
 
     // Attach guest attempts from this browser to the newly signed-in learner.
     // The visitor key is only a browser-scoped claim token; it is not the auth credential.
@@ -92,6 +112,13 @@
       });
       if (claimError) {
         setStatus("Your account is signed in, but guest mock history could not be linked. " + claimError.message, true);
+        return;
+      }
+      const { error: quizClaimError } = await db.rpc("claim_guest_topic_quiz_attempts", {
+        p_visitor_key: visitorKey
+      });
+      if (quizClaimError) {
+        setStatus("Your account is signed in, but guest quiz history could not be linked. Run the latest quiz progress SQL migration in Supabase. " + quizClaimError.message, true);
         return;
       }
     }
@@ -105,9 +132,18 @@
     const profile = data.profile || {};
     $("learnerName").textContent = profile.name || session.user.email?.split("@")[0] || "Learner";
     $("learnerEmail").textContent = profile.email || session.user.email || "";
-    $("mocksStarted").textContent = data.mocks_started ?? 0;
+    $("lessonsCompleted").textContent = data.lessons_completed ?? 0;
+    $("quizzesStarted").textContent = data.quizzes_started ?? 0;
+    $("quizzesCompleted").textContent = data.quizzes_completed ?? 0;
     $("mocksCompleted").textContent = data.mocks_completed ?? 0;
+    const lessonTotal = Number(data.lessons_total || 0);
+    const lessonDone = Number(data.lessons_completed || 0);
+    $("lessonProgressText").textContent = lessonDone + " of " + lessonTotal + " lessons completed";
+    $("lessonProgressBar").style.width = (lessonTotal ? Math.min(100,100*lessonDone/lessonTotal) : 0) + "%";
+    $("quizProgressText").textContent = (data.quizzes_completed ?? 0) + " quizzes completed";
+    $("mockProgressText").textContent = (data.mocks_completed ?? 0) + " mock tests completed";
     profileRows(profile);
+    renderQuizHistory(data.topic_quiz_attempts || []);
     renderAttempts(data.recent_attempts || []);
 
     $("dashboardContent").hidden = false;
