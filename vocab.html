@@ -13,6 +13,13 @@
 .tile{min-height:255px;background:white;border:1px solid var(--line);border-radius:19px;padding:20px;box-shadow:0 9px 26px #182d5a0a;display:flex;flex-direction:column;cursor:pointer;overflow-wrap:anywhere;transition:.15s}.tile:hover{transform:translateY(-2px);border-color:#cbd8ff}.tile:focus{outline:3px solid #356df344}.tilehead{display:flex;justify-content:space-between;align-items:center;font-size:.73rem;color:#7b879e;font-weight:750}.tag{background:#edf2ff;color:#315ed5;padding:5px 9px;border-radius:99px}.word{font-size:1.8rem;color:var(--navy);font-weight:850;letter-spacing:-.5px;text-align:center;margin:auto 0;padding:22px 0}.hint{text-align:center;color:#8791a5;font-size:.8rem;margin:0}.details{display:none;border-top:1px solid var(--line);padding-top:13px;margin-top:12px;font-size:.85rem;color:#46536d}.tile.meaning .details,.tile.examples .details{display:block}.details ol{padding-left:20px;margin:7px 0}.details li{margin:4px 0}.syn{margin-top:10px}.examplesText{display:none;margin-top:12px}.tile.examples .examplesText{display:block}.examplesText p{margin:6px 0}.label{font-size:.72rem;letter-spacing:.8px;text-transform:uppercase;color:var(--blue);font-weight:850}
 .actions{display:flex;justify-content:center;gap:10px;margin:18px 0}.btn{border:1px solid #dce3ef;border-radius:10px;background:white;padding:10px 16px;font:inherit;font-weight:750;cursor:pointer;color:#293653}.btn.primary{background:var(--blue);color:white;border-color:var(--blue)}.btn:disabled{opacity:.4;cursor:default}.status{padding:20px;background:white;border:1px solid var(--line);border-radius:14px;text-align:center;color:var(--muted)}
 .status-tabs{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin:20px 0 16px}
+.status-tabs[hidden]{display:none}
+.login-prompt{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:20px 0 16px;padding:12px 16px;border:1px solid #dce5f4;background:#fff;border-radius:12px;color:#65728a;text-align:center;font-size:.83rem;line-height:1.5}
+.login-prompt[hidden]{display:none}
+.login-prompt a{font-weight:800;color:var(--blue);text-decoration:none}
+.login-prompt a:hover{text-decoration:underline}
+.word-category{display:table;margin:-12px auto 18px;padding:5px 11px;border:1px solid #dce5ef;border-radius:999px;background:#f7f9fc;color:#5f6c82;font-size:.72rem;font-weight:750}
+.word-category[hidden]{display:none}
 .status-tab{display:inline-flex;align-items:center;gap:9px;border:1px solid #dfe5ee;border-radius:999px;padding:10px 15px;background:#fff;color:#4d5870;font:inherit;font-size:.83rem;font-weight:800;cursor:pointer}
 .status-tab.active{box-shadow:0 3px 12px #19233a12;transform:translateY(-1px)}
 .status-tab.know.active{background:#e5f7eb;border-color:#83c69b;color:#146b3a}
@@ -70,19 +77,23 @@
 </header>
 <main><div class="intro"><div class="eyebrow">Build your word power</div><h1>Vocab Mountain</h1><p>Review words cumulatively by day. Tap a tile to reveal meanings and synonyms, tap again for examples, then tap a third time to reveal the word.</p></div>
 <div class="toolbar"><div class="filters"><input id="search" type="search" placeholder="Search a word…" aria-label="Search vocabulary"><select id="dayFilter"><option value="all">All days</option></select><button class="btn" id="shuffle" type="button">↻ Shuffle</button></div><div class="count" id="counter">Loading words…</div></div>
-<div class="status-tabs" role="tablist" aria-label="Vocabulary status">
+<div id="statusTabs" class="status-tabs" role="tablist" aria-label="Vocabulary progress" hidden>
   <button class="status-tab all active" type="button" role="tab" aria-selected="true" data-status-tab="all">
     <span class="status-dot"></span> All <span class="status-count" id="countAll">0</span>
   </button>
   <button class="status-tab know" type="button" role="tab" aria-selected="false" data-status-tab="know">
-    <span class="status-dot"></span> Know it <span class="status-count" id="countKnow">0</span>
+    <span class="status-dot"></span title="Words you have mastered"> Nailed It <span class="status-count" id="countKnow">0</span>
   </button>
   <button class="status-tab review" type="button" role="tab" aria-selected="false" data-status-tab="review">
-    <span class="status-dot"></span> Seen but Review <span class="status-count" id="countReview">0</span>
+    <span class="status-dot"></span title="Words to practise again"> Revisit <span class="status-count" id="countReview">0</span>
   </button>
   <button class="status-tab unknown" type="button" role="tab" aria-selected="false" data-status-tab="unknown">
-    <span class="status-dot"></span> Unknown <span class="status-count" id="countUnknown">0</span>
+    <span class="status-dot"></span title="Words that are new to you"> New to Me <span class="status-count" id="countUnknown">0</span>
   </button>
+</div>
+<div id="loginPrompt" class="login-prompt">
+  <span>Browsing as a guest. Your vocabulary progress will not be saved, and the learning tracker is available after you sign in.</span>
+  <a href="/account.html?redirect=%2Fvocab.html">Sign in to unlock the tracker</a>
 </div>
 <div class="viewbar"><span>Words per view</span><div class="choices"><button class="choice active" data-n="1">1</button><button class="choice" data-n="2">2</button><button class="choice" data-n="4">4</button><button class="choice" data-n="6">6</button></div></div>
 <div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading Vocab Mountain…</div><div class="tiles" id="tiles" style="display:none"></div>
@@ -119,6 +130,7 @@ function mapDatabaseWords(rows){
     day:txt(r,"day"),
     sn:txt(r,"sn"),
     word:txt(r,"word"),
+    category:txt(r,"category"),
     meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
     syn:txt(r,"synonyms"),
     examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
@@ -154,7 +166,7 @@ async function load(){
     let offset=0;
     while(true){
       const {data,error}=await vocabDb.from("vocab_words")
-        .select("id,day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
+        .select("id,day,sn,word,category,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
         .eq("is_published",true)
         .order("day",{ascending:true})
         .order("sn",{ascending:true,nullsFirst:false})
@@ -166,7 +178,10 @@ async function load(){
       offset+=pageSize;
     }
     S.all=mapDatabaseWords(allRows);
-    await loadProgress();
+    $("statusTabs").hidden=!S.user;
+    $("loginPrompt").hidden=!!S.user;
+    if(S.user) await loadProgress();
+    else S.statuses=new Map();
     if(!S.all.length){
       $("status").hidden=false;
       $("status").textContent="No published vocabulary words are available yet.";
@@ -211,7 +226,7 @@ function filter(){
   const dayNumber=day==="all"?Infinity:Number(day);
   S.available=S.all.filter(word=>
     (day==="all"||(!Number.isNaN(dayNumber)&&Number(word.day)<=dayNumber)||word.day===day)&&
-    (!query||word.word.toLowerCase().includes(query))
+    (!query||[word.word,word.category].filter(Boolean).join(" ").toLowerCase().includes(query))
   );
   updateStatusTabs();
   S.items=S.statusFilter==="all"?[...S.available]:S.available.filter(word=>wordStatus(word)===S.statusFilter);
@@ -229,6 +244,7 @@ function shuffleList(toggle=true){
   render();
 }
 async function setWordStatus(word,status){
+  if(!S.user)return;
   const id=String(word.id);
   S.statuses.set(id,status);
   writeLocalProgress();
@@ -265,6 +281,7 @@ function card(word,number){
   el.innerHTML=
     '<div class="tilehead"><span>WORD '+esc(word.sn||number)+'</span><span class="tag">DAY '+esc(word.day||"—")+'</span></div>'+
     '<div class="word">'+esc(word.word)+'</div>'+
+    '<div class="word-category"'+(word.category?'':' hidden')+'>'+esc(word.category)+'</div>'+
     '<p class="hint">Tap to reveal meanings</p>'+
     '<div class="details"><div class="meaningText"><b>Meanings</b>'+
     (word.meanings.length?'<ol>'+word.meanings.map(m=>'<li>'+esc(m)+'</li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
@@ -272,11 +289,11 @@ function card(word,number){
     '</div><div class="examplesText"><div class="label">Examples</div>'+
     (word.examples.map(example=>'<p>'+esc(example)+'</p>').join("")||"<p>No examples entered.</p>")+
     '</div></div>'+
-    '<div class="card-status-actions" role="group" aria-label="Set vocabulary status">'+
-      '<button type="button" class="state-action '+(status==="know"?"active":"")+'" data-word-status="know" aria-pressed="'+(status==="know")+'">Know it</button>'+
-      '<button type="button" class="state-action '+(status==="review"?"active":"")+'" data-word-status="review" aria-pressed="'+(status==="review")+'">Seen but Review</button>'+
-      '<button type="button" class="state-action '+(status==="unknown"?"active":"")+'" data-word-status="unknown" aria-pressed="'+(status==="unknown")+'">Unknown</button>'+
-    '</div>';
+    (S.user?'<div class="card-status-actions" role="group" aria-label="Set vocabulary progress">'+
+      '<button type="button" class="state-action '+(status==="know"?"active":"")+'" data-word-status="know" aria-pressed="'+(status==="know")+'">Nailed It</button>'+
+      '<button type="button" class="state-action '+(status==="review"?"active":"")+'" data-word-status="review" aria-pressed="'+(status==="review")+'">Revisit</button>'+
+      '<button type="button" class="state-action '+(status==="unknown"?"active":"")+'" data-word-status="unknown" aria-pressed="'+(status==="unknown")+'">New to Me</button>'+
+    '</div>':"");
   let stage=0;
   function flip(){stage=(stage+1)%3;setCardStage(el,stage)}
   el.addEventListener("click",event=>{
