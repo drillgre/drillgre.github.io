@@ -2266,7 +2266,7 @@ function renderVocabImportPreview() {
 async function validateVocabImport() {
   const file = $("vocabImportFile").files[0];
   if (!file) {
-    message("vocabImportStatus","Choose a CSV file first.");
+    message("vocabImportStatus","Choose a CSV or Excel workbook first.");
     return;
   }
   if (file.size > 10 * 1024 * 1024) {
@@ -2275,7 +2275,7 @@ async function validateVocabImport() {
   }
   $("validateVocabImport").disabled = true;
   $("runVocabImport").disabled = true;
-  message("vocabImportStatus","Reading and validating CSV…");
+  message("vocabImportStatus","Reading and validating the vocabulary file…");
   try {
     if (!window.XLSX) throw new Error("The CSV reader could not load. Refresh the admin page and try again.");
     const workbook = window.XLSX.read(await file.arrayBuffer(),{type:"array"});
