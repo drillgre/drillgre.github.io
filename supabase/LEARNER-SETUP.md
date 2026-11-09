@@ -35,7 +35,7 @@ In the Admin workspace, select **Vocab Mountain**. Administrators can:
 
 CSV columns are \`day\`, \`sn\`, \`word\`, \`meaning1\`, \`meaning2\`, \`meaning3\`, \`synonyms\`, \`example1\`, \`example2\`, \`example3\`, and \`is_published\`. Only \`day\`, \`word\`, and at least one meaning are required. Download the template from the Admin workspace or use [the CSV template](../templates/drillgre-vocabulary-template.csv).
 
-Vocab Mountain reads published words directly from Supabase. The former Excel workbook has been removed from the repository. New words start in the green **Know it** category. Learners can move any word to **Seen but Review** or **Unknown**. Signed-in learners have status progress saved to Supabase and synced across devices; guests have status progress saved in their current browser.
+Vocab Mountain reads published words directly from Supabase. The former Excel workbook has been removed from the repository. The page opens on **All**, and unclassified words have white cards. Learners can explicitly classify words as **Know it** (green), **Seen but Review** (orange), or **Unknown** (red). Signed-in learners have all three classifications saved to Supabase and synced across devices; guests have status progress saved in their current browser.
 
 
 ## Email and password authentication
