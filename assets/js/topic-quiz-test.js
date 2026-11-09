@@ -428,9 +428,7 @@
         return {question:q,response,grade:data};
       }));
 
-      const secondsUsed = state.deadlineAt === null
-        ? 0
-        : Math.max(0,Math.round((state.startedAt ? (state.startedAt + state.durationSeconds*1000 - state.deadlineAt) : 0)/1000));
+      const secondsUsed = Math.max(0,Math.round((Date.now() - state.startedAt)/1000));
       renderResults(items,secondsUsed);
       setStatus("");
       window.scrollTo({top:0,behavior:"smooth"});
