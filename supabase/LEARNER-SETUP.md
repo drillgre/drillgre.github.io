@@ -27,7 +27,7 @@ Run \`vocab-mountain.sql\` in the Supabase SQL Editor. It creates the \`vocab_wo
 In the Admin workspace, select **Vocab Mountain**. Administrators can:
 
 - Add or edit a word using the entry form, with day, serial number, up to three meanings, synonyms, and up to three examples.
-- Import a CSV file after previewing the rows and validation results.
+- Import a CSV or Excel workbook after previewing the rows and validation results.
 - See and skip duplicate words rather than replacing existing entries.
 - Publish, unpublish, or delete entries.
 
