@@ -12,6 +12,29 @@
 .tiles{display:grid;gap:14px;grid-template-columns:1fr}.tiles[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{min-height:255px;background:white;border:1px solid var(--line);border-radius:19px;padding:20px;box-shadow:0 9px 26px #182d5a0a;display:flex;flex-direction:column;cursor:pointer;overflow-wrap:anywhere;transition:.15s}.tile:hover{transform:translateY(-2px);border-color:#cbd8ff}.tile:focus{outline:3px solid #356df344}.tilehead{display:flex;justify-content:space-between;align-items:center;font-size:.73rem;color:#7b879e;font-weight:750}.tag{background:#edf2ff;color:#315ed5;padding:5px 9px;border-radius:99px}.word{font-size:1.8rem;color:var(--navy);font-weight:850;letter-spacing:-.5px;text-align:center;margin:auto 0;padding:22px 0}.hint{text-align:center;color:#8791a5;font-size:.8rem;margin:0}.details{display:none;border-top:1px solid var(--line);padding-top:13px;margin-top:12px;font-size:.85rem;color:#46536d}.tile.meaning .details,.tile.examples .details{display:block}.details ol{padding-left:20px;margin:7px 0}.details li{margin:4px 0}.syn{margin-top:10px}.examplesText{display:none;margin-top:12px}.tile.examples .examplesText{display:block}.examplesText p{margin:6px 0}.label{font-size:.72rem;letter-spacing:.8px;text-transform:uppercase;color:var(--blue);font-weight:850}
 .actions{display:flex;justify-content:center;gap:10px;margin:18px 0}.btn{border:1px solid #dce3ef;border-radius:10px;background:white;padding:10px 16px;font:inherit;font-weight:750;cursor:pointer;color:#293653}.btn.primary{background:var(--blue);color:white;border-color:var(--blue)}.btn:disabled{opacity:.4;cursor:default}.status{padding:20px;background:white;border:1px solid var(--line);border-radius:14px;text-align:center;color:var(--muted)}
+.status-tabs{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin:20px 0 16px}
+.status-tab{display:inline-flex;align-items:center;gap:9px;border:1px solid #dfe5ee;border-radius:999px;padding:10px 15px;background:#fff;color:#4d5870;font:inherit;font-size:.83rem;font-weight:800;cursor:pointer}
+.status-tab.active{box-shadow:0 3px 12px #19233a12;transform:translateY(-1px)}
+.status-tab.know.active{background:#e5f7eb;border-color:#83c69b;color:#146b3a}
+.status-tab.review.active{background:#fff1dc;border-color:#e9b15d;color:#91520b}
+.status-tab.unknown.active{background:#ffebeb;border-color:#e99b9b;color:#a22d2d}
+.status-dot{width:9px;height:9px;border-radius:50%;background:currentColor}
+.status-count{min-width:22px;padding:2px 6px;border-radius:99px;background:#ffffffa8;text-align:center}
+.tile.status-know{background:#eaf8ee;border-color:#9bd2aa}
+.tile.status-review{background:#fff2df;border-color:#edc17c}
+.tile.status-unknown{background:#ffeded;border-color:#e9aaaa}
+.tile.status-know:hover{border-color:#62b77d}
+.tile.status-review:hover{border-color:#dc9d3d}
+.tile.status-unknown:hover{border-color:#d97878}
+.card-status-actions{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #19233a14}
+.state-action{border:1px solid #ffffffaa;border-radius:999px;padding:7px 9px;background:#ffffffa8;color:#48536a;font:inherit;font-size:.68rem;font-weight:800;cursor:pointer}
+.state-action.active{box-shadow:inset 0 0 0 1.5px currentColor;background:#fff}
+.state-action[data-word-status="know"]{color:#176d3c}
+.state-action[data-word-status="review"]{color:#a15a0a}
+.state-action[data-word-status="unknown"]{color:#a32e2e}
+.state-action:focus-visible,.status-tab:focus-visible{outline:3px solid #356df355;outline-offset:2px}
+@media(max-width:650px){.status-tabs{justify-content:stretch}.status-tab{flex:1;justify-content:center;padding:9px 8px;font-size:.74rem}.card-status-actions{gap:4px}.state-action{padding:7px 8px;font-size:.63rem}}
+
 @media(max-width:650px){main{padding:28px 13px 50px}#search{min-width:100%;width:100%}.filters{width:100%}.filters select{flex:1}.tiles[data-count="2"],.tiles[data-count="4"],.tiles[data-count="6"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:15px;min-height:220px}.word{font-size:1.4rem}.viewbar{flex-wrap:wrap}}
 </style>  <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -47,63 +70,88 @@
 </header>
 <main><div class="intro"><div class="eyebrow">Build your word power</div><h1>Vocab Mountain</h1><p>Review words cumulatively by day. Tap a tile to reveal meanings and synonyms, tap again for examples, then tap a third time to reveal the word.</p></div>
 <div class="toolbar"><div class="filters"><input id="search" type="search" placeholder="Search a word…" aria-label="Search vocabulary"><select id="dayFilter"><option value="all">All days</option></select><button class="btn" id="shuffle" type="button">↻ Shuffle</button></div><div class="count" id="counter">Loading words…</div></div>
+<div class="status-tabs" role="tablist" aria-label="Vocabulary status">
+  <button class="status-tab know active" type="button" role="tab" aria-selected="true" data-status-tab="know">
+    <span class="status-dot"></span> Know it <span class="status-count" id="countKnow">0</span>
+  </button>
+  <button class="status-tab review" type="button" role="tab" aria-selected="false" data-status-tab="review">
+    <span class="status-dot"></span> Seen but Review <span class="status-count" id="countReview">0</span>
+  </button>
+  <button class="status-tab unknown" type="button" role="tab" aria-selected="false" data-status-tab="unknown">
+    <span class="status-dot"></span> Unknown <span class="status-count" id="countUnknown">0</span>
+  </button>
+</div>
 <div class="viewbar"><span>Words per view</span><div class="choices"><button class="choice active" data-n="1">1</button><button class="choice" data-n="2">2</button><button class="choice" data-n="4">4</button><button class="choice" data-n="6">6</button></div></div>
 <div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading Vocab Mountain…</div><div class="tiles" id="tiles" style="display:none"></div>
 <div class="actions" id="actions" style="display:none"><button class="btn" id="prev">← Previous</button><button class="btn primary" id="next">Next →</button></div></main>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const VOCAB_SUPABASE_URL="https://aayzpcfryixauwsytphd.supabase.co";
 const VOCAB_SUPABASE_KEY="sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
 const vocabDb=window.supabase.createClient(VOCAB_SUPABASE_URL,VOCAB_SUPABASE_KEY);
 </script>
 <script>
-const S={all:[],items:[],page:0,n:1,shuffled:false},$=id=>document.getElementById(id);
+const S={all:[],available:[],items:[],page:0,n:1,shuffled:false,statusFilter:"know",statuses:new Map(),user:null};
+const $=id=>document.getElementById(id);
+const GUEST_PROGRESS_KEY="drillgre_vocab_word_status_guest_v1";
+const LOCAL_PROGRESS_PREFIX="drillgre_vocab_word_status_user_";
 const txt=(r,k)=>r[k]==null?"":String(r[k]).trim();
 const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function renderLoadedWords(sourceMessage=""){
-  [...new Set(S.all.map(x=>x.day).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)).forEach(d=>{
-    let o=document.createElement("option");o.value=d;o.textContent="Day "+d;$("dayFilter").append(o);
-  });
-  filter();
-  $("status").hidden=!sourceMessage;
-  $("status").textContent=sourceMessage;
-  $("tiles").style.display="grid";
-  $("actions").style.display="flex";
+function progressStorageKey(){return S.user?LOCAL_PROGRESS_PREFIX+S.user.id:GUEST_PROGRESS_KEY}
+function readLocalProgress(){
+  try{
+    const value=JSON.parse(localStorage.getItem(progressStorageKey())||"{}");
+    return new Map(Object.entries(value).filter(([,status])=>status==="review"||status==="unknown"));
+  }catch{return new Map()}
+}
+function writeLocalProgress(){
+  const data=Object.fromEntries([...S.statuses.entries()]);
+  try{localStorage.setItem(progressStorageKey(),JSON.stringify(data));}catch{}
+}
+function wordStatus(word){
+  return S.statuses.get(String(word.id))||"know";
 }
 function mapDatabaseWords(rows){
   return (rows||[]).map(r=>({
-    day:txt(r,"day"),sn:txt(r,"sn"),word:txt(r,"word"),
+    id:String(r.id),
+    day:txt(r,"day"),
+    sn:txt(r,"sn"),
+    word:txt(r,"word"),
     meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
-    syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
+    syn:txt(r,"synonyms"),
+    examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
   })).filter(x=>x.word);
 }
-async function loadWorkbookFallback(reason){
-  try{
-    const response=await fetch("assets/vocab_mountain.xlsx",{cache:"no-store"});
-    if(!response.ok)throw Error("Workbook not found.");
-    const bytes=await response.arrayBuffer();
-    const workbook=XLSX.read(bytes,{type:"array"});
-    const rows=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{defval:""});
-    S.all=rows.map(r=>({
-      day:txt(r,"day"),sn:txt(r,"SN"),word:txt(r,"word"),
-      meanings:["meaning1","meaning2","meaning3"].map(k=>txt(r,k)).filter(Boolean),
-      syn:txt(r,"synonyms"),examples:["example1","example2","example3"].map(k=>txt(r,k)).filter(Boolean)
-    })).filter(x=>x.word);
-    if(!S.all.length)throw Error("No vocabulary words were found.");
-    renderLoadedWords(reason||"Showing the original workbook because the database has not been populated yet.");
-  }catch(error){
-    $("status").hidden=false;
-    $("status").textContent=reason+" "+(error.message||"Vocabulary is not available.");
+async function loadProgress(){
+  S.statuses=new Map();
+  if(!S.user){
+    S.statuses=readLocalProgress();
+    return;
   }
+  const {data,error}=await vocabDb.from("vocab_word_progress")
+    .select("vocab_word_id,status")
+    .eq("learner_id",S.user.id);
+  if(error){
+    S.statuses=readLocalProgress();
+    $("status").hidden=false;
+    $("status").textContent="Your saved status could not be synced from your account. Showing this device's saved progress. Run supabase/vocab-word-progress.sql to enable cross-device syncing.";
+    return;
+  }
+  S.statuses=new Map((data||[]).map(row=>[String(row.vocab_word_id),row.status]));
+  writeLocalProgress();
 }
 async function load(){
+  $("status").hidden=false;
+  $("status").textContent="Loading Vocab Mountain…";
   try{
+    const {data:sessionData}=await vocabDb.auth.getSession();
+    S.user=sessionData?.session?.user||null;
+
     const allRows=[];
     const pageSize=1000;
     let offset=0;
     while(true){
       const {data,error}=await vocabDb.from("vocab_words")
-        .select("day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
+        .select("id,day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
         .eq("is_published",true)
         .order("day",{ascending:true})
         .order("sn",{ascending:true,nullsFirst:false})
@@ -114,48 +162,174 @@ async function load(){
       if(page.length<pageSize)break;
       offset+=pageSize;
     }
-    if(allRows.length){
-      S.all=mapDatabaseWords(allRows);
-      renderLoadedWords("");
+    S.all=mapDatabaseWords(allRows);
+    await loadProgress();
+    if(!S.all.length){
+      $("status").hidden=false;
+      $("status").textContent="No published vocabulary words are available yet.";
+      $("counter").textContent="0 words";
+      $("tiles").style.display="none";
+      $("actions").style.display="none";
+      updateStatusTabs();
       return;
     }
-    await loadWorkbookFallback("The vocabulary database is ready but empty. The original workbook is being shown until its complete contents are imported.");
+    renderLoadedWords();
   }catch(error){
-    await loadWorkbookFallback("The vocabulary database is not available yet. Showing the original workbook. "+(error.message||""));
+    $("status").hidden=false;
+    $("status").textContent="Vocab Mountain could not be loaded. "+(error.message||"Please refresh and try again.");
   }
 }
-function filter(){
-  let q=$("search").value.toLowerCase().trim(),d=$("dayFilter").value;
-  let dayNum=d==="all"?Infinity:Number(d);
-  S.items=S.all.filter(x=>(d==="all"||(!Number.isNaN(dayNum)&&Number(x.day)<=dayNum)||x.day===d)&&(!q||x.word.toLowerCase().includes(q)));
-  if(S.shuffled)shuffleList(false);S.page=0;render();
+function renderLoadedWords(){
+  [...new Set(S.all.map(x=>x.day).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)).forEach(day=>{
+    let option=document.createElement("option");
+    option.value=day;option.textContent="Day "+day;$("dayFilter").append(option);
+  });
+  filter();
 }
-function shuffleList(toggle=true){if(toggle)S.shuffled=true;for(let i=S.items.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[S.items[i],S.items[j]]=[S.items[j],S.items[i]];}S.page=0;render()}
-function card(x,number){
-  let el=document.createElement("article");el.className="tile";el.tabIndex=0;el.setAttribute("role","button");
-  el.innerHTML='<div class="tilehead"><span>WORD '+esc(x.sn||number)+'</span><span class="tag">DAY '+esc(x.day||"—")+'</span></div><div class="word">'+esc(x.word)+'</div><p class="hint">Tap to flip to meanings</p><div class="details"><div class="meaningText"><b>Meanings</b>'+
-    (x.meanings.length?'<ol>'+x.meanings.map(m=>'<li>'+esc(m)+'</li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
-    (x.syn?'<div class="syn"><b>Synonyms:</b> '+esc(x.syn)+'</div>':"")+
-    '</div><div class="examplesText"><div class="label">Examples</div>'+(x.examples.map(e=>'<p>'+esc(e)+'</p>').join("")||"<p>No examples entered.</p>")+'</div></div>';
+function updateStatusTabs(){
+  const counts={know:0,review:0,unknown:0};
+  S.available.forEach(word=>counts[wordStatus(word)]++);
+  $("countKnow").textContent=counts.know;
+  $("countReview").textContent=counts.review;
+  $("countUnknown").textContent=counts.unknown;
+  document.querySelectorAll("[data-status-tab]").forEach(button=>{
+    const active=button.dataset.statusTab===S.statusFilter;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-selected",String(active));
+  });
+}
+function filter(){
+  const query=$("search").value.toLowerCase().trim();
+  const day=$("dayFilter").value;
+  const dayNumber=day==="all"?Infinity:Number(day);
+  S.available=S.all.filter(word=>
+    (day==="all"||(!Number.isNaN(dayNumber)&&Number(word.day)<=dayNumber)||word.day===day)&&
+    (!query||word.word.toLowerCase().includes(query))
+  );
+  updateStatusTabs();
+  S.items=S.available.filter(word=>wordStatus(word)===S.statusFilter);
+  if(S.shuffled)shuffleList(false);
+  S.page=0;
+  render();
+}
+function shuffleList(toggle=true){
+  if(toggle)S.shuffled=true;
+  for(let i=S.items.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [S.items[i],S.items[j]]=[S.items[j],S.items[i]];
+  }
+  S.page=0;
+  render();
+}
+async function setWordStatus(word,status){
+  const id=String(word.id);
+  if(status==="know")S.statuses.delete(id);else S.statuses.set(id,status);
+  writeLocalProgress();
+  updateStatusTabs();
+  S.items=S.available.filter(item=>wordStatus(item)===S.statusFilter);
+  render();
+
+  if(!S.user)return;
+  try{
+    let result;
+    if(status==="know"){
+      result=await vocabDb.from("vocab_word_progress")
+        .delete().eq("learner_id",S.user.id).eq("vocab_word_id",id);
+    }else{
+      result=await vocabDb.from("vocab_word_progress")
+        .upsert({learner_id:S.user.id,vocab_word_id:id,status,updated_at:new Date().toISOString()},
+          {onConflict:"learner_id,vocab_word_id"});
+    }
+    if(result.error)throw result.error;
+    writeLocalProgress();
+    $("status").hidden=true;
+  }catch(error){
+    $("status").hidden=false;
+    $("status").textContent="Saved on this device, but account syncing failed. Run supabase/vocab-word-progress.sql for cross-device progress. "+(error.message||"");
+  }
+}
+function setCardStage(el,stage){
+  el.dataset.stage=String(stage);
+  el.classList.toggle("meaning",stage===1);
+  el.classList.toggle("examples",stage===2);
+  el.querySelector(".hint").textContent=stage===0?"Tap to reveal meanings":stage===1?"Tap to reveal examples":"Tap to return to word";
+}
+function card(word,number){
+  const status=wordStatus(word);
+  const el=document.createElement("article");
+  el.className="tile status-"+status;
+  el.tabIndex=0;
+  el.dataset.stage="0";
+  el.innerHTML=
+    '<div class="tilehead"><span>WORD '+esc(word.sn||number)+'</span><span class="tag">DAY '+esc(word.day||"—")+'</span></div>'+
+    '<div class="word">'+esc(word.word)+'</div>'+
+    '<p class="hint">Tap to reveal meanings</p>'+
+    '<div class="details"><div class="meaningText"><b>Meanings</b>'+
+    (word.meanings.length?'<ol>'+word.meanings.map(m=>'<li>'+esc(m)+'</li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
+    (word.syn?'<div class="syn"><b>Synonyms:</b> '+esc(word.syn)+'</div>':"")+
+    '</div><div class="examplesText"><div class="label">Examples</div>'+
+    (word.examples.map(example=>'<p>'+esc(example)+'</p>').join("")||"<p>No examples entered.</p>")+
+    '</div></div>'+
+    '<div class="card-status-actions" role="group" aria-label="Set vocabulary status">'+
+      '<button type="button" class="state-action '+(status==="know"?"active":"")+'" data-word-status="know" aria-pressed="'+(status==="know")+'">Know it</button>'+
+      '<button type="button" class="state-action '+(status==="review"?"active":"")+'" data-word-status="review" aria-pressed="'+(status==="review")+'">Seen but Review</button>'+
+      '<button type="button" class="state-action '+(status==="unknown"?"active":"")+'" data-word-status="unknown" aria-pressed="'+(status==="unknown")+'">Unknown</button>'+
+    '</div>';
   let stage=0;
-  function tap(){stage=(stage+1)%3;el.classList.toggle("meaning",stage===1);el.classList.toggle("examples",stage===2);el.querySelector(".word").textContent=x.word;el.querySelector(".hint").textContent=stage===0?"Tap to flip to meanings":stage===1?"Tap to flip to examples":"Tap to return to word";}
-  el.addEventListener("click",tap);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tap()}});
+  function flip(){stage=(stage+1)%3;setCardStage(el,stage)}
+  el.addEventListener("click",event=>{
+    if(event.target.closest(".card-status-actions"))return;
+    flip();
+  });
+  el.addEventListener("keydown",event=>{
+    if(event.target!==el)return;
+    if(event.key==="Enter"||event.key===" "){event.preventDefault();flip()}
+  });
+  el.querySelectorAll("[data-word-status]").forEach(button=>{
+    button.addEventListener("click",event=>{
+      event.stopPropagation();
+      setWordStatus(word,button.dataset.wordStatus);
+    });
+  });
   return el;
 }
 function render(){
-  let total=S.items.length,pages=Math.max(1,Math.ceil(total/S.n));S.page=Math.min(S.page,pages-1);
-  let start=S.page*S.n,shown=S.items.slice(start,start+S.n);
-  $("counter").textContent=total?(start+1)+"–"+(start+shown.length)+" of "+total+" words":"0 words";
-  $("bar").style.width=total?((start+shown.length)/total*100)+"%":"0%";
-  $("tiles").innerHTML="";$("tiles").dataset.count=S.n;
-  if(!total){$("tiles").style.display="none";$("actions").style.display="none";$("status").hidden=false;$("status").textContent="No matching words. Adjust your search or day filter.";return}
-  $("status").hidden=true;$("tiles").style.display="grid";$("actions").style.display="flex";
-  shown.forEach((x,i)=>$("tiles").append(card(x,start+i+1)));
-  $("prev").disabled=S.page===0;$("next").disabled=S.page>=pages-1;$("next").textContent=S.page===pages-1?"End":"Next →";
+  const total=S.items.length;
+  const pages=Math.max(1,Math.ceil(total/S.n));
+  S.page=Math.min(S.page,pages-1);
+  const start=S.page*S.n;
+  const shown=S.items.slice(start,start+S.n);
+  $("counter").textContent=total?(start+1)+"–"+(start+shown.length)+" of "+total+" words":"0 words in this tab";
+  $("bar").style.width=total?((start+shown.length)/Math.max(1,S.all.length)*100)+"%":"0%";
+  $("tiles").innerHTML="";
+  $("tiles").dataset.count=S.n;
+  if(!total){
+    $("tiles").style.display="none";
+    $("actions").style.display="none";
+    $("status").hidden=false;
+    $("status").textContent="No words in this category match your search or day filter.";
+    return;
+  }
+  $("status").hidden=true;
+  $("tiles").style.display="grid";
+  $("actions").style.display="flex";
+  shown.forEach((word,index)=>$("tiles").append(card(word,start+index+1)));
+  $("prev").disabled=S.page===0;
+  $("next").disabled=S.page>=pages-1;
+  $("next").textContent=S.page===pages-1?"End":"Next →";
 }
 $("prev").onclick=()=>{if(S.page>0){S.page--;render()}};
 $("next").onclick=()=>{if(S.page<Math.ceil(S.items.length/S.n)-1){S.page++;render()}};
-document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{S.n=+b.dataset.n;S.page=0;document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("active",x===b));render()});
+document.querySelectorAll(".choice").forEach(button=>button.onclick=()=>{
+  S.n=Number(button.dataset.n);S.page=0;
+  document.querySelectorAll(".choice").forEach(item=>item.classList.toggle("active",item===button));
+  render();
+});
+document.querySelectorAll("[data-status-tab]").forEach(button=>button.addEventListener("click",()=>{
+  S.statusFilter=button.dataset.statusTab;
+  S.page=0;
+  filter();
+}));
 $("search").addEventListener("input",filter);
 $("dayFilter").addEventListener("change",()=>{S.shuffled=false;filter()});
 $("shuffle").onclick=()=>shuffleList(true);
