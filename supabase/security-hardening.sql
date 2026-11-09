@@ -55,6 +55,12 @@ grant select (
 
 -- Client roles may use the public schema but must not create objects in it.
 revoke create on schema public from public, anon, authenticated;
+revoke all on schema private from public, anon, authenticated;
+
+-- New functions created by the Supabase migration owner are not executable
+-- by PUBLIC unless a later migration explicitly grants access.
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public;
 
 -- The app's question-figure bucket is public-read for rendered question images.
 -- Only an authenticated account whose profile has role=admin may upload,
