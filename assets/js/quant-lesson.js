@@ -95,13 +95,21 @@
   function optionMarkup(question) {
     const type = question.question_type;
     if (type === "quantitative_comparison") {
+      const quantities = parseOptions(question.options);
+      const quantityA = quantities.find(item => /quantity.?a/i.test(item.label || ""))?.text || quantities[0]?.text || "";
+      const quantityB = quantities.find(item => /quantity.?b/i.test(item.label || ""))?.text || quantities[1]?.text || "";
+      const comparison = `
+        <div class="qc-comparison">
+          <div class="qc-column"><div class="qc-label">Quantity A</div><div class="qc-value">${esc(quantityA)}</div></div>
+          <div class="qc-column"><div class="qc-label">Quantity B</div><div class="qc-value">${esc(quantityB)}</div></div>
+        </div>`;
       const choices = [
         ["A","Quantity A is greater"],
         ["B","Quantity B is greater"],
         ["C","The two quantities are equal"],
         ["D","The relationship cannot be determined"]
       ];
-      return choices.map(([value,label]) => `
+      return comparison + choices.map(([value,label]) => `
         <label class="answer-option">
           <input type="radio" name="answer-${esc(question.id)}" value="${value}">
           <span><b>${value}.</b> ${label}</span>
