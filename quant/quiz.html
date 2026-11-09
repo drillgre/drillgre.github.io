@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Build a GRE Quant topic quiz on DrillGRE.">
+  <title>Quant Quiz | DrillGRE</title>
+  <link rel="stylesheet" href="../assets/css/lms.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="../assets/js/topic-quiz.js"></script>
+  <style>
+    .quiz-shell{max-width:1180px;margin:0 auto;padding:28px 18px 60px}
+    .quiz-hero{background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:20px;padding:28px;margin-bottom:22px}
+    .quiz-hero h1{font-size:clamp(28px,4vw,40px);line-height:1.12;margin:8px 0 12px;letter-spacing:-1.1px}
+    .quiz-hero p{color:var(--muted);line-height:1.65;max-width:800px}
+    .quiz-status{padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:10px;color:var(--muted);font-size:13px;margin:12px 0}
+    .quiz-status.error{color:#9a2e20;border-color:#f3d0cb;background:#fff5f4}
+    .quiz-status:empty{display:none}
+    .quiz-config{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:18px;align-items:start;margin-top:18px}
+    .quiz-topic-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .quiz-topic-group,.quiz-settings,.quiz-history-panel{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px}
+    .quiz-category-row{display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer}
+    .quiz-category-row input,.quiz-subtopic-row input{accent-color:var(--blue);width:16px;height:16px}
+    .quiz-category-row strong{color:var(--ink)}
+    .quiz-category-count{margin-left:auto;color:var(--muted);font-size:11px}
+    .quiz-subtopic-list{display:grid;gap:9px;border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+    .quiz-subtopic-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;cursor:pointer}
+    .quiz-subtopic-row span:last-child{margin-left:auto;color:#8490a3;font-size:11px}
+    .quiz-settings label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}
+    .quiz-settings select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:var(--ink);font:inherit;margin-bottom:12px}
+    .quiz-settings p{font-size:12px;color:var(--muted);line-height:1.55}
+    .quiz-action{width:100%;border:0;border-radius:10px;background:var(--blue);color:white;padding:12px 16px;font-weight:800;cursor:pointer}
+    .quiz-action:disabled{opacity:.5;cursor:not-allowed}
+    .quiz-quota{padding:11px 13px;border:1px solid #dce5ff;border-radius:10px;background:#f5f7ff;color:#344158;font-size:12px;line-height:1.55;margin:12px 0}
+    .quiz-history-panel{margin-top:28px}
+    .quiz-history-panel h2{margin:0 0 6px;font-size:19px}
+    .quiz-history-intro{font-size:12px;color:var(--muted);margin:0 0 15px}
+    .quiz-history-list{display:grid;gap:10px}
+    .quiz-history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 16px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:14px}
+    .quiz-history-title{font-weight:800;color:var(--ink);font-size:13px}
+    .quiz-history-meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+    .quiz-history-score{font-size:16px;font-weight:850;color:var(--blue);text-align:right}
+    .quiz-history-action{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid var(--blue);border-radius:8px;padding:8px 12px;color:var(--blue);font-size:12px;font-weight:800}
+    .quiz-empty{padding:18px;border:1px dashed #cbd5e1;border-radius:11px;color:var(--muted);font-size:13px}
+    @media(max-width:800px){.quiz-config{grid-template-columns:1fr}.quiz-topic-groups{grid-template-columns:1fr}.quiz-settings{order:-1}}
+  </style>
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script defer src="/assets/js/site-nav.js"></script>
+</head>
+<body>
+<header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span>
+      <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      <span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <details class="drillgre-nav-dropdown" open>
+        <summary>Quant</summary>
+        <div class="drillgre-nav-submenu">
+          <a href="/quant/index.html">Lessons</a>
+          <a href="/quant/quiz.html" aria-current="page">Quiz</a>
+        </div>
+      </details>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions">
+      <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+      <a class="drillgre-start-link" href="/quant/quiz.html">Start drilling <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="quiz-shell">
+  <div class="crumb"><a href="/">Home</a> / <a href="/quant/index.html">Quant</a> / Quiz</div>
+  <section class="quiz-hero">
+    <div class="eyebrow">Topic-based practice</div>
+    <h1>Build your Quant quiz.</h1>
+    <p>Select one or more topics and subtopics, choose a quiz length and time allowance, and practise with a random set of GRE-style questions. Your unfinished quizzes are saved and can be resumed from here or your learner profile.</p>
+    <div id="quizQuotaNote" class="quiz-quota">Checking your quiz allowance…</div>
+  </section>
+
+  <section id="topicQuizSection">
+    <div class="sectionhead" style="display:flex;justify-content:space-between;align-items:end;margin:20px 0 8px">
+      <div><h2>Choose topics and subtopics</h2><p style="color:#69758b;margin:6px 0 0;font-size:13px">You can combine topics from multiple Quant categories.</p></div>
+      <span id="quizBankCount" style="font-size:12px;color:#69758b"></span>
+    </div>
+    <div id="quizSetupStatus" class="quiz-status" role="status">Loading available practice questions…</div>
+    <div id="quizSetupPanel" hidden>
+      <div class="quiz-config">
+        <div id="quizTopicGroups" class="quiz-topic-groups" aria-label="Select topics and subtopics"></div>
+        <aside class="quiz-settings">
+          <label for="quizQuestionCount">Questions in this quiz</label>
+          <select id="quizQuestionCount">
+            <option value="10">10 questions</option>
+            <option value="11">11 questions</option>
+            <option value="12" selected>12 questions</option>
+            <option value="13">13 questions</option>
+            <option value="14">14 questions</option>
+            <option value="15">15 questions</option>
+          </select>
+          <label for="quizTimingMode">Time allowance</label>
+          <select id="quizTimingMode">
+            <option value="standard">Standard GRE timing</option>
+            <option value="time_and_half">50% extra time</option>
+            <option value="double">Double time</option>
+            <option value="untimed">Untimed practice</option>
+          </select>
+          <p>Standard timing follows the mock test pace. Extra-time and untimed options are also available.</p>
+          <p id="quizAvailability">Select one or more subtopics to see how many questions are available.</p>
+          <button id="startTopicQuiz" class="quiz-action" type="button" disabled>Start topic quiz in a new tab</button>
+          <p>Guests receive two topic quiz attempts. Registered learners can take unlimited quizzes.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="quiz-history-panel" aria-labelledby="quizHistoryHeading">
+    <h2 id="quizHistoryHeading">Your quizzes</h2>
+    <p class="quiz-history-intro">Resume an unfinished quiz or review the results of a completed quiz.</p>
+    <div id="quizHistoryStatus" class="quiz-status" hidden></div>
+    <div id="quizHistoryList" class="quiz-history-list"><div class="quiz-empty">Loading quiz history…</div></div>
+  </section>
+</main>
+<footer style="max-width:1180px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Quant Quiz</footer>
+</body>
+</html>
