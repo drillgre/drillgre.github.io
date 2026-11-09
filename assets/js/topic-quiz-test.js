@@ -632,9 +632,12 @@
         const {error:claimError} = await db.rpc("claim_guest_topic_quiz_attempts",{p_visitor_key:visitorKey});
         if (claimError) throw claimError;
       }
-      db.auth.onAuthStateChange(async event => {
+      db.auth.onAuthStateChange(event => {
         if (event === "SIGNED_IN") {
-          await db.rpc("claim_guest_topic_quiz_attempts",{p_visitor_key:visitorKey});
+          setTimeout(() => {
+            db.rpc("claim_guest_topic_quiz_attempts",{p_visitor_key:visitorKey})
+              .catch(() => {});
+          },0);
         }
       });
       if (savedAttemptId) {
