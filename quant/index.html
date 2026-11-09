@@ -52,9 +52,12 @@
     .quiz-stimulus h3{margin:5px 0 8px;font-size:17px}
     .quiz-stimulus-label{font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:#3154c5}
     .quiz-stimulus-context{white-space:pre-line;color:var(--ink);line-height:1.65}
-    .quiz-quantities{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-    .quiz-quantities>div{background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:12px}
-    .quiz-quantities p{white-space:pre-line;margin:6px 0 0;color:#354158;font-size:14px;line-height:1.6}
+
+    .qc-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,9vw,96px);width:100%;max-width:760px;margin:14px auto 18px;padding:3px 12px 14px}
+    .qc-column{min-width:0;text-align:center;padding:3px 8px}
+    .qc-label{display:inline-block;color:var(--ink);font-size:15px;font-weight:500;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;margin-bottom:7px}
+    .qc-value{color:var(--ink);font-size:17px;line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}
+
     .quiz-option{display:flex;align-items:flex-start;gap:10px;padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;line-height:1.5}
     .quiz-option:has(input:checked){border-color:#8aa5ff;background:#f3f6ff}
     .quiz-option input{margin-top:4px}
@@ -71,7 +74,7 @@
     .quiz-score strong{display:block;font-size:46px;line-height:1.1;letter-spacing:-1px}
     .quiz-score p{color:#dbe3f8;margin:6px 0 0}
     @media(max-width:760px){.quiz-config{grid-template-columns:1fr}.quiz-topic-groups{grid-template-columns:1fr}.quiz-settings{order:-1}}
-    @media(max-width:650px){.quiz-quantities{grid-template-columns:1fr}.quiz-controls{align-items:flex-start;flex-direction:column}.quiz-controls .quiz-action{width:100%}}
+    @media(max-width:650px){.quiz-controls{align-items:flex-start;flex-direction:column}.quiz-controls .quiz-action{width:100%}}
 
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
