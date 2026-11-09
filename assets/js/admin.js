@@ -78,6 +78,27 @@ const esc = s =>
     "'": "&#39;"
   }[c]));
 
+const FIGURE_EXTENSIONS = Object.freeze({
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif"
+});
+
+function validateFigureFile(file, messageId, inputId) {
+  if (!Object.prototype.hasOwnProperty.call(FIGURE_EXTENSIONS, file.type)) {
+    message(messageId, "Use a PNG, JPEG, WebP, or GIF image. SVG and other file types are not accepted.");
+    $(inputId).value = "";
+    return null;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    message(messageId, "The image must be smaller than 5 MB.");
+    $(inputId).value = "";
+    return null;
+  }
+  return FIGURE_EXTENSIONS[file.type];
+}
+
 function message(id, text, success = false) {
   const el = $(id);
   if (!el) return;
@@ -226,12 +247,18 @@ $("loginForm").onsubmit = async e => {
 };
 
 $("logout").onclick = async () => {
-  await db.auth.signOut();
-
-  user = null;
-
-  $("dashboard").hidden = true;
-  $("login").hidden = false;
+  const button = $("logout");
+  button.disabled = true;
+  button.textContent = "Signing out…";
+  try {
+    const { error } = await db.auth.signOut({ scope: "local" });
+    if (error) throw error;
+    window.location.replace("/");
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Sign out";
+    message("loginMsg", "Sign out failed. Please try again. " + (error.message || ""));
+  }
 };
 
 (async () => {
@@ -1071,14 +1098,10 @@ $("stimulusFigure").addEventListener("change", async () => {
   const file = $("stimulusFigure").files[0];
   if (!file) return;
 
-  if (file.size > 5 * 1024 * 1024) {
-    message("stimulusMsg", "The shared figure must be smaller than 5 MB.");
-    $("stimulusFigure").value = "";
-    return;
-  }
+  const ext = validateFigureFile(file, "stimulusMsg", "stimulusFigure");
+  if (!ext) return;
 
   $("stimulusFigurePreview").textContent = "Uploading shared figure…";
-  const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${user.id}/stimulus-${crypto.randomUUID()}.${ext}`;
   const { error } = await db.storage.from("question-figures").upload(path, file, {
     contentType: file.type
@@ -1165,19 +1188,10 @@ $("figure").onchange = async () => {
 
   if (!file) return;
 
-  if (file.size > 5 * 1024 * 1024) {
-    message("questionMsg", "Figure must be smaller than 5 MB.");
-
-    $("figure").value = "";
-
-    return;
-  }
+  const ext = validateFigureFile(file, "questionMsg", "figure");
+  if (!ext) return;
 
   $("preview").textContent = "Uploading…";
-
-  const ext = (file.name.split(".").pop() || "png")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
 
   const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
 
