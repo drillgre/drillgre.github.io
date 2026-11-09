@@ -599,14 +599,44 @@
       p_visitor_key:visitorKey
     });
     if (error) throw error;
-    if (!data || data.status !== "in_progress") throw new Error("This quiz is no longer available to resume.");
+    if (!data) throw new Error("This quiz is no longer available.");
     const questionList = await loadStimuli(data.questions || []);
+    if (data.status === "completed") {
+      questions = questionList;
+      state = {
+        attemptId:data.attempt_id,
+        sessionToken:data.session_token || sessionToken,
+        status:"completed",
+        questionIds:questions.map(q=>String(q.id)),
+        timingMode:data.timing_mode || "standard",
+        durationSeconds:data.duration_seconds,
+        startedAt:new Date(data.started_at || Date.now()).getTime(),
+        deadlineAt:data.deadline_at ? new Date(data.deadline_at).getTime() : null,
+        currentIndex:0,
+        responses:data.responses || {},
+        flagged:(data.flagged_question_ids || []).map(String)
+      };
+      $("loadingPanel").hidden = true;
+      renderResults(data.review || [],Math.max(0,Math.round((Date.now()-state.startedAt)/1000)));
+      return;
+    }
+    if (data.status !== "in_progress") throw new Error("This quiz is no longer available to resume.");
     await beginQuiz(questionList,data);
   }
 
   async function init() {
     visitorKey = getVisitorKey();
     try {
+      const {data:sessionData} = await db.auth.getSession();
+      if (sessionData?.session?.user) {
+        const {error:claimError} = await db.rpc("claim_guest_topic_quiz_attempts",{p_visitor_key:visitorKey});
+        if (claimError) throw claimError;
+      }
+      db.auth.onAuthStateChange(async event => {
+        if (event === "SIGNED_IN") {
+          await db.rpc("claim_guest_topic_quiz_attempts",{p_visitor_key:visitorKey});
+        }
+      });
       if (savedAttemptId) {
         await resumeAttempt();
       } else {
