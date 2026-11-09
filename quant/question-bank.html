@@ -16,7 +16,9 @@
     .bank-count{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;min-width:150px;text-align:center}
     .bank-count strong{display:block;font-size:28px;color:var(--ink)}
     .bank-count span{font-size:11px;color:var(--muted)}
-    .bank-count small{display:block;margin-top:5px;font-size:11px;color:#168456;font-weight:750}
+    .bank-count small{display:block;margin-top:5px;font-size:11px;color:#64748b;font-weight:750}
+    .bank-diagnostics-trigger{margin-top:12px;border:1px solid #dbe3f0;background:#fff;color:#3154c5;border-radius:9px;padding:8px 11px;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+    .bank-diagnostics-trigger:hover{background:#f4f7ff;border-color:#b9c7ff}
     .bank-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(4,minmax(130px,1fr));gap:10px;margin:20px 0 12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
     .bank-filters input,.bank-filters select{width:100%;min-width:0;padding:11px 12px;border:1px solid #d4dbe7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-size:13px}
     .bank-results-line{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:12px 2px}
@@ -57,7 +59,21 @@
     .bank-excerpt{font-size:13px;line-height:1.65;color:#56637a;margin:0 0 13px;white-space:pre-line}
     .bank-card-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .bank-open{border:0;border-radius:8px;background:var(--blue);color:#fff;padding:9px 13px;font-weight:800;font-size:12px;cursor:pointer}
-    .bank-done{display:inline-flex;align-items:center;gap:5px;border:1px solid #b9e2c8;border-radius:99px;background:#f0fbf4;color:#187447;padding:5px 9px;font-size:11px;font-weight:800}
+    .bank-done{display:inline-flex;align-items:center;border:1px solid #b9e2c8;border-radius:99px;background:#f0fbf4;color:#187447;padding:5px 9px;font-size:11px;font-weight:800}
+    .bank-review{display:inline-flex;align-items:center;border:1px solid #f3d3a4;border-radius:99px;background:#fff8eb;color:#9a5b0b;padding:5px 9px;font-size:11px;font-weight:800}
+    .bank-diagnostics-dialog{width:min(820px,calc(100% - 28px))}
+    .bank-diagnostics-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:23px}
+    .bank-diagnostic-stat{border:1px solid var(--line);border-radius:12px;background:#fbfcff;padding:15px}
+    .bank-diagnostic-stat span{display:block;color:var(--muted);font-size:11px;font-weight:700}
+    .bank-diagnostic-stat strong{display:block;margin-top:7px;color:var(--ink);font-size:25px}
+    .bank-diagnostic-stat small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+    .bank-diagnostics-subtitle{font-size:15px;color:var(--ink);margin:8px 0 10px}
+    .bank-diagnostics-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+    .bank-diagnostics-table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+    .bank-diagnostics-table th,.bank-diagnostics-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #e9edf4;white-space:nowrap}
+    .bank-diagnostics-table th{background:#f7f9fc;color:#536078;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+    .bank-diagnostics-table tr:last-child td{border-bottom:0}
+    .bank-diagnostics-note{margin:13px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
     .bank-card-figure{display:block;width:100%;max-height:115px;object-fit:contain;border-radius:8px;background:#f8fafc}
     .bank-card-figure[hidden]{display:none}
     .bank-dialog{width:min(900px,calc(100% - 28px));max-width:900px;max-height:88vh;padding:0;border:0;border-radius:16px;box-shadow:0 24px 90px rgba(14,27,52,.28);overflow:hidden}
@@ -79,7 +95,7 @@
     .bank-status{padding:13px 15px;margin:14px 0;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-size:13px;line-height:1.6}
     .bank-status.error{border-color:#f3d0cb;background:#fff5f4;color:#9a2e20}
     @media(max-width:900px){.bank-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-filters input{grid-column:1/-1}}
-    @media(max-width:650px){.bank-hero{align-items:flex-start;flex-direction:column}.bank-count{width:100%}.bank-filters{grid-template-columns:1fr}.bank-filters input{grid-column:auto}.bank-question{padding:16px}.bank-results-line{align-items:flex-start;flex-direction:column}}
+    @media(max-width:650px){.bank-hero{align-items:flex-start;flex-direction:column}.bank-count{width:100%}.bank-filters{grid-template-columns:1fr}.bank-filters input{grid-column:auto}.bank-question{padding:16px}.bank-results-line{align-items:flex-start;flex-direction:column}.bank-diagnostics-summary{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -125,6 +141,7 @@
       <strong id="bankTotal">—</strong>
       <span>Practice questions</span>
       <small id="bankCompletedSummary">0 completed by you</small>
+      <button id="openBankDiagnostics" class="bank-diagnostics-trigger" type="button">View diagnostics</button>
     </div>
   </section>
 
@@ -169,6 +186,19 @@
         <button id="closeQuestionDialog" class="bank-dialog-close" type="button" aria-label="Close question">×</button>
       </div>
       <div id="questionDialogBody" class="bank-dialog-body"></div>
+    </div>
+  </dialog>
+
+  <dialog id="bankDiagnosticsDialog" class="bank-dialog bank-diagnostics-dialog" aria-labelledby="bankDiagnosticsTitle">
+    <div class="bank-dialog-shell">
+      <div class="bank-dialog-head">
+        <div>
+          <div class="eyebrow">Your learning analysis</div>
+          <h2 id="bankDiagnosticsTitle">Question Bank diagnostics</h2>
+        </div>
+        <button id="closeBankDiagnostics" class="bank-dialog-close" type="button" aria-label="Close diagnostics">×</button>
+      </div>
+      <div id="bankDiagnosticsBody" class="bank-dialog-body"></div>
     </div>
   </dialog>
 </main>
