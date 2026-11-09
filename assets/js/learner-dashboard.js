@@ -137,7 +137,7 @@
 
     const { data, error } = await db.rpc("get_learner_dashboard");
     if (error) {
-      setStatus("Your account is signed in, but the learner dashboard could not be loaded. " + error.message + " Check that learner-accounts.sql has been run in Supabase.", true);
+      setStatus("Your account is signed in, but the learner dashboard could not be loaded. " + error.message + " Check that learner-accounts.sql and quiz-progress.sql have been run in Supabase.", true);
       return;
     }
 
