@@ -48,7 +48,7 @@
 <main><div class="intro"><div class="eyebrow">Build your word power</div><h1>Vocab Mountain</h1><p>Review words cumulatively by day. Tap a tile to reveal meanings and synonyms, tap again for examples, then tap a third time to reveal the word.</p></div>
 <div class="toolbar"><div class="filters"><input id="search" type="search" placeholder="Search a word…" aria-label="Search vocabulary"><select id="dayFilter"><option value="all">All days</option></select><button class="btn" id="shuffle" type="button">↻ Shuffle</button></div><div class="count" id="counter">Loading words…</div></div>
 <div class="viewbar"><span>Words per view</span><div class="choices"><button class="choice active" data-n="1">1</button><button class="choice" data-n="2">2</button><button class="choice" data-n="4">4</button><button class="choice" data-n="6">6</button></div></div>
-<div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading workbook…</div><div class="tiles" id="tiles" style="display:none"></div>
+<div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading Vocab Mountain…</div><div class="tiles" id="tiles" style="display:none"></div>
 <div class="actions" id="actions" style="display:none"><button class="btn" id="prev">← Previous</button><button class="btn primary" id="next">Next →</button></div></main>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -98,14 +98,24 @@ async function loadWorkbookFallback(reason){
 }
 async function load(){
   try{
-    const {data,error}=await vocabDb.from("vocab_words")
-      .select("day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
-      .eq("is_published",true)
-      .order("day",{ascending:true})
-      .order("sn",{ascending:true,nullsFirst:false});
-    if(error)throw error;
-    if(data&&data.length){
-      S.all=mapDatabaseWords(data);
+    const allRows=[];
+    const pageSize=1000;
+    let offset=0;
+    while(true){
+      const {data,error}=await vocabDb.from("vocab_words")
+        .select("day,sn,word,meaning1,meaning2,meaning3,synonyms,example1,example2,example3")
+        .eq("is_published",true)
+        .order("day",{ascending:true})
+        .order("sn",{ascending:true,nullsFirst:false})
+        .range(offset,offset+pageSize-1);
+      if(error)throw error;
+      const page=data||[];
+      allRows.push(...page);
+      if(page.length<pageSize)break;
+      offset+=pageSize;
+    }
+    if(allRows.length){
+      S.all=mapDatabaseWords(allRows);
       renderLoadedWords("");
       return;
     }
