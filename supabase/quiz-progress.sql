@@ -508,7 +508,7 @@ begin
 
   update public.gre_topic_quiz_attempts
   set learner_id=v_user_id
-  where visitor_key=p_visitor_key;
+  where visitor_key=p_visitor_key and learner_id is null;
 
   get diagnostics v_claimed = row_count;
   return v_claimed;
