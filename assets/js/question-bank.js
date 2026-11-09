@@ -147,6 +147,11 @@
     host.querySelectorAll("img").forEach(image => {
       image.addEventListener("error", () => {
         image.hidden = true;
+        const card = image.closest(".bank-card");
+        if (card) {
+          card.classList.remove("has-figure");
+          card.classList.add("no-figure");
+        }
       }, { once:true });
     });
   }
@@ -174,8 +179,9 @@
     const isDone = completedIds.has(id);
     const stimulus = getStimulus(question);
     const cardFigureUrl = question.figure_url || stimulus?.figure_url;
+    const hasFigure = !!safeImageUrl(cardFigureUrl);
     const cardFigure = figureMarkup(cardFigureUrl,question.question_text || "Question figure","bank-card-figure");
-    return '<article class="bank-card" data-question-card="' + esc(id) + '">' +
+    return '<article class="bank-card ' + (hasFigure ? "has-figure" : "no-figure") + '" data-question-card="' + esc(id) + '">' +
       '<div class="bank-card-main">' +
         '<div class="bank-question-head">' +
           '<span class="bank-question-number">Question ' + (index+1) + '</span>' +
