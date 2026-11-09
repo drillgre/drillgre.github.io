@@ -1,16 +1,26 @@
 -- Vocab Mountain learner-level word classification.
 -- Run after supabase/vocab-mountain.sql.
 --
--- "know" is the default state and is not stored. Only review and unknown
--- states are saved, so newly published words start green for every learner.
+-- A word with no progress row is unclassified. It appears in All with a
+-- white card. Explicit Know it, Seen but Review, and Unknown classifications
+-- are stored separately for each learner.
 
 create table if not exists public.vocab_word_progress (
   learner_id uuid not null references auth.users(id) on delete cascade,
   vocab_word_id uuid not null references public.vocab_words(id) on delete cascade,
-  status text not null check (status in ('review','unknown')),
+  status text not null,
   updated_at timestamptz not null default now(),
   primary key (learner_id, vocab_word_id)
 );
+
+-- Allow the three explicit learner classifications. This also upgrades
+-- installations that previously allowed only review and unknown.
+alter table public.vocab_word_progress
+  drop constraint if exists vocab_word_progress_status_check;
+
+alter table public.vocab_word_progress
+  add constraint vocab_word_progress_status_check
+  check (status in ('know','review','unknown'));
 
 create index if not exists vocab_word_progress_learner_status_idx
   on public.vocab_word_progress(learner_id, status);
