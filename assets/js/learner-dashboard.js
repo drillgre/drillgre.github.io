@@ -166,12 +166,18 @@
   }
 
   $("signOut").addEventListener("click", async () => {
-    const { error } = await db.auth.signOut();
-    if (error) {
-      setStatus(error.message, true);
-      return;
+    const button = $("signOut");
+    button.disabled = true;
+    button.textContent = "Signing out…";
+    try {
+      const { error } = await db.auth.signOut({ scope: "local" });
+      if (error) throw error;
+      window.location.replace("/");
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Sign out";
+      setStatus("Sign out failed. Please try again. " + (error.message || ""), true);
     }
-    window.location.replace("account.html");
   });
 
   document.addEventListener("DOMContentLoaded", loadDashboard);
