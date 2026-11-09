@@ -119,4 +119,6 @@ The Quant Academy page includes a topic-quiz builder below the course modules. L
 
 Topic quizzes show a simple correct-answer count and answer review. They do not calculate the mock-test 130–170 practice scale.
 
+The learner selects the quiz timing option in Quant Academy. The quiz opens in a new browser tab with a GRE-style test interface, question navigation, Mark for Review, a countdown timer, and a final review screen. Standard timing follows the mock-test pace: 21 minutes for up to 12 questions and 26 minutes for 15 questions, scaled proportionally for other quiz lengths. The 50% extra-time, double-time, and untimed options are also available. The timer and answers are retained within the tab if the learner refreshes the page.
+
 Run `topic-quiz.sql` after the three core setup scripts. It enables published practice stimulus groups to be read on the topic quiz page and creates the `grade_gre_quiz_question` RPC. Correct answers and explanations are returned by this RPC only after each learner submits the quiz.
