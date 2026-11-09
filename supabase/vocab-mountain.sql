@@ -8,6 +8,7 @@ create table if not exists public.vocab_words (
   day integer not null check (day >= 1),
   sn integer check (sn is null or sn >= 1),
   word text not null check (length(trim(word)) > 0),
+  category text,
   meaning1 text,
   meaning2 text,
   meaning3 text,
@@ -19,6 +20,8 @@ create table if not exists public.vocab_words (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.vocab_words add column if not exists category text;
 
 create unique index if not exists vocab_words_word_unique_idx
   on public.vocab_words (lower(trim(word)));
@@ -36,10 +39,20 @@ grant select on public.vocab_words to anon, authenticated;
 grant insert, update, delete on public.vocab_words to authenticated;
 
 drop policy if exists "Public can read published vocabulary" on public.vocab_words;
+drop policy if exists "Authenticated can read vocabulary and admin drafts" on public.vocab_words;
+
+-- Anonymous readers can see published words without requiring access to profiles.
 create policy "Public can read published vocabulary"
 on public.vocab_words
 for select
-to anon, authenticated
+to anon
+using (is_published = true);
+
+-- Signed-in learners see published words; administrators can also read drafts.
+create policy "Authenticated can read vocabulary and admin drafts"
+on public.vocab_words
+for select
+to authenticated
 using (
   is_published = true
   or exists (
