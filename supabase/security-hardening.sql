@@ -138,6 +138,67 @@ using (
   )
 );
 
+-- Add restrictive policies as a second layer. PostgreSQL combines
+-- permissive policies with OR, but restrictive policies with AND. This makes
+-- sure any pre-existing broad storage policy cannot open this bucket to
+-- non-admin writes. These policies are scoped to this bucket only.
+drop policy if exists "DrillGRE restrict question figure inserts to admins" on storage.objects;
+create policy "DrillGRE restrict question figure inserts to admins"
+on storage.objects
+as restrictive
+for insert
+to public
+with check (
+  bucket_id <> 'question-figures'
+  or exists (
+    select 1
+    from public.profiles p
+    where p.id = (select auth.uid())
+      and p.role = 'admin'
+  )
+);
+
+drop policy if exists "DrillGRE restrict question figure updates to admins" on storage.objects;
+create policy "DrillGRE restrict question figure updates to admins"
+on storage.objects
+as restrictive
+for update
+to public
+using (
+  bucket_id <> 'question-figures'
+  or exists (
+    select 1
+    from public.profiles p
+    where p.id = (select auth.uid())
+      and p.role = 'admin'
+  )
+)
+with check (
+  bucket_id <> 'question-figures'
+  or exists (
+    select 1
+    from public.profiles p
+    where p.id = (select auth.uid())
+      and p.role = 'admin'
+  )
+);
+
+drop policy if exists "DrillGRE restrict question figure deletes to admins" on storage.objects;
+create policy "DrillGRE restrict question figure deletes to admins"
+on storage.objects
+as restrictive
+for delete
+to public
+using (
+  bucket_id <> 'question-figures'
+  or exists (
+    select 1
+    from public.profiles p
+    where p.id = (select auth.uid())
+      and p.role = 'admin'
+  )
+);
+
 commit;
 
 notify pgrst, 'reload schema';
