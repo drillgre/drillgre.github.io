@@ -21,6 +21,9 @@
     .progress-track span{display:block;height:100%;width:0;background:var(--blue);transition:width .2s}
     .progress-secondary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
     .progress-secondary>div{background:#f7f9fd;border:1px solid var(--line);padding:13px;border-radius:10px}
+    .completed-lesson-list{display:flex;flex-wrap:wrap;gap:8px}
+    .completed-lesson-list a,.completed-lesson-list span{display:inline-flex;align-items:center;padding:7px 10px;border:1px solid #dbe4f4;border-radius:8px;background:#f7f9fd;color:#33415a;font-size:11px;text-decoration:none}
+    .completed-lesson-list a:hover{border-color:#9db5ff;color:#2454d7}
     .progress-secondary strong,.progress-secondary span{display:block}
     .progress-secondary strong{font-size:14px;color:var(--navy)}
     .progress-secondary span{font-size:11px;color:var(--muted);margin-top:4px}
@@ -111,6 +114,10 @@
       <div class="progress-secondary">
         <div><strong id="quizProgressText">0 quizzes completed</strong><span>Topic quiz practice</span></div>
         <div><strong id="mockProgressText">0 mock tests completed</strong><span>Adaptive Quant mocks</span></div>
+      </div>
+      <div style="margin-top:18px">
+        <h3 style="font-size:14px;margin:0 0 9px">Lessons completed</h3>
+        <div id="completedLessonList" class="completed-lesson-list"></div>
       </div>
     </section>
     <div class="dash-columns">
