@@ -10,9 +10,9 @@ Run the SQL files listed in [LEARNER-SETUP.md](supabase/LEARNER-SETUP.md) in ord
 - Allows signed-in users to read only their own profile row and only the fields the frontend needs.
 - Protects the profile role field from direct learner-side modification.
 - Disables client creation of database objects in the public schema.
-- Makes the question-figure bucket public-read but admin-write, with a 5 MB upload limit and raster-image MIME allow-list.
+- Makes the question-figure bucket public-read but admin-write, with a 5 MB upload limit and raster-image MIME allow-list. Restrictive write policies also prevent any older broad Storage policy from opening this bucket to learners.
 
-Review Storage policies after migration. Existing broad policies can combine permissively with the new policies; remove any policy that grants general authenticated users write access to the question-figure bucket.
+Review Storage policies after migration. The migration applies restrictive insert, update, and delete rules to the question-figure bucket, so a broad permissive policy cannot override the administrator-only check for that bucket. Keep any other bucket policies scoped to their own buckets.
 
 ## Supabase project settings
 
