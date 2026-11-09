@@ -7,97 +7,81 @@
   const $ = id => document.getElementById(id);
 
   const CATEGORY_LABELS = {
-    arithmetic: "Arithmetic",
-    data_analysis: "Data Analysis",
-    algebra: "Algebra",
-    geometry: "Geometry"
+    arithmetic:"Arithmetic",
+    data_analysis:"Data Analysis",
+    algebra:"Algebra",
+    geometry:"Geometry"
   };
-
   const SUBTOPIC_LABELS = {
-    number_properties: "Number properties",
-    fractions_decimals: "Fractions and decimals",
-    percentages: "Percentages",
-    ratios_proportions: "Ratios and proportions",
-    exponents_roots: "Exponents and roots",
-    absolute_values: "Absolute values",
-    arithmetic_other: "Other arithmetic",
-    data_interpretation: "Data interpretation",
-    probability: "Probability",
-    counting: "Counting, permutations and combinations",
-    statistics: "Statistics",
-    algebra_core: "Equations and functions",
-    inequalities: "Inequalities",
-    word_problems: "Word problems",
-    geometry: "Geometry",
-    coordinate_geometry: "Coordinate geometry"
+    number_properties:"Number properties",
+    fractions_decimals:"Fractions and decimals",
+    percentages:"Percentages",
+    ratios_proportions:"Ratios and proportions",
+    exponents_roots:"Exponents and roots",
+    absolute_values:"Absolute values",
+    arithmetic_other:"Other arithmetic",
+    data_interpretation:"Data interpretation",
+    probability:"Probability",
+    counting:"Counting, permutations and combinations",
+    statistics:"Statistics",
+    algebra_core:"Equations and functions",
+    inequalities:"Inequalities",
+    word_problems:"Word problems",
+    geometry:"Geometry",
+    coordinate_geometry:"Coordinate geometry"
   };
 
   let questionBank = [];
-  let currentQuestions = [];
-  let submitting = false;
   let isAuthenticated = false;
   let guestQuizzesRemaining = 2;
+  let historyReady = false;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[ch]));
 
   function setStatus(message, isError = false) {
     const el = $("quizSetupStatus");
     if (!el) return;
     el.textContent = message;
-    el.classList.toggle("error", !!isError);
+    el.classList.toggle("error",!!isError);
     el.hidden = !message;
   }
 
-  function parseOptions(raw) {
-    if (Array.isArray(raw)) {
-      return raw.map((item, index) => typeof item === "string"
-        ? {label:String.fromCharCode(65 + index), text:item}
-        : item);
+  function getVisitorKey() {
+    let key = localStorage.getItem("drillgre_guest_visitor_key_v1");
+    if (!key || key.length < 32) {
+      key = crypto.randomUUID() + "-" + crypto.randomUUID();
+      localStorage.setItem("drillgre_guest_visitor_key_v1",key);
     }
-    if (typeof raw === "string") {
-      try { return parseOptions(JSON.parse(raw)); } catch { return []; }
-    }
-    if (raw && typeof raw === "object") {
-      return Object.entries(raw).map(([label, text]) =>
-        typeof text === "object" && text !== null
-          ? {label, ...text}
-          : {label, text:String(text)}
-      );
-    }
-    return [];
+    return key;
   }
 
   function categoryLabel(value) {
-    return CATEGORY_LABELS[value] || String(value || "Other").replaceAll("_", " ");
+    return CATEGORY_LABELS[value] || String(value || "Other").replaceAll("_"," ");
   }
 
   function subtopicLabel(value) {
-    return SUBTOPIC_LABELS[value] || String(value || "Other").replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+    return SUBTOPIC_LABELS[value] || String(value || "Other").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
   }
 
   async function fetchQuestionBank() {
     const all = [];
     const pageSize = 1000;
     let offset = 0;
-
     while (true) {
-      const {data, error} = await db
-        .from("questions")
+      const {data,error} = await db.from("questions")
         .select("id,topic,topic_category,subtopic,question_type,difficulty,question_text,options,figure_url,stimulus_id,question_usage")
-        .eq("published", true)
-        .in("question_usage", ["practice", "both"])
-        .order("created_at", {ascending:false})
-        .range(offset, offset + pageSize - 1);
-
+        .eq("published",true)
+        .in("question_usage",["practice","both"])
+        .order("created_at",{ascending:false})
+        .range(offset,offset + pageSize - 1);
       if (error) throw error;
       const page = data || [];
       all.push(...page);
       if (page.length < pageSize) break;
       offset += pageSize;
     }
-
     return all;
   }
 
@@ -106,28 +90,23 @@
     questionBank.forEach(q => {
       const category = q.topic_category || "arithmetic";
       const subtopic = q.subtopic || "arithmetic_other";
-      if (!groups.has(category)) groups.set(category, new Map());
-      const subs = groups.get(category);
-      subs.set(subtopic, (subs.get(subtopic) || 0) + 1);
+      if (!groups.has(category)) groups.set(category,new Map());
+      const subtopics = groups.get(category);
+      subtopics.set(subtopic,(subtopics.get(subtopic)||0)+1);
     });
 
-    const ordered = [...groups.entries()].sort((a,b) =>
-      categoryLabel(a[0]).localeCompare(categoryLabel(b[0]))
-    );
-
-    $("quizTopicGroups").innerHTML = ordered.map(([category, subs]) => {
-      const subRows = [...subs.entries()].sort((a,b) =>
-        subtopicLabel(a[0]).localeCompare(subtopicLabel(b[0]))
-      );
-      const categoryTotal = subRows.reduce((sum, item) => sum + item[1], 0);
+    const ordered = [...groups.entries()].sort((a,b)=>categoryLabel(a[0]).localeCompare(categoryLabel(b[0])));
+    $("quizTopicGroups").innerHTML = ordered.map(([category,subtopics]) => {
+      const rows = [...subtopics.entries()].sort((a,b)=>subtopicLabel(a[0]).localeCompare(subtopicLabel(b[0])));
+      const total = rows.reduce((sum,row)=>sum+row[1],0);
       return '<article class="quiz-topic-group" data-topic-group="' + esc(category) + '">' +
         '<label class="quiz-category-row">' +
           '<input type="checkbox" data-category-toggle="' + esc(category) + '">' +
           '<strong>' + esc(categoryLabel(category)) + '</strong>' +
-          '<span class="quiz-category-count">' + categoryTotal + ' questions</span>' +
+          '<span class="quiz-category-count">' + total + ' questions</span>' +
         '</label>' +
         '<div class="quiz-subtopic-list">' +
-          subRows.map(([subtopic, count]) =>
+          rows.map(([subtopic,count]) =>
             '<label class="quiz-subtopic-row">' +
               '<input type="checkbox" data-quiz-subtopic="' + esc(subtopic) + '" data-category="' + esc(category) + '">' +
               '<span>' + esc(subtopicLabel(subtopic)) + '</span>' +
@@ -139,30 +118,26 @@
     }).join("");
 
     $("quizTopicGroups").querySelectorAll("[data-category-toggle]").forEach(input => {
-      input.addEventListener("change", () => {
+      input.addEventListener("change",() => {
         const category = input.dataset.categoryToggle;
-        $("quizTopicGroups").querySelectorAll('[data-category="' + CSS.escape(category) + '"]').forEach(box => {
-          box.checked = input.checked;
-        });
+        $("quizTopicGroups").querySelectorAll('[data-category="' + CSS.escape(category) + '"]')
+          .forEach(child=>child.checked=input.checked);
         updateQuizAvailability();
       });
     });
-
-    $("quizTopicGroups").querySelectorAll("[data-quiz-subtopic]").forEach(input => {
-      input.addEventListener("change", updateQuizAvailability);
-    });
-
+    $("quizTopicGroups").querySelectorAll("[data-quiz-subtopic]").forEach(input =>
+      input.addEventListener("change",updateQuizAvailability)
+    );
     updateQuizAvailability();
   }
 
   function selectedSubtopicKeys() {
     return [...$("quizTopicGroups").querySelectorAll("[data-quiz-subtopic]:checked")]
-      .map(input => input.dataset.category + "::" + input.dataset.quizSubtopic);
+      .map(input=>input.dataset.category + "::" + input.dataset.quizSubtopic);
   }
 
   function selectedQuestionPool() {
     const selected = new Set(selectedSubtopicKeys());
-    if (!selected.size) return [];
     return questionBank.filter(q =>
       selected.has((q.topic_category || "arithmetic") + "::" + (q.subtopic || "arithmetic_other"))
     );
@@ -172,7 +147,7 @@
     $("quizTopicGroups").querySelectorAll("[data-category-toggle]").forEach(parent => {
       const category = parent.dataset.categoryToggle;
       const children = [...$("quizTopicGroups").querySelectorAll('[data-category="' + CSS.escape(category) + '"]')];
-      const checked = children.filter(item => item.checked).length;
+      const checked = children.filter(child=>child.checked).length;
       parent.checked = children.length > 0 && checked === children.length;
       parent.indeterminate = checked > 0 && checked < children.length;
     });
@@ -180,340 +155,28 @@
 
   function updateQuizAvailability() {
     updateCategoryCheckboxes();
+    const selected = selectedSubtopicKeys();
     const available = selectedQuestionPool().length;
     const requested = Number($("quizQuestionCount").value || 12);
+    const button = $("startTopicQuiz");
     const note = $("quizAvailability");
 
-    if (!selectedSubtopicKeys().length) {
+    if (!selected.length) {
       note.textContent = "Select one or more topics or subtopics to see how many questions are available.";
-      $("startTopicQuiz").disabled = true;
+      button.disabled = true;
     } else if (available < requested) {
       note.textContent = available + " questions available. Select more subtopics or choose a smaller quiz size.";
-      $("startTopicQuiz").disabled = true;
+      button.disabled = true;
+    } else if (!historyReady) {
+      note.textContent = "Checking your quiz allowance. The quiz option will be available when the allowance is confirmed.";
+      button.disabled = true;
     } else if (!isAuthenticated && guestQuizzesRemaining <= 0) {
       note.textContent = "You have used both free guest quiz attempts. Sign in for unlimited quizzes.";
-      $("startTopicQuiz").disabled = true;
+      button.disabled = true;
     } else {
       note.textContent = available + " eligible questions available. " + requested + " will be selected randomly.";
-      $("startTopicQuiz").disabled = false;
+      button.disabled = false;
     }
-  }
-
-  function shuffle(items) {
-    const result = items.slice();
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  }
-
-  async function attachStimuli(questions) {
-    const ids = [...new Set(questions.map(q => q.stimulus_id).filter(Boolean).map(String))];
-    if (!ids.length) return questions;
-
-    const {data, error} = await db
-      .from("question_stimuli")
-      .select("id,title,stimulus_text,figure_url")
-      .in("id", ids);
-
-    if (error) {
-      throw new Error("Unable to load a shared Data Interpretation stimulus. Run supabase/topic-quiz.sql in the Supabase SQL Editor. " + error.message);
-    }
-
-    const byId = new Map((data || []).map(item => [String(item.id), item]));
-    return questions.map(q => {
-      const stimulus = q.stimulus_id ? byId.get(String(q.stimulus_id)) : null;
-      return {
-        ...q,
-        stimulus_title: stimulus?.title || "",
-        stimulus_text: stimulus?.stimulus_text || "",
-        stimulus_figure_url: stimulus?.figure_url || ""
-      };
-    });
-  }
-
-  function parseQuestionOptions(q) {
-    return parseOptions(q.options);
-  }
-
-  function answerMarkup(q) {
-    if (q.question_type === "quantitative_comparison") {
-      const opts = parseQuestionOptions(q);
-      const a = opts.find(x => /quantity.?a/i.test(x.label || ""))?.text || opts[0]?.text || "";
-      const b = opts.find(x => /quantity.?b/i.test(x.label || ""))?.text || opts[1]?.text || "";
-      return '<div class="qc-comparison">' +
-        '<div class="qc-column"><div class="qc-label">Quantity A</div><div class="qc-value">' + esc(a) + '</div></div>' +
-        '<div class="qc-column"><div class="qc-label">Quantity B</div><div class="qc-value">' + esc(b) + '</div></div>' +
-      '</div>' +
-      [
-        ["A","Quantity A is greater"],
-        ["B","Quantity B is greater"],
-        ["C","The two quantities are equal"],
-        ["D","The relationship cannot be determined"]
-      ].map(([value,label]) =>
-        '<label class="quiz-option"><input type="radio" name="q-' + esc(q.id) + '" value="' + value + '">' +
-        '<span><b>' + value + '.</b> ' + label + '</span></label>'
-      ).join("");
-    }
-
-    if (q.question_type === "numeric_entry") {
-      return '<label class="quiz-numeric-wrap">Your answer' +
-        '<input class="quiz-numeric-answer" id="numeric-' + esc(q.id) + '" type="number" step="any" inputmode="decimal" placeholder="Enter a number">' +
-      '</label>';
-    }
-
-    const multiple = q.question_type === "multiple_choice_multiple";
-    return parseQuestionOptions(q).map((opt,index) => {
-      const value = String(opt.label || String.fromCharCode(65 + index));
-      return '<label class="quiz-option">' +
-        '<input type="' + (multiple ? "checkbox" : "radio") + '" name="q-' + esc(q.id) + '" value="' + esc(value) + '">' +
-        '<span><b>' + esc(value) + '.</b> ' + esc(opt.text ?? "") + '</span>' +
-      '</label>';
-    }).join("");
-  }
-
-  function stimulusMarkup(q) {
-    const figure = q.stimulus_figure_url
-      ? '<img class="quiz-question-figure" src="' + esc(q.stimulus_figure_url) + '" alt="' + esc(q.stimulus_title || "Shared Data Analysis figure") + '" loading="lazy">'
-      : "";
-    const context = q.stimulus_text
-      ? '<p class="quiz-stimulus-context">' + esc(q.stimulus_text) + '</p>'
-      : '<p class="quiz-stimulus-context">The shared data set is linked to these questions.</p>';
-    return '<section class="quiz-stimulus">' +
-      '<div class="quiz-stimulus-label">Shared Data Analysis stimulus</div>' +
-      '<h3>' + esc(q.stimulus_title || "Data set") + '</h3>' + context + figure +
-    '</section>';
-  }
-
-  function renderQuestions() {
-    const seenStimuli = new Set();
-    $("quizQuestionStack").innerHTML = currentQuestions.map((q,index) => {
-      let stimulus = "";
-      if (q.stimulus_id && !seenStimuli.has(String(q.stimulus_id))) {
-        seenStimuli.add(String(q.stimulus_id));
-        stimulus = stimulusMarkup(q);
-      }
-      const figure = !q.stimulus_id && q.figure_url
-        ? '<img class="quiz-question-figure" src="' + esc(q.figure_url) + '" alt="Question figure" loading="lazy">'
-        : "";
-      return stimulus +
-        '<article class="quiz-question" data-qid="' + esc(q.id) + '">' +
-          '<div class="quiz-question-head"><span class="quiz-question-number">Question ' + (index + 1) + ' of ' + currentQuestions.length + '</span></div>' +
-          '<div class="quiz-question-prompt">' + esc(q.question_text || "") + '</div>' +
-          figure +
-          '<div class="quiz-answer-area">' + answerMarkup(q) + '</div>' +
-        '</article>';
-    }).join("");
-
-    $("quizQuestionStack").querySelectorAll(".quiz-question").forEach(card => {
-      card.querySelectorAll("input").forEach(input => {
-        const update = () => {
-          const answered = card.querySelectorAll("input:checked").length > 0 ||
-            (card.querySelector(".quiz-numeric-answer")?.value.trim() || "") !== "";
-          card.classList.toggle("answered", answered);
-          updateQuizProgress();
-        };
-        input.addEventListener("change", update);
-        input.addEventListener("input", update);
-      });
-    });
-    updateQuizProgress();
-  }
-
-  function responseFor(q) {
-    const card = $("quizQuestionStack").querySelector('[data-qid="' + CSS.escape(String(q.id)) + '"]');
-    if (!card) return null;
-
-    if (q.question_type === "numeric_entry") {
-      const value = card.querySelector(".quiz-numeric-answer")?.value.trim() || "";
-      return value === "" ? null : value;
-    }
-
-    const selected = [...card.querySelectorAll("input:checked")].map(input => input.value);
-    if (!selected.length) return null;
-    return q.question_type === "multiple_choice_multiple" ? selected : selected[0];
-  }
-
-  function updateQuizProgress() {
-    const cards = [...$("quizQuestionStack").querySelectorAll(".quiz-question")];
-    const answered = cards.filter(card =>
-      card.querySelectorAll("input:checked").length > 0 ||
-      (card.querySelector(".quiz-numeric-answer")?.value.trim() || "") !== ""
-    ).length;
-    $("quizAnswered").textContent = answered + " / " + currentQuestions.length;
-    $("quizProgressFill").style.width = (currentQuestions.length ? answered / currentQuestions.length * 100 : 0) + "%";
-  }
-
-  function answerDisplay(response) {
-    if (response === null || response === undefined) return "Not answered";
-    if (Array.isArray(response)) return response.length ? response.join(", ") : "Not answered";
-    return String(response);
-  }
-
-  function correctAnswerText(q, answer) {
-    if (q.question_type === "numeric_entry") {
-      return String(answer && typeof answer === "object" ? answer.value : answer ?? "");
-    }
-    if (Array.isArray(answer)) return answer.join(", ");
-    if (q.question_type === "quantitative_comparison") {
-      return ({
-        A:"Quantity A is greater",
-        B:"Quantity B is greater",
-        C:"The two quantities are equal",
-        D:"The relationship cannot be determined"
-      })[String(answer)] || String(answer ?? "");
-    }
-    return String(answer ?? "");
-  }
-
-  function reviewOptionsMarkup(q) {
-    const opts = parseQuestionOptions(q);
-    if (q.question_type === "quantitative_comparison") {
-      const a = opts.find(x => /quantity.?a/i.test(x.label || ""))?.text || opts[0]?.text || "";
-      const b = opts.find(x => /quantity.?b/i.test(x.label || ""))?.text || opts[1]?.text || "";
-      return '<div class="qc-comparison">' +
-        '<div class="qc-column"><div class="qc-label">Quantity A</div><div class="qc-value">' + esc(a) + '</div></div>' +
-        '<div class="qc-column"><div class="qc-label">Quantity B</div><div class="qc-value">' + esc(b) + '</div></div>' +
-      '</div>';
-    }
-    if (!opts.length) return "";
-    return '<ul>' + opts.map((option,index) =>
-      '<li><b>' + esc(option.label || String.fromCharCode(65 + index)) + '.</b> ' + esc(option.text ?? "") + '</li>'
-    ).join("") + '</ul>';
-  }
-
-  function videoEmbed(raw) {
-    if (!raw) return "";
-    try {
-      const url = new URL(raw.trim());
-      let id = "";
-      if (url.hostname === "youtu.be") id = url.pathname.split("/").filter(Boolean)[0] || "";
-      else if (["youtube.com","www.youtube.com","m.youtube.com","youtube-nocookie.com","www.youtube-nocookie.com"].includes(url.hostname)) {
-        if (url.pathname === "/watch") id = url.searchParams.get("v") || "";
-        else if (/^\/(embed|shorts)\//.test(url.pathname)) id = url.pathname.split("/")[2] || "";
-      }
-      return /^[A-Za-z0-9_-]{11}$/.test(id) ? "https://www.youtube-nocookie.com/embed/" + id : "";
-    } catch { return ""; }
-  }
-
-  function renderReview(items) {
-    const seenStimuli = new Set();
-    $("quizReviewList").innerHTML = items.map((item,index) => {
-      const q = item.question;
-      let stimulus = "";
-      if (q.stimulus_id && !seenStimuli.has(String(q.stimulus_id))) {
-        seenStimuli.add(String(q.stimulus_id));
-        stimulus = stimulusMarkup(q);
-      }
-      const figure = !q.stimulus_id && q.figure_url
-        ? '<img class="quiz-question-figure" src="' + esc(q.figure_url) + '" alt="Question figure">'
-        : "";
-      let explanation = "";
-      if ((item.grade.explanation_type === "text" || item.grade.explanation_type === "both") && item.grade.explanation) {
-        explanation += '<div class="quiz-review-explanation">' + esc(item.grade.explanation) + '</div>';
-      }
-      const embed = videoEmbed(item.grade.explanation_video_url);
-      if ((item.grade.explanation_type === "video" || item.grade.explanation_type === "both") && embed) {
-        explanation += '<div class="quiz-review-explanation"><iframe src="' + esc(embed) + '" title="Question ' + (index + 1) + ' explanation" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%;max-width:560px;aspect-ratio:16/9;border:0;border-radius:10px"></iframe></div>';
-      }
-      return stimulus +
-        '<article class="quiz-review ' + (item.grade.correct ? "right" : "wrong") + '">' +
-          '<div class="quiz-question-head"><b>Question ' + (index + 1) + '</b><strong>' + (item.grade.correct ? "Correct" : "Incorrect / unanswered") + '</strong></div>' +
-          '<p class="quiz-question-prompt">' + esc(q.question_text || "") + '</p>' +
-          figure +
-          reviewOptionsMarkup(q) +
-          '<div class="quiz-review-answer"><b>Your answer:</b> ' + esc(answerDisplay(item.response)) +
-            '<br><b>Correct answer:</b> ' + esc(correctAnswerText(q, item.grade.correct_answer)) + '</div>' +
-          explanation +
-        '</article>';
-    }).join("");
-  }
-
-  function startTopicQuiz() {
-    const pool = selectedQuestionPool();
-    const requested = Number($("quizQuestionCount").value || 12);
-    if (pool.length < requested) return;
-
-    const subtopics = selectedSubtopicKeys();
-    const timing = $("quizTimingMode")?.value || "standard";
-    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
-    const query = new URLSearchParams({
-      subtopics: JSON.stringify(subtopics),
-      count: String(requested),
-      timing,
-      token
-    });
-    const quizUrl = "topic-quiz.html?" + query.toString();
-
-    // Open synchronously during the click event so popup blockers allow the new tab.
-    const quizWindow = window.open(quizUrl, "_blank");
-    if (!quizWindow) {
-      setStatus("Your browser blocked the new quiz tab. Allow pop-ups for drillgre.github.io, then select Start topic quiz again.", true);
-      return;
-    }
-    try { quizWindow.opener = null; } catch {}
-    setStatus("Your topic quiz has opened in a new tab. Your attempt is recorded when the test opens. Unfinished quizzes are saved in Your quizzes below.");
-    window.setTimeout(loadQuizHistory, 1800);
-  }
-
-  async function submitTopicQuiz() {
-    if (submitting || !currentQuestions.length) return;
-    const answered = currentQuestions.filter(q => responseFor(q) !== null).length;
-    const confirmMessage = answered < currentQuestions.length
-      ? "You have answered " + answered + " of " + currentQuestions.length + " questions. Submit the quiz with the remaining questions blank?"
-      : "Submit your quiz and see your results?";
-    if (!window.confirm(confirmMessage)) return;
-
-    submitting = true;
-    $("submitTopicQuiz").disabled = true;
-    $("submitTopicQuiz").textContent = "Checking answers…";
-
-    try {
-      const items = await Promise.all(currentQuestions.map(async question => {
-        const response = responseFor(question);
-        const {data, error} = await db.rpc("grade_gre_quiz_question", {
-          p_question_id: String(question.id),
-          p_response: response
-        });
-        if (error) throw new Error(error.message);
-        if (!data || data.error) throw new Error(data?.error || "A question could not be graded.");
-        return {question, response, grade:data};
-      }));
-
-      const correct = items.filter(item => item.grade.correct).length;
-      $("quizCorrectScore").textContent = correct + " / " + items.length;
-      $("quizScoreDetail").textContent = correct + " correct · " + (items.length - correct) + " incorrect or unanswered";
-      renderReview(items);
-      $("topicQuizRun").hidden = true;
-      $("topicQuizResults").hidden = false;
-      $("topicQuizResults").scrollIntoView({behavior:"smooth", block:"start"});
-    } catch (error) {
-      setStatus("Unable to check this quiz. " + (error.message || "Please try again."), true);
-    } finally {
-      submitting = false;
-      $("submitTopicQuiz").disabled = false;
-      $("submitTopicQuiz").textContent = "Submit quiz";
-    }
-  }
-
-  function resetTopicQuiz() {
-    currentQuestions = [];
-    $("topicQuizResults").hidden = true;
-    $("topicQuizRun").hidden = true;
-    $("quizSetupPanel").hidden = false;
-    setStatus("");
-    updateQuizAvailability();
-    $("topicQuizSection").scrollIntoView({behavior:"smooth", block:"start"});
-  }
-
-  function visitorKey() {
-    let key = localStorage.getItem("drillgre_guest_visitor_key_v1");
-    if (!key || key.length < 32) {
-      key = crypto.randomUUID() + "-" + crypto.randomUUID();
-      localStorage.setItem("drillgre_guest_visitor_key_v1", key);
-    }
-    return key;
   }
 
   function topicSummary(keys) {
@@ -531,45 +194,43 @@
     }
 
     host.innerHTML = attempts.map(attempt => {
-      const date = new Date(attempt.created_at).toLocaleString(undefined, {
+      const date = new Date(attempt.created_at).toLocaleString(undefined,{
         year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"
       });
       const completed = attempt.status === "completed";
-      const title = completed
-        ? "Completed topic quiz"
-        : "Unfinished topic quiz";
       const score = completed
         ? '<div class="quiz-history-score">' + esc(attempt.total_correct ?? 0) + ' / ' + esc(attempt.question_count) + ' correct</div>'
         : '<div class="quiz-history-score" style="color:#b7791f">In progress</div>';
-      const action = !completed
-        ? '<a class="quiz-history-action" target="_blank" rel="noopener" href="topic-quiz.html?attempt=' +
-          encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Resume quiz</a>'
-        : '<a class="quiz-history-action" target="_blank" rel="noopener" href="topic-quiz.html?attempt=' +
-          encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Review answers</a>';
+      const action = !completed ? "Resume quiz" : "Review answers";
+      const url = "topic-quiz.html?attempt=" + encodeURIComponent(attempt.id) +
+        "&token=" + encodeURIComponent(attempt.session_token);
       return '<article class="quiz-history-row">' +
-        '<div><div class="quiz-history-title">' + title + '</div>' +
+        '<div><div class="quiz-history-title">' + (completed ? "Completed topic quiz" : "Unfinished topic quiz") + '</div>' +
         '<div class="quiz-history-meta">' + esc(date) + ' · ' + esc(attempt.question_count) + ' questions · ' +
         esc(topicSummary(attempt.topic_keys)) + '</div></div>' +
-        '<div style="display:grid;justify-items:end;gap:8px">' + score + action + '</div>' +
+        '<div style="display:grid;justify-items:end;gap:8px">' + score +
+          '<a class="quiz-history-action" target="_blank" rel="noopener" href="' + url + '">' + action + '</a>' +
+        '</div>' +
       '</article>';
     }).join("");
   }
 
   async function loadQuizHistory() {
     const status = $("quizHistoryStatus");
+    historyReady = false;
+    updateQuizAvailability();
     try {
-      const [{data:sessionData}, key] = await Promise.all([
-        db.auth.getSession(),
-        Promise.resolve(visitorKey())
-      ]);
+      const key = getVisitorKey();
+      const {data:sessionData,error:sessionError} = await db.auth.getSession();
+      if (sessionError) throw sessionError;
       isAuthenticated = !!sessionData?.session?.user;
 
       if (isAuthenticated) {
-        const {error:claimError} = await db.rpc("claim_guest_topic_quiz_attempts", {p_visitor_key:key});
+        const {error:claimError} = await db.rpc("claim_guest_topic_quiz_attempts",{p_visitor_key:key});
         if (claimError) throw claimError;
       }
 
-      const {data,error} = await db.rpc("get_gre_topic_quiz_history", {p_visitor_key:key});
+      const {data,error} = await db.rpc("get_gre_topic_quiz_history",{p_visitor_key:key});
       if (error) throw error;
 
       if (isAuthenticated) {
@@ -578,45 +239,81 @@
         guestQuizzesRemaining = Number(data?.guest_quizzes_remaining ?? 2);
         const used = Number(data?.guest_quizzes_used ?? 0);
         $("quizQuotaNote").textContent = guestQuizzesRemaining + " of 2 free guest quiz attempts remaining. " +
-          (guestQuizzesRemaining === 0 ? "Sign in for unlimited quizzes." : "Sign in at any time to unlock unlimited quizzes and keep your history with your account.");
+          (guestQuizzesRemaining === 0
+            ? "Sign in for unlimited quizzes."
+            : "Sign in at any time to unlock unlimited quizzes and keep your history with your account.");
       }
 
       renderQuizHistory(data?.attempts || []);
-      if (status) { status.hidden = true; status.textContent = ""; }
+      historyReady = true;
+      if (status) {
+        status.hidden = true;
+        status.textContent = "";
+        status.classList.remove("error");
+      }
       updateQuizAvailability();
     } catch (error) {
       if (status) {
         status.hidden = false;
         status.classList.add("error");
-        status.textContent = "Quiz history and guest limits require the latest Supabase quiz progress migration. " + (error.message || "");
+        status.textContent = "Quiz history and guest limits require the latest quiz progress migration in Supabase. " + (error.message || "");
       }
-      $("quizQuotaNote").textContent = "Unable to verify your quiz allowance until the quiz progress migration is applied in Supabase.";
-      // Do not disable all local selection while migration setup is pending.
-      guestQuizzesRemaining = 2;
+      $("quizQuotaNote").textContent = "Unable to verify your quiz allowance. Please try again after the Supabase quiz progress migration is applied.";
+      historyReady = false;
       updateQuizAvailability();
     }
   }
 
-  async function init() {
-    $("quizQuestionCount").addEventListener("change", updateQuizAvailability);
-    $("startTopicQuiz").addEventListener("click", startTopicQuiz);
+  function startTopicQuiz() {
+    const pool = selectedQuestionPool();
+    const requested = Number($("quizQuestionCount").value || 12);
+    if (pool.length < requested || !historyReady) return;
+    if (!isAuthenticated && guestQuizzesRemaining <= 0) {
+      updateQuizAvailability();
+      return;
+    }
 
+    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+    const query = new URLSearchParams({
+      subtopics:JSON.stringify(selectedSubtopicKeys()),
+      count:String(requested),
+      timing:$("quizTimingMode").value || "standard",
+      token
+    });
+    const quizWindow = window.open("topic-quiz.html?" + query.toString(),"_blank");
+    if (!quizWindow) {
+      setStatus("Your browser blocked the new quiz tab. Allow pop-ups for drillgre.github.io and try again.",true);
+      return;
+    }
+    try { quizWindow.opener = null; } catch {}
+    setStatus("Your quiz has opened in a new tab. The attempt is recorded when the test loads. Unfinished quizzes are saved in Your quizzes below.");
+    window.setTimeout(loadQuizHistory,1800);
+  }
+
+  async function init() {
+    $("quizQuestionCount").addEventListener("change",updateQuizAvailability);
+    $("quizTimingMode").addEventListener("change",updateQuizAvailability);
+    $("startTopicQuiz").addEventListener("click",startTopicQuiz);
     try {
       questionBank = await fetchQuestionBank();
       $("quizBankCount").textContent = questionBank.length + " practice questions";
       if (!questionBank.length) {
         setStatus("No published questions are currently available for topic quizzes. Publish questions with availability set to Practice or Both in the admin workspace.");
+        $("quizSetupPanel").hidden = false;
         return;
       }
       renderTopicGroups();
       $("quizSetupPanel").hidden = false;
       setStatus("");
       await loadQuizHistory();
-      window.addEventListener("focus", loadQuizHistory);
+      window.addEventListener("focus",loadQuizHistory);
+      db.auth.onAuthStateChange(event => {
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") loadQuizHistory();
+      });
     } catch (error) {
-      setStatus("Unable to load the practice question bank. " + (error.message || ""), true);
+      setStatus("Unable to load the practice question bank. " + (error.message || ""),true);
     }
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded",init);
 })();
