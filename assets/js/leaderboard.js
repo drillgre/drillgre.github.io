@@ -69,7 +69,7 @@
 
     const { data, error } = await db.rpc("get_public_leaderboard", { p_limit: 50 });
     if (error) {
-      status("The leaderboard is not configured yet. Please run the latest learner-accounts.sql file in Supabase. " + error.message, true);
+      status("The leaderboard is not configured yet. Run supabase/quiz-progress.sql after the earlier database setup scripts in Supabase. " + error.message, true);
       renderRows([]);
       return;
     }
