@@ -721,7 +721,7 @@
     <div class="dialoghead">
       <div>
         <h2>Import vocabulary from CSV</h2>
-        <p class="field-note">Upload a CSV file, review validation, then import the valid new words.</p>
+        <p class="field-note">Upload a CSV or Excel workbook, review validation, then import the valid new words.</p>
       </div>
       <button type="button" class="x" data-close="importVocabDialog">×</button>
     </div>
@@ -729,8 +729,8 @@
       <div class="actions" style="justify-content:flex-start;margin-top:0">
         <button type="button" class="secondary" id="downloadVocabTemplate">Download CSV template</button>
       </div>
-      <label style="display:block;margin-top:12px">Vocabulary CSV file
-        <input id="vocabImportFile" type="file" accept=".csv,text/csv" style="display:block;margin-top:6px">
+      <label style="display:block;margin-top:12px">Vocabulary CSV or Excel file
+        <input id="vocabImportFile" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:block;margin-top:6px">
       </label>
       <p class="field-note">Required columns: day, word, and at least one meaning field. Optional columns: sn, synonyms, example1 to example3, and is_published. Existing words are skipped rather than replaced.</p>
       <button type="button" id="validateVocabImport">Preview and validate</button>
