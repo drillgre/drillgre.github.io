@@ -9,6 +9,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 3. `learner-read-policies.sql`
 4. `topic-quiz.sql`
 5. `quiz-progress.sql`
+6. `question-bank-progress.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -16,7 +17,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank completion tracking, the learner dashboard count, and leaderboard participation counts.
 
 ## Email and password authentication
 
@@ -79,6 +80,23 @@ The latest `learner-accounts.sql` file also adds question-level time recording a
 The leaderboard is opt-in. The public page displays only the learner's first name, best completed DrillGRE mock score, and number of completed mocks. Email addresses and user IDs are not published.
 
 The Quant mock uses standard GRE timing by default: 21 minutes for the first Quant section and 26 minutes for the second. Learners may select 50% extra time, double time, or untimed practice before starting. Question time is an estimate based on how long each question is visible while the test page is active.
+
+
+## Authenticated Question Bank and completion tracking
+
+The Quant → Question Bank page is available only to signed-in learners. Guests are directed to sign in or create an account before question content is loaded.
+
+Run \`question-bank-progress.sql\` after \`quiz-progress.sql\`. It adds:
+
+- Per-learner, persistent completion records for Question Bank items.
+- A server-side grading RPC that checks the submitted response and marks the item Done in the same operation.
+- A progress RPC that returns the signed-in learner's completed question IDs.
+- A Question Bank completion total in the learner dashboard.
+- A completed Question Bank question count on the opt-in public leaderboard.
+
+A Question Bank item is marked Done once the learner checks an answer, whether the answer is correct or incorrect. The Done state is saved to the learner's account and remains visible on later visits and across devices. Leaderboard ranking continues to prioritise the best completed mock score; completed topic quizzes and Question Bank items provide additional participation tie-breakers.
+
+The Question Bank listing shows an excerpt. Selecting **Open full question** opens the complete question in a lightbox. Figures are displayed only when a usable figure is provided; questions without figures do not display empty image placeholders. Correct answers and explanations are returned only after the signed-in learner submits an answer.
 
 
 ## Bulk question import
