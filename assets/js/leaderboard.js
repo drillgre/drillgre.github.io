@@ -74,7 +74,7 @@
       return;
     }
     renderRows(data || []);
-    status("Opted-in learners are ranked by their best mock score. Completed topic quizzes are shown as a separate participation count.");
+    status("Opted-in learners are ranked primarily by their best mock score. Completed topic quiz counts are displayed separately and used as a tie-breaker.");
   }
 
   $("leaderOptButton").addEventListener("click", async () => {
