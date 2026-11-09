@@ -75,7 +75,7 @@
         ? '<strong class="attempt-score">' + escapeHtml(attempt.total_correct ?? 0) + ' / ' + escapeHtml(attempt.question_count) + ' correct</strong>'
         : '<strong class="attempt-status">In progress</strong>';
       const action = completed
-        ? '<span class="attempt-meta">Completed</span>'
+        ? '<a target="_blank" rel="noopener" href="/quant/topic-quiz.html?attempt=' + encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Review answers →</a>'
         : '<a target="_blank" rel="noopener" href="/quant/topic-quiz.html?attempt=' + encodeURIComponent(attempt.id) + '&token=' + encodeURIComponent(attempt.session_token) + '">Resume quiz →</a>';
       return '<article class="quiz-attempt-row"><div><strong>Quant topic quiz</strong><div class="attempt-meta">' + escapeHtml(date) + '</div><div class="attempt-meta">' + escapeHtml(topic) + ' · ' + escapeHtml(attempt.question_count) + ' questions</div></div>' +
         '<div style="text-align:right;display:grid;justify-items:end;gap:5px">' + score + action + '</div></article>';
