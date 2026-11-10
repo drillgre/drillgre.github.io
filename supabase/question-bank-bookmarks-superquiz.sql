@@ -361,8 +361,10 @@ begin
     if p_duration_seconds is not null then
       raise exception 'Untimed practice cannot have a duration.';
     end if;
-  elsif p_duration_seconds is null or p_duration_seconds < 60
-      or p_duration_seconds > case when v_is_superquiz then 20000 else 7200 end then
+  elsif p_duration_seconds is null
+      or p_duration_seconds < 60
+      or (v_is_superquiz and p_duration_seconds > 20000)
+      or (not v_is_superquiz and p_duration_seconds > 7200) then
     raise exception 'The quiz duration is invalid.';
   end if;
 
