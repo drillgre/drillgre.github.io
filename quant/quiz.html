@@ -33,6 +33,14 @@
     .quiz-action:disabled{opacity:.5;cursor:not-allowed}
     .quiz-quota{padding:11px 13px;border:1px solid #dce5ff;border-radius:10px;background:#f5f7ff;color:#344158;font-size:12px;line-height:1.55;margin:12px 0}
     .quiz-history-panel{margin-top:28px}
+    .superquiz-panel{border-color:#cbd7ff;background:linear-gradient(130deg,#fff 15%,#f2f5ff)}
+    .superquiz-grid{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:center}
+    .superquiz-controls{display:grid;gap:9px}
+    .superquiz-controls label{font-size:12px;font-weight:800;color:#4b5870}
+    .superquiz-controls select{width:100%;padding:10px 11px;border:1px solid #d5ddeb;border-radius:9px;background:#fff;font:inherit;color:var(--ink)}
+    .superquiz-count{font-size:26px;font-weight:900;color:#244fc8}
+    .superquiz-note{font-size:12px;color:var(--muted);line-height:1.55;margin:8px 0 0}
+    @media(max-width:800px){.superquiz-grid{grid-template-columns:1fr}}
     .quiz-history-panel h2{margin:0 0 6px;font-size:19px}
     .quiz-history-intro{font-size:12px;color:var(--muted);margin:0 0 15px}
     .quiz-history-list{display:grid;gap:10px}
@@ -84,6 +92,30 @@
     <h1>Build your Quant quiz.</h1>
     <p>Select one or more topics and subtopics, choose a quiz length and time allowance, and practise with a random set of GRE-style questions. Your unfinished quizzes are saved and can be resumed from here or your learner profile.</p>
     <div id="quizQuotaNote" class="quiz-quota">Checking your quiz allowance…</div>
+  </section>
+
+  <section id="superquiz" class="quiz-history-panel superquiz-panel" hidden aria-labelledby="superquizHeading">
+    <div class="superquiz-grid">
+      <div>
+        <div class="eyebrow">Your saved question collection</div>
+        <h2 id="superquizHeading">Superquiz</h2>
+        <p class="quiz-history-intro">Every question you bookmark in the Question Bank is added here. Build a focused assessment from your saved questions, then review your score and explanations.</p>
+        <div class="superquiz-count" id="superquizCount">0 bookmarked questions</div>
+        <p id="superquizNote" class="superquiz-note">Bookmark questions in the Question Bank to build your personal Superquiz collection.</p>
+      </div>
+      <aside class="superquiz-controls">
+        <label for="superquizQuestionCount">Questions in this session</label>
+        <select id="superquizQuestionCount" disabled></select>
+        <label for="superquizTimingMode">Time allowance</label>
+        <select id="superquizTimingMode">
+          <option value="standard">Standard GRE timing</option>
+          <option value="time_and_half">50% extra time</option>
+          <option value="double">Double time</option>
+          <option value="untimed">Untimed practice</option>
+        </select>
+        <button id="startSuperquiz" class="quiz-action" type="button" disabled>Start Superquiz</button>
+      </aside>
+    </div>
   </section>
 
   <section id="topicQuizSection">
