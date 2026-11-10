@@ -17,6 +17,7 @@
     .bank-count strong{display:block;font-size:28px;color:var(--ink)}
     .bank-count span{font-size:11px;color:var(--muted)}
     .bank-count small{display:block;margin-top:5px;font-size:11px;color:#64748b;font-weight:750}
+    .bank-count [hidden]{display:none!important}
     .bank-diagnostics-trigger{margin-top:12px;border:1px solid #dbe3f0;background:#fff;color:#3154c5;border-radius:9px;padding:8px 11px;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
     .bank-diagnostics-trigger:hover{background:#f4f7ff;border-color:#b9c7ff}
     .bank-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(4,minmax(130px,1fr));gap:10px;margin:20px 0 12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
@@ -140,14 +141,14 @@
     <div class="bank-count">
       <strong id="bankTotal">—</strong>
       <span>Practice questions</span>
-      <small id="bankCompletedSummary">0 completed by you</small>
-      <button id="openBankDiagnostics" class="bank-diagnostics-trigger" type="button">View diagnostics</button>
+      <small id="bankCompletedSummary" hidden>0 completed by you</small>
+      <button id="openBankDiagnostics" class="bank-diagnostics-trigger" type="button" hidden>View diagnostics</button>
     </div>
   </section>
 
   <section id="bankAuthGate" class="bank-empty" hidden>
     <h2>Sign in to access the Question Bank</h2>
-    <p>The practice Question Bank is available to registered DrillGRE learners. Sign in or create a free account to browse questions and save your progress.</p>
+    <p id="bankAuthGateMessage">Sign in or create a free account to browse questions, check answers, and save your progress.</p>
     <a class="btn primary" href="/account.html?redirect=%2Fquant%2Fquestion-bank.html">Sign in or create an account</a>
   </section>
 
