@@ -185,13 +185,14 @@
 
   function updateBookmarkUI() {
     const count = bookmarkedIds.size;
-    $("bankBookmarkSummary").textContent = count.toLocaleString() + (count === 1 ? " saved for Superquiz" : " saved for Superquiz");
+    $("bankBookmarkSummary").textContent = count.toLocaleString() + (count === 1 ? " question saved for Superquiz" : " questions saved for Superquiz");
     $("bankBookmarkSummary").hidden = !bookmarkFeatureAvailable;
     $("bankSuperquizLink").hidden = !bookmarkFeatureAvailable;
     $("bankSuperquizLink").textContent = count ? "Build Superquiz · " + count : "Build Superquiz";
     document.querySelectorAll("[data-bookmark-question]").forEach(button => {
       const saved = bookmarkedIds.has(String(button.dataset.bookmarkQuestion));
       button.setAttribute("aria-pressed",String(saved));
+      button.disabled = !bookmarkFeatureAvailable;
       button.textContent = saved ? "★ Saved" : "☆ Bookmark";
     });
   }
@@ -301,7 +302,7 @@
           '<span class="bank-tag">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
           '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
           '<span data-question-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
-          '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCounts.get(id) ?? 0).toLocaleString() + ' attempts</span>' +
+          '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCountsAvailable ? (attemptCounts.get(id) ?? 0).toLocaleString() : "—") + ' attempts</span>' +
         '</div>' +
         '<p class="bank-excerpt">' + esc(shortened || "Question text unavailable.") + '</p>' +
         '<div class="bank-card-actions">' +
@@ -350,7 +351,7 @@
         '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
         '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
         '<span data-dialog-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
-      '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCounts.get(id) ?? 0).toLocaleString() + ' attempts</span>' +
+      '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCountsAvailable ? (attemptCounts.get(id) ?? 0).toLocaleString() : "—") + ' attempts</span>' +
       '</div>' +
       stimulusMarkup(question,true) +
       '<div class="bank-modal-prompt">' + esc(question.question_text || "") + '</div>' +
@@ -685,7 +686,13 @@
       await fetchBookmarks();
       await fetchAttemptCounts(allQuestions);
       $("bankTotal").textContent = allQuestions.length.toLocaleString();
-      $("bankStatus").hidden = true;
+      $("bankStatus").hidden = bookmarkFeatureAvailable && attemptCountsAvailable;
+      if (!bookmarkFeatureAvailable || !attemptCountsAvailable) {
+        $("bankStatus").classList.toggle("error",!bookmarkFeatureAvailable || !attemptCountsAvailable);
+        $("bankStatus").textContent = !bookmarkFeatureAvailable
+          ? "Bookmark and Superquiz features require supabase/question-bank-bookmarks-superquiz.sql. Question browsing remains available."
+          : "Total attempt counts require supabase/question-bank-bookmarks-superquiz.sql. Question practice remains available.";
+      }
       if (!allQuestions.length) {
         $("bankStatus").hidden = false;
         $("bankStatus").textContent = "There are no published questions currently marked for practice. Questions marked Practice or Both in the admin Question Bank will appear here after publication.";
