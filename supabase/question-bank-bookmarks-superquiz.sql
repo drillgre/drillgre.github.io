@@ -29,7 +29,16 @@ drop policy if exists "Learners read own Question Bank bookmarks" on public.gre_
 create policy "Learners read own Question Bank bookmarks"
 on public.gre_question_bank_bookmarks
 for select to authenticated
-using (learner_id = (select auth.uid()));
+using (
+  learner_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.questions q
+    where q.id = question_id
+      and q.published = true
+      and q.question_usage in ('practice','both')
+  )
+);
 
 drop policy if exists "Learners bookmark published practice questions" on public.gre_question_bank_bookmarks;
 create policy "Learners bookmark published practice questions"
