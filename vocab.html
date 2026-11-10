@@ -10,7 +10,17 @@
 .viewbar{display:flex;justify-content:center;align-items:center;gap:12px;margin:18px 0}.viewbar span{font-size:.85rem;color:var(--muted);font-weight:700}.choices{display:flex;gap:4px;padding:4px;border-radius:11px;background:#e8edf6}.choice{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:800;color:#5b6680;cursor:pointer}.choice.active{background:white;color:var(--blue);box-shadow:0 2px 8px #17203312}
 .progress{height:5px;background:#e5eaf4;border-radius:99px;overflow:hidden;margin-bottom:18px}.progress span{display:block;height:100%;background:var(--blue);width:0}
 .tiles{display:grid;gap:14px;grid-template-columns:1fr}.tiles[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
-.tile{min-height:255px;background:white;border:1px solid var(--line);border-radius:19px;padding:20px;box-shadow:0 9px 26px #182d5a0a;display:flex;flex-direction:column;cursor:pointer;overflow-wrap:anywhere;transition:.15s}.tile:hover{transform:translateY(-2px);border-color:#cbd8ff}.tile:focus{outline:3px solid #356df344}.tilehead{display:flex;justify-content:space-between;align-items:center;font-size:.73rem;color:#7b879e;font-weight:750}.tag{background:#edf2ff;color:#315ed5;padding:5px 9px;border-radius:99px}.word{font-size:1.8rem;color:var(--navy);font-weight:850;letter-spacing:-.5px;text-align:center;margin:auto 0;padding:22px 0}.hint{text-align:center;color:#8791a5;font-size:.8rem;margin:0}.details{display:none;border-top:1px solid var(--line);padding-top:13px;margin-top:12px;font-size:.85rem;color:#46536d}.tile.meaning .details,.tile.examples .details{display:block}.details ol{padding-left:20px;margin:7px 0}.details li{margin:4px 0}.syn{margin-top:10px}.examplesText{display:none;margin-top:12px}.tile.examples .examplesText{display:block}.examplesText p{margin:6px 0}.label{font-size:.72rem;letter-spacing:.8px;text-transform:uppercase;color:var(--blue);font-weight:850}
+.tile{min-height:255px;background:white;border:1px solid var(--line);border-radius:19px;padding:20px;box-shadow:0 9px 26px #182d5a0a;display:flex;flex-direction:column;cursor:pointer;overflow-wrap:anywhere;transition:.15s}.tile:hover{transform:translateY(-2px);border-color:#cbd8ff}.tile:focus{outline:3px solid #356df344}.tilehead{display:flex;justify-content:space-between;align-items:center;font-size:.73rem;color:#7b879e;font-weight:750}.tag{background:#edf2ff;color:#315ed5;padding:5px 9px;border-radius:99px}.word-line{display:flex;align-items:center;justify-content:center;gap:10px;margin:auto 0;padding:22px 0}
+.word{font-size:1.8rem;color:var(--navy);font-weight:850;letter-spacing:-.5px;text-align:center;margin:0;padding:0}
+.meaning-count{display:inline-flex;align-items:center;justify-content:center;min-width:29px;height:25px;padding:0 7px;border-radius:999px;background:#edf2ff;color:#315ed5;font-size:.78rem;font-weight:850}
+.speak-word{width:34px;height:34px;border:1px solid #dce5f2;border-radius:50%;background:#fff;color:#315ed5;cursor:pointer;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
+.speak-word:hover{background:#edf3ff;border-color:#b9c9ff;transform:translateY(-1px)}
+.speak-word:disabled{opacity:.5;cursor:default}
+.hint{text-align:center;color:#8791a5;font-size:.8rem;margin:0}.details{display:none;border-top:1px solid var(--line);padding-top:13px;margin-top:12px;font-size:.85rem;color:#46536d}.tile.meaning .details,.tile.examples .details{display:block}.details ol{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}
+.details li{display:flex;align-items:flex-start;gap:10px;margin:0;padding:10px 12px;border:1px solid #e7edf7;border-radius:11px;background:#fbfcff;line-height:1.55}
+.meaning-index{display:inline-flex;flex:0 0 22px;width:22px;height:22px;align-items:center;justify-content:center;border-radius:7px;background:#edf2ff;color:#315ed5;font-size:.72rem;font-weight:900}
+.syn{margin-top:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.syn-chip{display:inline-flex;border:1px solid #dce5f2;border-radius:999px;padding:4px 8px;background:#fff;color:#52617b;font-size:.75rem;font-weight:700}.examplesText{display:none;margin-top:12px}.tile.examples .examplesText{display:block}.examplesText p{margin:6px 0}.label{font-size:.72rem;letter-spacing:.8px;text-transform:uppercase;color:var(--blue);font-weight:850}
 .actions{display:flex;justify-content:center;gap:10px;margin:18px 0}.btn{border:1px solid #dce3ef;border-radius:10px;background:white;padding:10px 16px;font:inherit;font-weight:750;cursor:pointer;color:#293653}.btn.primary{background:var(--blue);color:white;border-color:var(--blue)}.btn:disabled{opacity:.4;cursor:default}.status{padding:20px;background:white;border:1px solid var(--line);border-radius:14px;text-align:center;color:var(--muted)}
 .status-tabs{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin:20px 0 16px}
 .status-tabs[hidden]{display:none}
@@ -42,7 +52,7 @@
 .state-action:focus-visible,.status-tab:focus-visible{outline:3px solid #356df355;outline-offset:2px}
 @media(max-width:650px){.status-tabs{justify-content:stretch}.status-tab{flex:1;justify-content:center;padding:9px 8px;font-size:.74rem}.card-status-actions{gap:4px}.state-action{padding:7px 8px;font-size:.63rem}}
 
-@media(max-width:650px){main{padding:28px 13px 50px}#search{min-width:100%;width:100%}.filters{width:100%}.filters select{flex:1}.tiles[data-count="2"],.tiles[data-count="4"],.tiles[data-count="6"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:15px;min-height:220px}.word{font-size:1.4rem}.viewbar{flex-wrap:wrap}}
+@media(max-width:650px){main{padding:28px 13px 50px}#search{min-width:100%;width:100%}.filters{width:100%}.filters select{flex:1}.tiles[data-count="2"],.tiles[data-count="4"],.tiles[data-count="6"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:15px;min-height:220px}.word{font-size:1.4rem}.word-line{gap:7px;padding:18px 0}.meaning-count{min-width:25px;height:22px;font-size:.7rem}.speak-word{width:30px;height:30px}.viewbar{flex-wrap:wrap}}
 </style>  <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="/assets/js/site-nav.js"></script>
@@ -76,7 +86,7 @@
   </div>
 </header>
 <main><div class="intro"><div class="eyebrow">Build your word power</div><h1>Vocab Mountain</h1><p>Review words cumulatively by day. Tap a tile to reveal meanings and synonyms, tap again for examples, then tap a third time to reveal the word.</p></div>
-<div class="toolbar"><div class="filters"><input id="search" type="search" placeholder="Search a word…" aria-label="Search vocabulary"><select id="dayFilter"><option value="all">All days</option></select><button class="btn" id="shuffle" type="button">↻ Shuffle</button></div><div class="count" id="counter">Loading words…</div></div>
+<div class="toolbar"><div class="filters"><input id="search" type="search" placeholder="Search a word…" aria-label="Search vocabulary"><select id="dayFilter" aria-label="Filter by day"><option value="all">All days</option></select><select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select><button class="btn" id="shuffle" type="button">↻ Shuffle</button></div><div class="count" id="counter">Loading words…</div></div>
 <div id="statusTabs" class="status-tabs" role="tablist" aria-label="Vocabulary progress" hidden>
   <button class="status-tab all active" type="button" role="tab" aria-selected="true" data-status-tab="all">
     <span class="status-dot"></span> All <span class="status-count" id="countAll">0</span>
@@ -198,6 +208,18 @@ async function load(){
   }
 }
 function renderLoadedWords(){
+  [...new Set(S.all.map(x=>x.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"})).forEach(category=>{
+    const option=document.createElement("option");
+    option.value=category;
+    option.textContent=category;
+    $("categoryFilter").append(option);
+  });
+  if(S.all.some(x=>!x.category)){
+    const option=document.createElement("option");
+    option.value="__uncategorised__";
+    option.textContent="Uncategorised";
+    $("categoryFilter").append(option);
+  }
   [...new Set(S.all.map(x=>x.day).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)).forEach(day=>{
     let option=document.createElement("option");
     option.value=day;option.textContent="Day "+day;$("dayFilter").append(option);
@@ -223,10 +245,12 @@ function updateStatusTabs(){
 function filter(){
   const query=$("search").value.toLowerCase().trim();
   const day=$("dayFilter").value;
+  const category=$("categoryFilter").value;
   const dayNumber=day==="all"?Infinity:Number(day);
   S.available=S.all.filter(word=>
     (day==="all"||(!Number.isNaN(dayNumber)&&Number(word.day)<=dayNumber)||word.day===day)&&
-    (!query||[word.word,word.category].filter(Boolean).join(" ").toLowerCase().includes(query))
+    (category==="all"||(category==="__uncategorised__"?!word.category:word.category===category))&&
+    (!query||[word.word,word.category,...word.meanings,word.syn,...word.examples].filter(Boolean).join(" ").toLowerCase().includes(query))
   );
   updateStatusTabs();
   S.items=S.statusFilter==="all"?[...S.available]:S.available.filter(word=>wordStatus(word)===S.statusFilter);
@@ -278,16 +302,21 @@ function card(word,number){
   el.className="tile"+(status==="all"?"":" status-"+status);
   el.tabIndex=0;
   el.dataset.stage="0";
+  const synonymList=word.syn?word.syn.split(/[;,]+/).map(item=>item.trim()).filter(Boolean):[];
+  const canSpeak=typeof window.speechSynthesis!=="undefined"&&typeof window.SpeechSynthesisUtterance!=="undefined";
   el.innerHTML=
-    '<div class="tilehead"><span>WORD '+esc(word.sn||number)+'</span><span class="tag">DAY '+esc(word.day||"—")+'</span></div>'+
-    '<div class="word">'+esc(word.word)+'</div>'+
+    '<div class="tilehead"><span>WORD '+esc(word.sn||number)+'</span><span class="tag">'+esc(word.category||"DAY "+(word.day||"—"))+'</span></div>'+
+    '<div class="word-line"><div class="word">'+esc(word.word)+'</div>'+
+      (word.meanings.length>1?'<span class="meaning-count" title="'+word.meanings.length+' meanings">('+word.meanings.length+')</span>':'')+
+      (canSpeak?'<button type="button" class="speak-word" aria-label="Hear pronunciation of '+esc(word.word)+'" title="Hear pronunciation">🔊</button>':'')+
+    '</div>'+
     '<div class="word-category"'+(word.category?'':' hidden')+'>'+esc(word.category)+'</div>'+
-    '<p class="hint">Tap to reveal meanings</p>'+
-    '<div class="details"><div class="meaningText"><b>Meanings</b>'+
-    (word.meanings.length?'<ol>'+word.meanings.map(m=>'<li>'+esc(m)+'</li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
-    (word.syn?'<div class="syn"><b>Synonyms:</b> '+esc(word.syn)+'</div>':"")+
+    '<p class="hint">Think of a meaning, then tap to reveal</p>'+
+    '<div class="details"><div class="meaningText"><b>Meanings · '+word.meanings.length+'</b>'+
+    (word.meanings.length?'<ol>'+word.meanings.map((m,index)=>'<li><span class="meaning-index">'+(index+1)+'</span><span>'+esc(m)+'</span></li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
+    (synonymList.length?'<div class="syn"><b>Synonyms:</b> '+synonymList.map(item=>'<span class="syn-chip">'+esc(item)+'</span>').join("")+'</div>':"")+
     '</div><div class="examplesText"><div class="label">Examples</div>'+
-    (word.examples.map(example=>'<p>'+esc(example)+'</p>').join("")||"<p>No examples entered.</p>")+
+    (word.examples.map((example,index)=>'<p><b>'+(index+1)+'.</b> '+esc(example)+'</p>').join("")||"<p>No examples entered.</p>")+
     '</div></div>'+
     (S.user?'<div class="card-status-actions" role="group" aria-label="Set vocabulary progress">'+
       '<button type="button" class="state-action '+(status==="know"?"active":"")+'" data-word-status="know" aria-pressed="'+(status==="know")+'">Nailed It</button>'+
@@ -296,8 +325,24 @@ function card(word,number){
     '</div>':"");
   let stage=0;
   function flip(){stage=(stage+1)%3;setCardStage(el,stage)}
+  const speakButton=el.querySelector(".speak-word");
+  if(speakButton){
+    speakButton.addEventListener("click",event=>{
+      event.stopPropagation();
+      try{
+        window.speechSynthesis.cancel();
+        const utterance=new SpeechSynthesisUtterance(word.word);
+        utterance.lang="en-US";
+        utterance.rate=.88;
+        speakButton.disabled=true;
+        utterance.onend=()=>{speakButton.disabled=false};
+        utterance.onerror=()=>{speakButton.disabled=false};
+        window.speechSynthesis.speak(utterance);
+      }catch(error){speakButton.disabled=false}
+    });
+  }
   el.addEventListener("click",event=>{
-    if(event.target.closest(".card-status-actions"))return;
+    if(event.target.closest(".card-status-actions")||event.target.closest(".speak-word"))return;
     flip();
   });
   el.addEventListener("keydown",event=>{
@@ -351,6 +396,7 @@ document.querySelectorAll("[data-status-tab]").forEach(button=>button.addEventLi
 }));
 $("search").addEventListener("input",filter);
 $("dayFilter").addEventListener("change",()=>{S.shuffled=false;filter()});
+$("categoryFilter").addEventListener("change",()=>{S.shuffled=false;filter()});
 $("shuffle").onclick=()=>shuffleList(true);
 load();
 </script></body></html>
