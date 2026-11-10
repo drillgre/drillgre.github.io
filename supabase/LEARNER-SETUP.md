@@ -15,6 +15,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 9. `vocab-word-progress.sql`
 10. `security-hardening.sql`
 11. `question-bank-public-count.sql`
+12. `question-bank-bookmarks-superquiz.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -22,7 +23,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket. The eleventh script exposes only the aggregate count of published practice questions to visitors.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket. The eleventh script exposes only the aggregate count of published practice questions to visitors. The twelfth script adds private learner bookmarks, aggregate question-attempt counts, and Superquiz support through the persistent quiz engine.
 
 ## Production security checklist
 
@@ -46,6 +47,18 @@ These changes reduce common exposure and privilege-escalation risks. They do not
 ## Public Question Bank count
 
 Run `question-bank-public-count.sql` after `security-hardening.sql`. Visitors who are not signed in can see the total number of published questions marked **Practice** or **Both**. This RPC returns only an integer count. The Question Bank list, question-opening controls, completion summary, and diagnostics remain available only after sign-in.
+
+## Question Bank bookmarks, attempt counts, and Superquiz
+
+Run `question-bank-bookmarks-superquiz.sql` after `question-bank-public-count.sql`. It adds:
+
+- A bookmark list private to each signed-in learner, with row-level security preventing access to another learner's saved questions.
+- A **Bookmarked only** filter and bookmark controls on Question Bank cards and full-question views.
+- A total attempt count on each question. This counts Question Bank submissions and answered questions in completed topic quizzes and Superquizzes. It is an aggregate only; learner identities and answer details are never exposed.
+- A **Superquiz** panel on Quant → Quiz. Every bookmarked question enters the learner's Superquiz collection. Learners can assess all saved questions when there are 50 or fewer, or choose a session of up to 50 questions when the collection is larger.
+- Timed, extra-time, double-time, and untimed Superquiz sessions using the same autosave, resume, results, and answer-review engine as topic quizzes. Superquiz attempts appear in **Your quizzes**.
+
+The database verifies that every question selected for a Superquiz is currently published, available for practice, and bookmarked by the signed-in learner. The attempt-count ledger begins collecting records after this migration is applied; earlier attempts cannot be reconstructed reliably.
 
 ## Vocab Mountain content management
 
