@@ -52,7 +52,27 @@
 .state-action:focus-visible,.status-tab:focus-visible{outline:3px solid #356df355;outline-offset:2px}
 @media(max-width:650px){.status-tabs{justify-content:stretch}.status-tab{flex:1;justify-content:center;padding:9px 8px;font-size:.74rem}.card-status-actions{gap:4px}.state-action{padding:7px 8px;font-size:.63rem}}
 
-@media(max-width:650px){main{padding:28px 13px 50px}#search{min-width:100%;width:100%}.filters{width:100%}.filters select{flex:1}.tiles[data-count="2"],.tiles[data-count="4"],.tiles[data-count="6"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:15px;min-height:220px}.word{font-size:1.4rem}.word-line{gap:7px;padding:18px 0}.meaning-count{min-width:25px;height:22px;font-size:.7rem}.speak-word{width:30px;height:30px}.viewbar{flex-wrap:wrap}}
+.swipe-hint{display:none;margin:-6px 0 12px;text-align:center;color:#75819a;font-size:.76rem;font-weight:700}
+@media(max-width:650px){main{padding:28px 13px 50px}#search{min-width:100%;width:100%}.filters{width:100%}.filters select{flex:1}.tiles[data-count="2"],.tiles[data-count="4"],.tiles[data-count="6"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:15px;min-height:220px}.word{font-size:1.4rem}.word-line{gap:7px;padding:18px 0}.meaning-count{min-width:25px;height:22px;font-size:.7rem}.speak-word{width:30px;height:30px}.viewbar{flex-wrap:wrap}
+.swipe-hint.visible{display:block}
+.tiles{touch-action:pan-y}
+.tiles[data-count="1"]{grid-template-columns:1fr}
+.tiles[data-count="4"] .tile{min-height:172px;padding:12px}
+.tiles[data-count="4"] .word-line{padding:11px 0}
+.tiles[data-count="4"] .card-status-actions{margin-top:9px;padding-top:8px}
+.tiles[data-count="6"]{gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.tiles[data-count="6"] .tile{min-height:142px;padding:9px;border-radius:13px}
+.tiles[data-count="6"] .tilehead{font-size:.61rem}
+.tiles[data-count="6"] .tag{padding:3px 6px}
+.tiles[data-count="6"] .word{font-size:1.03rem;letter-spacing:-.3px}
+.tiles[data-count="6"] .word-line{gap:5px;padding:8px 0}
+.tiles[data-count="6"] .meaning-count{min-width:22px;height:19px;padding:0 5px;font-size:.62rem}
+.tiles[data-count="6"] .speak-word{width:24px;height:24px;font-size:.78rem}
+.tiles[data-count="6"] .word-category{margin:-5px auto 6px;padding:3px 6px;font-size:.59rem}
+.tiles[data-count="6"] .hint{font-size:.65rem}
+.tiles[data-count="6"] .card-status-actions{gap:3px;margin-top:7px;padding-top:6px}
+.tiles[data-count="6"] .state-action{padding:4px 5px;font-size:.53rem}
+}
 </style>  <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="/assets/js/site-nav.js"></script>
@@ -107,6 +127,7 @@
 </div>
 <div class="viewbar"><span>Words per view</span><div class="choices"><button class="choice active" data-n="1">1</button><button class="choice" data-n="2">2</button><button class="choice" data-n="4">4</button><button class="choice" data-n="6">6</button></div></div>
 <div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading Vocab Mountain…</div><div class="tiles" id="tiles" style="display:none"></div>
+<div id="swipeHint" class="swipe-hint" aria-live="polite"></div>
 <div class="actions" id="actions" style="display:none"><button class="btn" id="prev">← Previous</button><button class="btn primary" id="next">Next →</button></div></main>
 <script>
 const VOCAB_SUPABASE_URL="https://aayzpcfryixauwsytphd.supabase.co";
@@ -114,7 +135,7 @@ const VOCAB_SUPABASE_KEY="sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
 const vocabDb=window.supabase.createClient(VOCAB_SUPABASE_URL,VOCAB_SUPABASE_KEY);
 </script>
 <script>
-const S={all:[],available:[],items:[],page:0,n:1,shuffled:false,statusFilter:"all",statuses:new Map(),user:null};
+const S={all:[],available:[],items:[],page:0,n:1,shuffled:false,statusFilter:"all",statuses:new Map(),user:null,ignoreNextTileClickUntil:0};
 const $=id=>document.getElementById(id);
 const GUEST_PROGRESS_KEY="drillgre_vocab_word_status_guest_v1";
 const LOCAL_PROGRESS_PREFIX="drillgre_vocab_word_status_user_";
@@ -273,7 +294,13 @@ async function setWordStatus(word,status){
   S.statuses.set(id,status);
   writeLocalProgress();
   updateStatusTabs();
-  S.items=S.statusFilter==="all"?[...S.available]:S.available.filter(item=>wordStatus(item)===S.statusFilter);
+
+  // Preserve the current list sequence, including shuffle, when changing status.
+  if(S.statusFilter!=="all" && status!==S.statusFilter){
+    S.items=S.items.filter(item=>String(item.id)!==id);
+    const remainingPages=Math.max(1,Math.ceil(S.items.length/S.n));
+    S.page=Math.min(S.page,remainingPages-1);
+  }
   render();
 
   if(!S.user)return;
@@ -342,6 +369,7 @@ function card(word,number){
     });
   }
   el.addEventListener("click",event=>{
+    if(Date.now()<S.ignoreNextTileClickUntil)return;
     if(event.target.closest(".card-status-actions")||event.target.closest(".speak-word"))return;
     flip();
   });
@@ -363,6 +391,11 @@ function render(){
   S.page=Math.min(S.page,pages-1);
   const start=S.page*S.n;
   const shown=S.items.slice(start,start+S.n);
+  const swipeHint=$("swipeHint");
+  swipeHint.classList.toggle("visible",total>shown.length);
+  swipeHint.textContent=total>shown.length
+    ? "Swipe left for the next "+S.n+" words · Swipe right to go back"
+    : "";
   $("counter").textContent=total?(start+1)+"–"+(start+shown.length)+" of "+total+" words":"0 words in this tab";
   $("bar").style.width=total?((start+shown.length)/Math.max(1,S.all.length)*100)+"%":"0%";
   $("tiles").innerHTML="";
@@ -384,6 +417,38 @@ function render(){
 }
 $("prev").onclick=()=>{if(S.page>0){S.page--;render()}};
 $("next").onclick=()=>{if(S.page<Math.ceil(S.items.length/S.n)-1){S.page++;render()}};
+
+let swipeStart=null;
+$("tiles").addEventListener("touchstart",event=>{
+  if(event.touches.length!==1 || event.target.closest("button")){
+    swipeStart=null;
+    return;
+  }
+  const touch=event.touches[0];
+  swipeStart={x:touch.clientX,y:touch.clientY};
+},{passive:true});
+
+$("tiles").addEventListener("touchend",event=>{
+  if(!swipeStart || !event.changedTouches.length)return;
+  const touch=event.changedTouches[0];
+  const deltaX=touch.clientX-swipeStart.x;
+  const deltaY=touch.clientY-swipeStart.y;
+  swipeStart=null;
+  if(Math.abs(deltaX)<48 || Math.abs(deltaX)<Math.abs(deltaY)*1.25)return;
+
+  event.preventDefault();
+  S.ignoreNextTileClickUntil=Date.now()+650;
+  const lastPage=Math.max(0,Math.ceil(S.items.length/S.n)-1);
+  if(deltaX<0 && S.page<lastPage){
+    S.page++;
+    render();
+  }else if(deltaX>0 && S.page>0){
+    S.page--;
+    render();
+  }
+},{passive:false});
+
+$("tiles").addEventListener("touchcancel",()=>{swipeStart=null},{passive:true});
 document.querySelectorAll(".choice").forEach(button=>button.onclick=()=>{
   S.n=Number(button.dataset.n);S.page=0;
   document.querySelectorAll(".choice").forEach(item=>item.classList.toggle("active",item===button));
