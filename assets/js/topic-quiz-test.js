@@ -9,7 +9,10 @@
   const savedAttemptId = params.get("attempt");
   const sessionToken = params.get("token") || (crypto.randomUUID() + "-" + crypto.randomUUID());
   const STATE_KEY = "drillgre_topic_quiz_" + (savedAttemptId || sessionToken);
-  const requestedCount = Math.max(10, Math.min(15, Number(params.get("count") || 12)));
+  const isSuperquiz = params.get("mode") === "superquiz";
+  const requestedCount = isSuperquiz
+    ? Math.max(1,Math.min(50,Number(params.get("count") || 1)))
+    : Math.max(10,Math.min(15,Number(params.get("count") || 12)));
   const timingMode = ["standard","time_and_half","double","untimed"].includes(params.get("timing"))
     ? params.get("timing") : "standard";
 
@@ -111,6 +114,12 @@
       pool.push(...batch);
       if (batch.length < pageSize) break;
       offset += pageSize;
+    }
+    if (isSuperquiz) {
+      let requestedIds = [];
+      try { requestedIds = JSON.parse(params.get("question_ids") || "[]"); } catch {}
+      const selected = new Set(Array.isArray(requestedIds) ? requestedIds.map(String) : []);
+      return pool.filter(q => selected.has(String(q.id)));
     }
     const selected = new Set(selectedSubtopics);
     return pool.filter(q => selected.has((q.topic_category || "arithmetic") + "::" + (q.subtopic || "arithmetic_other")));
@@ -408,7 +417,7 @@
     $("reviewPanel").hidden = true;
     $("resultPanel").hidden = false;
     $("resultScore").innerHTML = correct + ' <span>/ ' + items.length + '</span>';
-    $("resultSubtitle").textContent = "Topic quiz completed · " + timingLabel() + " · " + formatTime(secondsUsed) + " elapsed";
+    $("resultSubtitle").textContent = (isSuperquiz ? "Superquiz completed" : "Topic quiz completed") + " · " + timingLabel() + " · " + formatTime(secondsUsed) + " elapsed";
     $("resultDetail").textContent = correct + " correct · " + (items.length-correct) + " incorrect or unanswered";
 
     const seenStimuli = new Set();
@@ -553,7 +562,7 @@
 
     $("loadingPanel").hidden = true;
     $("testPanel").hidden = false;
-    $("quizSubtitle").textContent = "Topic practice · " + questions.length + " questions · " + timingLabel();
+    $("quizSubtitle").textContent = (isSuperquiz ? "Superquiz" : "Topic practice") + " · " + questions.length + " questions · " + timingLabel();
     renderCurrentQuestion();
 
     $("previousQuestion").addEventListener("click",() => goToQuestion(state.currentIndex-1));
@@ -574,16 +583,33 @@
   }
 
   async function startNewAttempt() {
-    try { selectedSubtopics = JSON.parse(params.get("subtopics") || "[]"); }
-    catch { selectedSubtopics = []; }
-    if (!Array.isArray(selectedSubtopics) || !selectedSubtopics.length) {
-      throw new Error("No topics were selected. Close this tab and start a new quiz from Quant → Quiz.");
+    let selected = [];
+    if (isSuperquiz) {
+      let requestedIds = [];
+      try { requestedIds = JSON.parse(params.get("question_ids") || "[]"); } catch {}
+      if (!Array.isArray(requestedIds) || requestedIds.length !== requestedCount ||
+          new Set(requestedIds.map(String)).size !== requestedCount) {
+        throw new Error("The Superquiz question list is invalid. Return to Quant → Quiz and start again.");
+      }
+      const pool = await fetchQuestionPool();
+      const byId = new Map(pool.map(question => [String(question.id),question]));
+      selected = requestedIds.map(id => byId.get(String(id))).filter(Boolean);
+      if (selected.length !== requestedCount) {
+        throw new Error("Some bookmarked questions are no longer published for practice. Return to the Superquiz panel and refresh your saved questions.");
+      }
+      selectedSubtopics = ["__superquiz__"];
+    } else {
+      try { selectedSubtopics = JSON.parse(params.get("subtopics") || "[]"); }
+      catch { selectedSubtopics = []; }
+      if (!Array.isArray(selectedSubtopics) || !selectedSubtopics.length) {
+        throw new Error("No topics were selected. Close this tab and start a new quiz from Quant → Quiz.");
+      }
+      const pool = await fetchQuestionPool();
+      if (pool.length < requestedCount) {
+        throw new Error("Only " + pool.length + " eligible questions are available for your selections. Return to Quant → Quiz and select more subtopics or a smaller quiz.");
+      }
+      selected = shuffle(pool).slice(0,requestedCount);
     }
-    const pool = await fetchQuestionPool();
-    if (pool.length < requestedCount) {
-      throw new Error("Only " + pool.length + " eligible questions are available for your selections. Return to Quant → Quiz and select more subtopics or a smaller quiz.");
-    }
-    const selected = shuffle(pool).slice(0,requestedCount);
     const duration = durationFor(requestedCount,timingMode);
     const {data,error} = await db.rpc("start_gre_topic_quiz",{
       p_session_token:sessionToken,
