@@ -304,9 +304,9 @@
     }
 
     const cap = Math.min(50,count);
-    const sizes = count <= 50
-      ? [count]
-      : [...new Set([10,15,20,30,50].filter(size => size <= cap))];
+    const sizes = [...new Set([5,10,15,20,30,50].filter(size => size <= cap))];
+    if (count <= 50 && !sizes.includes(count)) sizes.push(count);
+    sizes.sort((a,b)=>a-b);
     sizes.forEach(size => {
       const label = size === count ? "All saved questions · " + size : size + " questions";
       select.add(new Option(label,String(size)));
