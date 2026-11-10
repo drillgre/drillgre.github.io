@@ -77,6 +77,11 @@
   flex: 0 0 auto;
   margin-left: auto;
 }
+.drillgre-site-header .drillgre-nav-actions > .drillgre-account-link,
+.drillgre-site-header .drillgre-nav-actions > .drillgre-account-link[data-signed-in="true"] {
+  border: 1.5px solid #000 !important;
+  background: transparent !important;
+}
 .drillgre-account-link {
   display: inline-flex;
   align-items: center;
