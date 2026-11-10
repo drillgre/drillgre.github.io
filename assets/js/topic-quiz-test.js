@@ -15,6 +15,7 @@
     : Math.max(10,Math.min(15,Number(params.get("count") || 12)));
   const timingMode = ["standard","time_and_half","double","untimed"].includes(params.get("timing"))
     ? params.get("timing") : "standard";
+  document.title = isSuperquiz ? "GRE Quant Superquiz | DrillGRE" : "GRE Quant Topic Quiz | DrillGRE";
 
   let visitorKey = null;
   let selectedSubtopics = [];
