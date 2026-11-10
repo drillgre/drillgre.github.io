@@ -311,6 +311,7 @@
       const label = size === count ? "All saved questions · " + size : size + " questions";
       select.add(new Option(label,String(size)));
     });
+    select.value = String(count <= 50 ? count : 15);
     select.disabled = false;
     $("startSuperquiz").disabled = false;
     $("superquizNote").textContent = count > 50
