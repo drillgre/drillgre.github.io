@@ -4,7 +4,7 @@ This is a public static website backed by Supabase. Security controls are enforc
 
 ## Database hardening
 
-Run the SQL files listed in [LEARNER-SETUP.md](supabase/LEARNER-SETUP.md) in order, including `security-hardening.sql` last. That migration:
+Run the SQL files listed in [LEARNER-SETUP.md](supabase/LEARNER-SETUP.md) in order, including `security-hardening.sql` at step 10, followed by subsequent feature migrations. That migration:
 
 - Removes direct insert, update, and delete access to learner profiles for browser roles.
 - Allows signed-in users to read only their own profile row and only the fields the frontend needs.
@@ -13,6 +13,10 @@ Run the SQL files listed in [LEARNER-SETUP.md](supabase/LEARNER-SETUP.md) in ord
 - Makes the question-figure bucket public-read but admin-write, with a 5 MB upload limit and raster-image MIME allow-list. Restrictive write policies also prevent any older broad Storage policy from opening this bucket to learners.
 
 Review Storage policies after migration. The migration applies restrictive insert, update, and delete rules to the question-figure bucket, so a broad permissive policy cannot override the administrator-only check for that bucket. Keep any other bucket policies scoped to their own buckets.
+
+## Question Bank saved data
+
+The Question Bank bookmark table and attempt ledger use row-level security and do not grant direct access to another learner's saved questions or attempt records. Aggregate question attempt totals are returned through a narrow RPC that exposes counts only.
 
 ## Supabase project settings
 
