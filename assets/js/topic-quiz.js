@@ -35,6 +35,7 @@
   let isAuthenticated = false;
   let guestQuizzesRemaining = 2;
   let historyReady = false;
+  let bookmarkedQuestionIds = [];
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -180,6 +181,7 @@
   }
 
   function topicSummary(keys) {
+    if ((keys || []).includes("__superquiz__")) return "Superquiz · saved questions";
     return (keys || []).map(key => {
       const parts = String(key).split("::");
       return categoryLabel(parts[0]) + " · " + subtopicLabel(parts[1]);
@@ -205,7 +207,7 @@
       const url = "topic-quiz.html?attempt=" + encodeURIComponent(attempt.id) +
         "&token=" + encodeURIComponent(attempt.session_token);
       return '<article class="quiz-history-row">' +
-        '<div><div class="quiz-history-title">' + (completed ? "Completed topic quiz" : "Unfinished topic quiz") + '</div>' +
+        '<div><div class="quiz-history-title">' + ((attempt.topic_keys || []).includes("__superquiz__") ? (completed ? "Completed Superquiz" : "Unfinished Superquiz") : (completed ? "Completed topic quiz" : "Unfinished topic quiz")) + '</div>' +
         '<div class="quiz-history-meta">' + esc(date) + ' · ' + esc(attempt.question_count) + ' questions · ' +
         esc(topicSummary(attempt.topic_keys)) + '</div></div>' +
         '<div style="display:grid;justify-items:end;gap:8px">' + score +
@@ -264,6 +266,84 @@
     }
   }
 
+  async function loadSuperquizBookmarks() {
+    const panel = $("superquiz");
+    if (!isAuthenticated) {
+      panel.hidden = true;
+      bookmarkedQuestionIds = [];
+      return;
+    }
+
+    panel.hidden = false;
+    $("superquizNote").textContent = "Loading your bookmarked questions…";
+    const {data,error} = await db.from("gre_question_bank_bookmarks")
+      .select("question_id,created_at")
+      .order("created_at",{ascending:true});
+    if (error) {
+      $("superquizCount").textContent = "Bookmarks unavailable";
+      $("superquizNote").textContent = "Run supabase/question-bank-bookmarks-superquiz.sql in the Supabase SQL Editor to enable Superquiz.";
+      $("superquizQuestionCount").disabled = true;
+      $("startSuperquiz").disabled = true;
+      return;
+    }
+
+    bookmarkedQuestionIds = (data || []).map(row => String(row.question_id));
+    const count = bookmarkedQuestionIds.length;
+    $("superquizCount").textContent = count.toLocaleString() + (count === 1 ? " bookmarked question" : " bookmarked questions");
+
+    const select = $("superquizQuestionCount");
+    select.innerHTML = "";
+    if (!count) {
+      select.add(new Option("No saved questions yet",""));
+      select.disabled = true;
+      $("startSuperquiz").disabled = true;
+      $("superquizNote").textContent = "Open the Question Bank and use ☆ Bookmark on questions you want to practise later. They will appear here automatically.";
+      return;
+    }
+
+    const cap = Math.min(50,count);
+    const sizes = count <= 50
+      ? [count]
+      : [...new Set([10,15,20,30,50].filter(size => size <= cap))];
+    sizes.forEach(size => {
+      const label = size === count ? "All saved questions · " + size : size + " questions";
+      select.add(new Option(label,String(size)));
+    });
+    select.disabled = false;
+    $("startSuperquiz").disabled = false;
+    $("superquizNote").textContent = count > 50
+      ? "You have more than 50 saved questions. Each sitting can assess up to 50; the rest stay in your collection for future sessions."
+      : "All your saved questions are included in this Superquiz. You can choose standard GRE timing, extra time, or untimed practice.";
+  }
+
+  function startSuperquiz() {
+    if (!isAuthenticated || !bookmarkedQuestionIds.length) return;
+    const requested = Number($("superquizQuestionCount").value || 0);
+    if (!requested || requested > 50) return;
+    const ids = bookmarkedQuestionIds.slice();
+    for (let index=ids.length-1;index>0;index--) {
+      const j=Math.floor(Math.random()*(index+1));
+      [ids[index],ids[j]]=[ids[j],ids[index]];
+    }
+    const selected = ids.slice(0,requested);
+    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+    const query = new URLSearchParams({
+      mode:"superquiz",
+      question_ids:JSON.stringify(selected),
+      count:String(selected.length),
+      timing:$("superquizTimingMode").value || "standard",
+      token
+    });
+    const quizWindow = window.open("topic-quiz.html?" + query.toString(),"_blank");
+    if (!quizWindow) {
+      setStatus("Your browser blocked the new Superquiz tab. Allow pop-ups for drillgre.github.io and try again.",true);
+      return;
+    }
+    try { quizWindow.opener = null; } catch {}
+    setStatus("Your Superquiz has opened in a new tab. Your saved questions remain in your collection, and this attempt will appear in Your quizzes.");
+    window.setTimeout(loadQuizHistory,1800);
+  }
+
   function startTopicQuiz() {
     const pool = selectedQuestionPool();
     const requested = Number($("quizQuestionCount").value || 12);
@@ -294,6 +374,7 @@
     $("quizQuestionCount").addEventListener("change",updateQuizAvailability);
     $("quizTimingMode").addEventListener("change",updateQuizAvailability);
     $("startTopicQuiz").addEventListener("click",startTopicQuiz);
+    $("startSuperquiz").addEventListener("click",startSuperquiz);
     try {
       questionBank = await fetchQuestionBank();
       $("quizBankCount").textContent = questionBank.length + " practice questions";
@@ -306,9 +387,15 @@
       $("quizSetupPanel").hidden = false;
       setStatus("");
       await loadQuizHistory();
-      window.addEventListener("focus",loadQuizHistory);
+      await loadSuperquizBookmarks();
+      window.addEventListener("focus",async () => {
+        await loadQuizHistory();
+        await loadSuperquizBookmarks();
+      });
       db.auth.onAuthStateChange(event => {
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") loadQuizHistory();
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          loadQuizHistory().then(loadSuperquizBookmarks);
+        }
       });
     } catch (error) {
       setStatus("Unable to load the practice question bank. " + (error.message || ""),true);
