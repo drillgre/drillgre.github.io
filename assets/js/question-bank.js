@@ -308,7 +308,7 @@
         '<div class="bank-card-actions">' +
           '<button class="bank-open" type="button" data-open-question="' + esc(id) + '">Open full question</button>' +
           bookmarkButtonMarkup(id) +
-          '<span class="attempt-meta">' + (question.stimulus_id ? "Includes shared Data Analysis material" : "Practice question") + '</span>' +
+          (question.stimulus_id ? '<span class="attempt-meta">Includes shared Data Analysis material</span>' : '') +
         '</div>' +
       '</div>' +
       cardFigure +
