@@ -204,8 +204,10 @@
         ? '<div class="quiz-history-score">' + esc(attempt.total_correct ?? 0) + ' / ' + esc(attempt.question_count) + ' correct</div>'
         : '<div class="quiz-history-score" style="color:#b7791f">In progress</div>';
       const action = !completed ? "Resume quiz" : "Review answers";
+      const isSuperquiz = (attempt.topic_keys || []).includes("__superquiz__");
       const url = "topic-quiz.html?attempt=" + encodeURIComponent(attempt.id) +
-        "&token=" + encodeURIComponent(attempt.session_token);
+        "&token=" + encodeURIComponent(attempt.session_token) +
+        (isSuperquiz ? "&mode=superquiz" : "");
       return '<article class="quiz-history-row">' +
         '<div><div class="quiz-history-title">' + ((attempt.topic_keys || []).includes("__superquiz__") ? (completed ? "Completed Superquiz" : "Unfinished Superquiz") : (completed ? "Completed topic quiz" : "Unfinished topic quiz")) + '</div>' +
         '<div class="quiz-history-meta">' + esc(date) + ' · ' + esc(attempt.question_count) + ' questions · ' +
