@@ -78,13 +78,26 @@
   margin-left: auto;
 }
 .drillgre-account-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #d9e0eb;
+  border-radius: 11px;
+  background: transparent;
   color: #26334d;
   text-decoration: none;
   font-size: 14px;
   font-weight: 750;
   white-space: nowrap;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
-.drillgre-account-link:hover { color: #356df3; }
+.drillgre-account-link:hover {
+  border-color: #b8c4d6;
+  background: rgba(245,247,251,.55);
+  color: #356df3;
+}
 .drillgre-account-link[data-signed-in="true"] {
   color: #2454d7;
   max-width: 132px;
