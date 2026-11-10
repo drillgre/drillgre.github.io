@@ -241,6 +241,9 @@ begin
       and answer.question_id = aq.question_id
     where aq.attempt_id = new.id
       and answer.response is not null
+      and answer.response <> 'null'::jsonb
+      and answer.response <> '""'::jsonb
+      and answer.response <> '[]'::jsonb
     on conflict (quiz_attempt_id,question_id)
       where quiz_attempt_id is not null
       do nothing;
