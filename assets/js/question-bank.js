@@ -502,21 +502,47 @@
     stimulusById = new Map((data || []).map(row => [String(row.id),row]));
   }
 
+  async function fetchPublicQuestionCount() {
+    const {data,error} = await db.rpc("get_public_question_bank_count");
+    if (error) throw error;
+    const count = Number(data);
+    if (!Number.isInteger(count) || count < 0) {
+      throw new Error("The public question count returned an invalid value.");
+    }
+    $("bankTotal").textContent = count.toLocaleString();
+    return count;
+  }
+
   async function init() {
+    let publicQuestionCount = null;
+    try {
+      publicQuestionCount = await fetchPublicQuestionCount();
+    } catch (error) {
+      $("bankTotal").textContent = "—";
+      console.warn("Public Question Bank count unavailable:", error);
+    }
+
     const {data:sessionData,error:sessionError} = await db.auth.getSession();
     if (sessionError) {
-      $("bankStatus").hidden = false;
-      $("bankStatus").classList.add("error");
-      $("bankStatus").textContent = "Unable to verify your sign-in. " + sessionError.message;
-      $("bankWorkspace").hidden = false;
+      $("bankCompletedSummary").hidden = true;
+      $("openBankDiagnostics").hidden = true;
+      $("bankAuthGate").hidden = false;
+      $("bankAuthGateMessage").textContent = "We could not verify your sign-in. Please refresh or sign in again to access the Question Bank.";
       return;
     }
 
     if (!sessionData?.session?.user) {
+      $("bankCompletedSummary").hidden = true;
+      $("openBankDiagnostics").hidden = true;
+      $("bankAuthGateMessage").textContent = publicQuestionCount === null
+        ? "Sign in or create a free account to browse questions, check answers, and save your progress."
+        : "There are " + publicQuestionCount.toLocaleString() + " published practice questions. Sign in or create a free account to browse them, check your answers, and save your progress.";
       $("bankAuthGate").hidden = false;
       return;
     }
 
+    $("bankCompletedSummary").hidden = false;
+    $("openBankDiagnostics").hidden = false;
     $("bankWorkspace").hidden = false;
     ["bankSearch","bankCategory","bankSubtopic","bankType","bankDifficulty"].forEach(id => {
       $(id).addEventListener(id === "bankSearch" ? "input" : "change",() => {
