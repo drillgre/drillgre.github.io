@@ -9,7 +9,20 @@
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:26px 0 15px}.filters{display:flex;gap:9px;flex-wrap:wrap}input,select{font:inherit;padding:10px 12px;border:1px solid #dce3ef;border-radius:10px;background:white}#search{min-width:220px}.count{color:var(--muted);font-size:.86rem;font-weight:700}
 .viewbar{display:flex;justify-content:center;align-items:center;gap:12px;margin:18px 0}.viewbar span{font-size:.85rem;color:var(--muted);font-weight:700}.choices{display:flex;gap:4px;padding:4px;border-radius:11px;background:#e8edf6}.choice{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:800;color:#5b6680;cursor:pointer}.choice.active{background:white;color:var(--blue);box-shadow:0 2px 8px #17203312}
 .progress{height:5px;background:#e5eaf4;border-radius:99px;overflow:hidden;margin-bottom:18px}.progress span{display:block;height:100%;background:var(--blue);width:0}
-.tiles{display:grid;gap:14px;grid-template-columns:1fr}.tiles[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tiles-viewport{position:relative;width:100%;overflow:hidden;touch-action:pan-y}
+.tiles{display:grid;gap:14px;grid-template-columns:1fr;position:relative;width:100%}
+.tiles-outgoing{position:absolute!important;top:0;left:0;width:100%;pointer-events:none;z-index:2}
+.tiles-enter-from-right{animation:vocab-page-enter-right .28s cubic-bezier(.22,.75,.25,1) both}
+.tiles-enter-from-left{animation:vocab-page-enter-left .28s cubic-bezier(.22,.75,.25,1) both}
+.tiles-exit-to-left{animation:vocab-page-exit-left .28s cubic-bezier(.22,.75,.25,1) both}
+.tiles-exit-to-right{animation:vocab-page-exit-right .28s cubic-bezier(.22,.75,.25,1) both}
+@keyframes vocab-page-enter-right{from{transform:translateX(100%);opacity:.82}to{transform:translateX(0);opacity:1}}
+@keyframes vocab-page-enter-left{from{transform:translateX(-100%);opacity:.82}to{transform:translateX(0);opacity:1}}
+@keyframes vocab-page-exit-left{from{transform:translateX(0);opacity:1}to{transform:translateX(-100%);opacity:.82}}
+@keyframes vocab-page-exit-right{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:.82}}
+@media(prefers-reduced-motion:reduce){
+  .tiles-enter-from-right,.tiles-enter-from-left,.tiles-exit-to-left,.tiles-exit-to-right{animation-duration:.01ms}
+}.tiles[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles[data-count="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{min-height:255px;background:white;border:1px solid var(--line);border-radius:19px;padding:20px;box-shadow:0 9px 26px #182d5a0a;display:flex;flex-direction:column;cursor:pointer;overflow-wrap:anywhere;transition:.15s}.tile:hover{transform:translateY(-2px);border-color:#cbd8ff}.tile:focus{outline:3px solid #356df344}.tilehead{display:flex;justify-content:space-between;align-items:center;font-size:.73rem;color:#7b879e;font-weight:750}.tag{background:#edf2ff;color:#315ed5;padding:5px 9px;border-radius:99px}.word-line{display:flex;align-items:center;justify-content:center;gap:10px;margin:auto 0;padding:22px 0}
 .word{font-size:1.8rem;color:var(--navy);font-weight:850;letter-spacing:-.5px;text-align:center;margin:0;padding:0}
 .meaning-count{display:inline-flex;align-items:center;justify-content:center;min-width:29px;height:25px;padding:0 7px;border-radius:999px;background:#edf2ff;color:#315ed5;font-size:.78rem;font-weight:850}
@@ -52,9 +65,7 @@
 .state-action:focus-visible,.status-tab:focus-visible{outline:3px solid #356df355;outline-offset:2px}
 @media(max-width:650px){.status-tabs{justify-content:stretch}.status-tab{flex:1;justify-content:center;padding:9px 8px;font-size:.74rem}.card-status-actions{gap:4px}.state-action{padding:7px 8px;font-size:.63rem}}
 
-.swipe-hint{display:none;margin:-6px 0 12px;text-align:center;color:#75819a;font-size:.76rem;font-weight:700}
 @media(max-width:650px){main{padding:28px 13px 50px}#search{min-width:100%;width:100%}.filters{width:100%}.filters select{flex:1}.tiles[data-count="2"],.tiles[data-count="4"],.tiles[data-count="6"]{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:15px;min-height:220px}.word{font-size:1.4rem}.word-line{gap:7px;padding:18px 0}.meaning-count{min-width:25px;height:22px;font-size:.7rem}.speak-word{width:30px;height:30px}.viewbar{flex-wrap:wrap}
-.swipe-hint.visible{display:block}
 .tiles{touch-action:pan-y}
 .tiles[data-count="1"]{grid-template-columns:1fr}
 .tiles[data-count="4"] .tile{min-height:172px;padding:12px}
@@ -126,8 +137,7 @@
   <a href="/account.html?redirect=%2Fvocab.html">Sign in to unlock the tracker</a>
 </div>
 <div class="viewbar"><span>Words per view</span><div class="choices"><button class="choice active" data-n="1">1</button><button class="choice" data-n="2">2</button><button class="choice" data-n="4">4</button><button class="choice" data-n="6">6</button></div></div>
-<div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading Vocab Mountain…</div><div class="tiles" id="tiles" style="display:none"></div>
-<div id="swipeHint" class="swipe-hint" aria-live="polite"></div>
+<div class="progress"><span id="bar"></span></div><div id="status" class="status">Loading Vocab Mountain…</div><div class="tiles-viewport" id="tilesViewport"><div class="tiles" id="tiles" style="display:none"></div></div>
 <div class="actions" id="actions" style="display:none"><button class="btn" id="prev">← Previous</button><button class="btn primary" id="next">Next →</button></div></main>
 <script>
 const VOCAB_SUPABASE_URL="https://aayzpcfryixauwsytphd.supabase.co";
@@ -391,15 +401,28 @@ function render(){
   S.page=Math.min(S.page,pages-1);
   const start=S.page*S.n;
   const shown=S.items.slice(start,start+S.n);
-  const swipeHint=$("swipeHint");
-  swipeHint.classList.toggle("visible",total>shown.length);
-  swipeHint.textContent=total>shown.length
-    ? "Swipe left for the next "+S.n+" words · Swipe right to go back"
-    : "";
+  const tiles=$("tiles");
+  const viewport=$("tilesViewport");
+  const direction=S.pageTransition;
+  S.pageTransition=null;
+
+  // Keep the old complete grid as a non-interactive frame while the incoming
+  // grid slides in. The entire batch moves together, not individual cards.
+  let outgoing=null;
+  if(direction && tiles.children.length && tiles.style.display!=="none"){
+    outgoing=tiles.cloneNode(true);
+    outgoing.removeAttribute("id");
+    outgoing.classList.add("tiles-outgoing");
+    outgoing.setAttribute("aria-hidden","true");
+    outgoing.inert=true;
+    outgoing.querySelectorAll("button").forEach(button=>button.tabIndex=-1);
+    viewport.appendChild(outgoing);
+  }
+
   $("counter").textContent=total?(start+1)+"–"+(start+shown.length)+" of "+total+" words":"0 words in this tab";
   $("bar").style.width=total?((start+shown.length)/Math.max(1,S.all.length)*100)+"%":"0%";
-  $("tiles").innerHTML="";
-  $("tiles").dataset.count=S.n;
+  tiles.innerHTML="";
+  tiles.dataset.count=S.n;
   if(!total){
     $("tiles").style.display="none";
     $("actions").style.display="none";
@@ -410,16 +433,41 @@ function render(){
   $("status").hidden=true;
   $("tiles").style.display="grid";
   $("actions").style.display="flex";
-  shown.forEach((word,index)=>$("tiles").append(card(word,start+index+1)));
+  shown.forEach((word,index)=>tiles.append(card(word,start+index+1)));
+
+  if(outgoing){
+    const enterClass=direction==="next"?"tiles-enter-from-right":"tiles-enter-from-left";
+    const exitClass=direction==="next"?"tiles-exit-to-left":"tiles-exit-to-right";
+    tiles.classList.add(enterClass);
+    outgoing.classList.add(exitClass);
+    let cleaned=false;
+    const cleanup=()=>{
+      if(cleaned)return;
+      cleaned=true;
+      outgoing.remove();
+      tiles.classList.remove(enterClass);
+    };
+    outgoing.addEventListener("animationend",cleanup,{once:true});
+    tiles.addEventListener("animationend",cleanup,{once:true});
+  }
+
   $("prev").disabled=S.page===0;
   $("next").disabled=S.page>=pages-1;
   $("next").textContent=S.page===pages-1?"End":"Next →";
 }
-$("prev").onclick=()=>{if(S.page>0){S.page--;render()}};
-$("next").onclick=()=>{if(S.page<Math.ceil(S.items.length/S.n)-1){S.page++;render()}};
+function changePage(direction){
+  const lastPage=Math.max(0,Math.ceil(S.items.length/S.n)-1);
+  const nextPage=S.page+(direction==="next"?1:-1);
+  if(nextPage<0||nextPage>lastPage)return;
+  S.page=nextPage;
+  S.pageTransition=direction;
+  render();
+}
+$("prev").onclick=()=>changePage("previous");
+$("next").onclick=()=>changePage("next");
 
 let swipeStart=null;
-$("tiles").addEventListener("touchstart",event=>{
+$("tilesViewport").addEventListener("touchstart",event=>{
   if(event.touches.length!==1 || event.target.closest("button")){
     swipeStart=null;
     return;
@@ -428,7 +476,7 @@ $("tiles").addEventListener("touchstart",event=>{
   swipeStart={x:touch.clientX,y:touch.clientY};
 },{passive:true});
 
-$("tiles").addEventListener("touchend",event=>{
+$("tilesViewport").addEventListener("touchend",event=>{
   if(!swipeStart || !event.changedTouches.length)return;
   const touch=event.changedTouches[0];
   const deltaX=touch.clientX-swipeStart.x;
@@ -438,17 +486,11 @@ $("tiles").addEventListener("touchend",event=>{
 
   event.preventDefault();
   S.ignoreNextTileClickUntil=Date.now()+650;
-  const lastPage=Math.max(0,Math.ceil(S.items.length/S.n)-1);
-  if(deltaX<0 && S.page<lastPage){
-    S.page++;
-    render();
-  }else if(deltaX>0 && S.page>0){
-    S.page--;
-    render();
-  }
+  if(deltaX<0) changePage("next");
+  else changePage("previous");
 },{passive:false});
 
-$("tiles").addEventListener("touchcancel",()=>{swipeStart=null},{passive:true});
+$("tilesViewport").addEventListener("touchcancel",()=>{swipeStart=null},{passive:true});
 document.querySelectorAll(".choice").forEach(button=>button.onclick=()=>{
   S.n=Number(button.dataset.n);S.page=0;
   document.querySelectorAll(".choice").forEach(item=>item.classList.toggle("active",item===button));
