@@ -12,11 +12,14 @@ begin;
 -- ============================================================
 
 create table if not exists public.gre_question_bank_bookmarks (
-  learner_id uuid not null references auth.users(id) on delete cascade,
+  learner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   question_id uuid not null references public.questions(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (learner_id, question_id)
-);
+ );
+
+alter table public.gre_question_bank_bookmarks
+  alter column learner_id set default auth.uid();
 
 create index if not exists gre_question_bank_bookmarks_learner_created_idx
   on public.gre_question_bank_bookmarks(learner_id, created_at desc);
