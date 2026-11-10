@@ -20,7 +20,7 @@
     .bank-count [hidden]{display:none!important}
     .bank-diagnostics-trigger{margin-top:12px;border:1px solid #dbe3f0;background:#fff;color:#3154c5;border-radius:9px;padding:8px 11px;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
     .bank-diagnostics-trigger:hover{background:#f4f7ff;border-color:#b9c7ff}
-    .bank-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(4,minmax(130px,1fr));gap:10px;margin:20px 0 12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
+    .bank-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(5,minmax(120px,1fr));gap:10px;margin:20px 0 12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
     .bank-filters input,.bank-filters select{width:100%;min-width:0;padding:11px 12px;border:1px solid #d4dbe7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-size:13px}
     .bank-results-line{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:12px 2px}
     .bank-question-list{display:grid;gap:14px}
@@ -60,6 +60,11 @@
     .bank-excerpt{font-size:13px;line-height:1.65;color:#56637a;margin:0 0 13px;white-space:pre-line}
     .bank-card-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .bank-open{border:0;border-radius:8px;background:var(--blue);color:#fff;padding:9px 13px;font-weight:800;font-size:12px;cursor:pointer}
+    .bank-bookmark{border:1px solid #d4dce9;border-radius:8px;background:#fff;color:#344158;padding:8px 11px;font-weight:800;font-size:12px;cursor:pointer}
+    .bank-bookmark[aria-pressed="true"]{border-color:#f0c66d;background:#fff8e7;color:#80530d}
+    .bank-bookmark:disabled{opacity:.55;cursor:wait}
+    .bank-attempt-count{display:inline-flex;align-items:center;gap:5px;color:#6a7589;font-size:11px;font-weight:750}
+    .bank-superquiz-link{display:block;text-decoration:none;margin:10px auto 0;width:max-content;max-width:100%}
     .bank-done{display:inline-flex;align-items:center;border:1px solid #b9e2c8;border-radius:99px;background:#f0fbf4;color:#187447;padding:5px 9px;font-size:11px;font-weight:800}
     .bank-review{display:inline-flex;align-items:center;border:1px solid #f3d3a4;border-radius:99px;background:#fff8eb;color:#9a5b0b;padding:5px 9px;font-size:11px;font-weight:800}
     .bank-diagnostics-dialog{width:min(820px,calc(100% - 28px))}
@@ -142,6 +147,8 @@
       <strong id="bankTotal">—</strong>
       <span>Practice questions</span>
       <small id="bankCompletedSummary" hidden>0 completed by you</small>
+      <small id="bankBookmarkSummary" hidden>0 saved for Superquiz</small>
+      <a id="bankSuperquizLink" class="bank-diagnostics-trigger bank-superquiz-link" href="/quant/quiz.html#superquiz" hidden>Build Superquiz</a>
       <button id="openBankDiagnostics" class="bank-diagnostics-trigger" type="button" hidden>View diagnostics</button>
     </div>
   </section>
@@ -160,6 +167,10 @@
     <select id="bankCategory" aria-label="Filter by topic"><option value="">All topics</option></select>
     <select id="bankSubtopic" aria-label="Filter by subtopic"><option value="">All subtopics</option></select>
     <select id="bankType" aria-label="Filter by question type"><option value="">All question types</option></select>
+    <select id="bankSavedFilter" aria-label="Filter by saved status">
+      <option value="">All questions</option>
+      <option value="saved">Bookmarked only</option>
+    </select>
     <select id="bankDifficulty" aria-label="Filter by difficulty">
       <option value="">All difficulty levels</option>
       <option value="1">Difficulty 1</option>
