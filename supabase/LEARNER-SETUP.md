@@ -14,6 +14,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 8. `vocab-mountain.sql`
 9. `vocab-word-progress.sql`
 10. `security-hardening.sql`
+11. `question-bank-public-count.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -21,7 +22,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
-These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket.
+These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket. The eleventh script exposes only the aggregate count of published practice questions to visitors.
 
 ## Production security checklist
 
@@ -41,6 +42,10 @@ Before opening registration to the public, review these project settings in the 
 GitHub Pages serves the static site over HTTPS, but it does not provide a repository-level mechanism for configuring arbitrary HTTP response security headers. The account, dashboard, admin, and quiz pages now use a no-referrer policy as a browser-side safeguard. For full Content-Security-Policy, frame protection, HSTS, and other response headers, put the site behind a host or proxy that can set HTTP headers. Cloudflare Pages supports a `_headers` file for this purpose.
 
 These changes reduce common exposure and privilege-escalation risks. They do not make any public website impossible to attack. Keep Supabase, dependencies, and access policies updated, and review logs for unusual activity.
+
+## Public Question Bank count
+
+Run `question-bank-public-count.sql` after `security-hardening.sql`. Visitors who are not signed in can see the total number of published questions marked **Practice** or **Both**. This RPC returns only an integer count. The Question Bank list, question-opening controls, completion summary, and diagnostics remain available only after sign-in.
 
 ## Vocab Mountain content management
 
