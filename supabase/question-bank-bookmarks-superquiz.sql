@@ -459,3 +459,5 @@ grant execute on function public.start_gre_topic_quiz(text,text,text[],text[],te
 
 notify pgrst, 'reload schema';
 
+commit;
+
