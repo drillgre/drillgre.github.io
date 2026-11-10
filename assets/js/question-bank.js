@@ -302,7 +302,7 @@
           '<span class="bank-tag">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
           '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
           '<span data-question-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
-          '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCountsAvailable ? (attemptCounts.get(id) ?? 0).toLocaleString() : "—") + ' attempts</span>' +
+          '<span class="bank-attempt-count" title="Total submitted attempts for this question" data-attempt-count="' + esc(id) + '">' + (attemptCountsAvailable ? (attemptCounts.get(id) ?? 0).toLocaleString() : "—") + ' attempts</span>' +
         '</div>' +
         '<p class="bank-excerpt">' + esc(shortened || "Question text unavailable.") + '</p>' +
         '<div class="bank-card-actions">' +
