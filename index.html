@@ -146,8 +146,18 @@
       .cta-panel { padding: 28px; flex-direction: column; align-items: flex-start; }
       .footer-inner { flex-direction: column; align-items: flex-start; }
     }
+    /* Keep the account link visibly outlined on the homepage. */
+    .drillgre-site-header .drillgre-nav-actions > a.drillgre-account-link,
+    .drillgre-site-header .drillgre-nav-actions > a.drillgre-account-link[data-signed-in="true"] {
+      border: 1.5px solid #000 !important;
+      background: transparent !important;
+      border-radius: 11px;
+      padding: 0 14px;
+      min-height: 44px;
+      box-shadow: none !important;
+    }
   </style>
-  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <link rel="stylesheet" href="/assets/css/site-nav.css?v=20261110-black-outline-2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="/assets/js/site-nav.js"></script>
 </head>
