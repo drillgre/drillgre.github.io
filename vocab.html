@@ -305,7 +305,7 @@ function card(word,number){
   const synonymList=word.syn?word.syn.split(/[;,]+/).map(item=>item.trim()).filter(Boolean):[];
   const canSpeak=typeof window.speechSynthesis!=="undefined"&&typeof window.SpeechSynthesisUtterance!=="undefined";
   el.innerHTML=
-    '<div class="tilehead"><span>WORD '+esc(word.sn||number)+'</span><span class="tag">'+esc(word.category||"DAY "+(word.day||"—"))+'</span></div>'+
+    '<div class="tilehead"><span>WORD '+esc(word.sn||number)+'</span><span class="tag">DAY '+esc(word.day||"—")+'</span></div>'+
     '<div class="word-line"><div class="word">'+esc(word.word)+'</div>'+
       (word.meanings.length>1?'<span class="meaning-count" title="'+word.meanings.length+' meanings">('+word.meanings.length+')</span>':'')+
       (canSpeak?'<button type="button" class="speak-word" aria-label="Hear pronunciation of '+esc(word.word)+'" title="Hear pronunciation">🔊</button>':'')+
