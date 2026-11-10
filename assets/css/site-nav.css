@@ -83,7 +83,7 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid #d9e0eb;
+  border: 1px solid #111827;
   border-radius: 11px;
   background: transparent;
   color: #26334d;
@@ -94,7 +94,7 @@
   transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
 .drillgre-account-link:hover {
-  border-color: #b8c4d6;
+  border-color: #000000;
   background: rgba(245,247,251,.55);
   color: #356df3;
 }
