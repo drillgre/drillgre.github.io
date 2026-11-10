@@ -24,6 +24,10 @@
   let stimulusById = new Map();
   let completedIds = new Set();
   let progressById = new Map();
+  let bookmarkedIds = new Set();
+  let attemptCounts = new Map();
+  let bookmarkFeatureAvailable = true;
+  let attemptCountsAvailable = true;
   let currentQuestion = null;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -171,6 +175,101 @@
     '</section>';
   }
 
+  function bookmarkButtonMarkup(id) {
+    const saved = bookmarkedIds.has(String(id));
+    const disabled = !bookmarkFeatureAvailable;
+    return '<button type="button" class="bank-bookmark" data-bookmark-question="' + esc(id) +
+      '" aria-pressed="' + String(saved) + '"' + (disabled?' disabled title="Run the Question Bank bookmarks migration to enable saving"':'') + '>' +
+      (saved ? '★ Saved' : '☆ Bookmark') + '</button>';
+  }
+
+  function updateBookmarkUI() {
+    const count = bookmarkedIds.size;
+    $("bankBookmarkSummary").textContent = count.toLocaleString() + (count === 1 ? " saved for Superquiz" : " saved for Superquiz");
+    $("bankBookmarkSummary").hidden = !bookmarkFeatureAvailable;
+    $("bankSuperquizLink").hidden = !bookmarkFeatureAvailable;
+    $("bankSuperquizLink").textContent = count ? "Build Superquiz · " + count : "Build Superquiz";
+    document.querySelectorAll("[data-bookmark-question]").forEach(button => {
+      const saved = bookmarkedIds.has(String(button.dataset.bookmarkQuestion));
+      button.setAttribute("aria-pressed",String(saved));
+      button.textContent = saved ? "★ Saved" : "☆ Bookmark";
+    });
+  }
+
+  async function fetchBookmarks() {
+    const {data,error} = await db.from("gre_question_bank_bookmarks")
+      .select("question_id")
+      .order("created_at",{ascending:true});
+    if (error) {
+      bookmarkFeatureAvailable = false;
+      bookmarkedIds = new Set();
+      updateBookmarkUI();
+      $("bankStatus").hidden = false;
+      $("bankStatus").textContent = "Bookmarks and Superquiz need the latest database migration. " + (error.message || "");
+      return;
+    }
+    bookmarkFeatureAvailable = true;
+    bookmarkedIds = new Set((data || []).map(row => String(row.question_id)));
+    updateBookmarkUI();
+  }
+
+  async function fetchAttemptCounts(questions) {
+    attemptCountsAvailable = true;
+    attemptCounts = new Map();
+    const ids = questions.map(question => String(question.id));
+    for (let index=0; index<ids.length; index+=200) {
+      const batch = ids.slice(index,index+200);
+      const {data,error} = await db.rpc("get_gre_question_bank_attempt_counts",{p_question_ids:batch});
+      if (error) {
+        attemptCountsAvailable = false;
+        attemptCounts = new Map();
+        console.warn("Question attempt counts unavailable:",error);
+        break;
+      }
+      Object.entries(data || {}).forEach(([id,count]) => attemptCounts.set(String(id),Number(count || 0)));
+    }
+  }
+
+  async function toggleBookmark(id,button) {
+    if (!bookmarkFeatureAvailable) return;
+    const key = String(id);
+    const wasSaved = bookmarkedIds.has(key);
+    if (button) { button.disabled = true; button.textContent = "Saving…"; }
+    try {
+      const result = wasSaved
+        ? await db.from("gre_question_bank_bookmarks").delete().eq("question_id",key)
+        : await db.from("gre_question_bank_bookmarks").insert({question_id:key});
+      if (result.error) throw result.error;
+      if (wasSaved) bookmarkedIds.delete(key);
+      else bookmarkedIds.add(key);
+      updateBookmarkUI();
+      applyFilters();
+      if (currentQuestion && String(currentQuestion.id) === key) {
+        $("questionDialogBody").querySelectorAll("[data-bookmark-question]").forEach(item => {
+          item.setAttribute("aria-pressed",String(bookmarkedIds.has(key)));
+          item.textContent = bookmarkedIds.has(key) ? "★ Saved" : "☆ Bookmark";
+        });
+      }
+      $("bankStatus").hidden = true;
+    } catch(error) {
+      if (button) {
+        button.disabled = false;
+        button.textContent = wasSaved ? "★ Saved" : "☆ Bookmark";
+      }
+      $("bankStatus").hidden = false;
+      $("bankStatus").classList.add("error");
+      $("bankStatus").textContent = "Could not update this bookmark. " + (error.message || "");
+    }
+  }
+
+  function updateAttemptCount(id,count) {
+    const key = String(id);
+    attemptCounts.set(key,Number(count || 0));
+    document.querySelectorAll('[data-attempt-count="' + CSS.escape(key) + '"]').forEach(element => {
+      element.textContent = Number(count || 0).toLocaleString() + " attempts";
+    });
+  }
+
   function statusBadgeMarkup(status) {
     if (status === "done") return '<span class="bank-done">Done</span>';
     if (status === "review") return '<span class="bank-review">Review</span>';
@@ -202,10 +301,12 @@
           '<span class="bank-tag">' + esc(questionTypeLabel(question.question_type)) + '</span>' +
           '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
           '<span data-question-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
+          '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCounts.get(id) ?? 0).toLocaleString() + ' attempts</span>' +
         '</div>' +
         '<p class="bank-excerpt">' + esc(shortened || "Question text unavailable.") + '</p>' +
         '<div class="bank-card-actions">' +
           '<button class="bank-open" type="button" data-open-question="' + esc(id) + '">Open full question</button>' +
+          bookmarkButtonMarkup(id) +
           '<span class="attempt-meta">' + (question.stimulus_id ? "Includes shared Data Analysis material" : "Practice question") + '</span>' +
         '</div>' +
       '</div>' +
@@ -228,6 +329,9 @@
         if (question) openQuestion(question);
       });
     });
+    host.querySelectorAll("[data-bookmark-question]").forEach(button => {
+      button.addEventListener("click", () => toggleBookmark(button.dataset.bookmarkQuestion,button));
+    });
   }
 
   function openQuestion(question) {
@@ -246,18 +350,25 @@
         '<span class="bank-tag">' + esc(category) + (subtopic ? ' · ' + esc(subtopic) : '') + '</span>' +
         '<span class="bank-tag">Difficulty ' + esc(question.difficulty ?? "—") + '/5</span>' +
         '<span data-dialog-status>' + statusBadgeMarkup(progress?.status) + '</span>' +
+      '<span class="bank-attempt-count" data-attempt-count="' + esc(id) + '">' + (attemptCounts.get(id) ?? 0).toLocaleString() + ' attempts</span>' +
       '</div>' +
       stimulusMarkup(question,true) +
       '<div class="bank-modal-prompt">' + esc(question.question_text || "") + '</div>' +
       figure +
       '<div class="bank-options">' + optionMarkup(question) + '</div>' +
-      '<button class="bank-check" id="checkQuestionBankAnswer" type="button">Check answer</button>' +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">' +
+        bookmarkButtonMarkup(id) +
+        '<button class="bank-check" id="checkQuestionBankAnswer" type="button">Check answer</button>' +
+      '</div>' +
       '<div class="bank-feedback" id="questionBankFeedback" hidden></div>' +
       '<p class="attempt-meta" id="questionStatusHelp" style="margin-top:12px">A correct answer is marked Done. An incorrect answer is marked Review until you answer correctly.</p>';
 
     const displayNumber = allQuestions.findIndex(item => String(item.id) === id) + 1;
     $("dialogQuestionTitle").textContent = "Question " + (displayNumber || "details");
     attachImageFallback(body);
+    body.querySelectorAll("[data-bookmark-question]").forEach(button => {
+      button.addEventListener("click", () => toggleBookmark(button.dataset.bookmarkQuestion,button));
+    });
     $("checkQuestionBankAnswer").addEventListener("click",checkCurrentAnswer);
     if (!dialog.open) dialog.showModal();
   }
@@ -285,6 +396,7 @@
       first_attempt_correct: grade?.first_attempt_correct ?? previous.first_attempt_correct ?? null
     });
     updateCompletedSummary();
+    if (grade?.total_attempts !== undefined) updateAttemptCount(id,grade.total_attempts);
 
     const markup = statusBadgeMarkup(status);
     const card = $("bankQuestionList").querySelector('[data-question-card="' + CSS.escape(key) + '"]');
@@ -379,6 +491,7 @@
     const subtopic = $("bankSubtopic").value;
     const type = $("bankType").value;
     const difficulty = $("bankDifficulty").value;
+    const savedFilter = $("bankSavedFilter").value;
 
     const filtered = allQuestions.filter(question => {
       const topicCategory = question.topic_category || "arithmetic";
@@ -393,7 +506,8 @@
         (!category || topicCategory === category) &&
         (!subtopic || (question.subtopic || "arithmetic_other") === subtopic) &&
         (!type || question.question_type === type) &&
-        (!difficulty || String(question.difficulty) === difficulty);
+        (!difficulty || String(question.difficulty) === difficulty) &&
+        (!savedFilter || (savedFilter === "saved" && bookmarkedIds.has(String(question.id))));
     });
 
     $("bankResultCount").textContent = "Showing " + filtered.length + " of " + allQuestions.length + " practice questions";
@@ -544,7 +658,7 @@
     $("bankCompletedSummary").hidden = false;
     $("openBankDiagnostics").hidden = false;
     $("bankWorkspace").hidden = false;
-    ["bankSearch","bankCategory","bankSubtopic","bankType","bankDifficulty"].forEach(id => {
+    ["bankSearch","bankCategory","bankSubtopic","bankType","bankDifficulty","bankSavedFilter"].forEach(id => {
       $(id).addEventListener(id === "bankSearch" ? "input" : "change",() => {
         if (id === "bankCategory") updateSubtopicFilter();
         applyFilters();
@@ -568,6 +682,8 @@
       // Read the learner's saved completion state before rendering the list.
       await fetchProgress();
       allQuestions = await fetchAllQuestions();
+      await fetchBookmarks();
+      await fetchAttemptCounts(allQuestions);
       $("bankTotal").textContent = allQuestions.length.toLocaleString();
       $("bankStatus").hidden = true;
       if (!allQuestions.length) {
@@ -581,6 +697,11 @@
       await fetchStimuli(allQuestions);
       populateFilters();
       applyFilters();
+      window.addEventListener("focus",async () => {
+        await fetchBookmarks();
+        await fetchAttemptCounts(allQuestions);
+        applyFilters();
+      });
     } catch (error) {
       $("bankStatus").hidden = false;
       $("bankStatus").classList.add("error");
