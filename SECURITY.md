@@ -18,6 +18,10 @@ Review Storage policies after migration. The migration applies restrictive inser
 
 The Question Bank bookmark table and attempt ledger use row-level security and do not grant direct access to another learner's saved questions or attempt records. Aggregate question attempt totals are returned through a narrow RPC that exposes counts only.
 
+## Word Archery statistics
+
+Word Archery stores signed-in learner attempts in `gre_word_archery_attempts`. Row-level security limits direct reads to the learner's own records; score submission and aggregate statistics are exposed through authenticated RPCs. Guest statistics are stored only in the visitor's browser.
+
 ## Supabase project settings
 
 In the Supabase Dashboard, keep email confirmation enabled, restrict Auth redirect URLs, configure appropriate rate limits, enable CAPTCHA/bot protection if public registration is being abused, use strong administrator credentials, and enable MFA for administrator accounts where supported. Enable leaked-password protection when available on the project's plan. Coordinate password-policy changes with existing learners.
