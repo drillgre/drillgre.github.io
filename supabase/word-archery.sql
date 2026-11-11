@@ -124,7 +124,7 @@ begin
 
       select count(distinct t.token)::integer
       into v_target_count
-      join unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
+      from unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
       where length(t.token) > 2
         and t.token not in (
           'the','and','for','with','from','into','onto','that','this','these',
