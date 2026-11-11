@@ -489,7 +489,7 @@ async function resolveAnswer(answer,timedOut=false){
     G.correct++;
     G.score+=Number(result.points_awarded||10);
     G.streak++;
-    $("battleScene").classList.remove("enemy-fired","wrong");
+    $("battleScene").classList.remove("wrong");
     $("battleScene").classList.add("correct");
     setFeedback("Bullseye! "+(G.mode==="synonym"?"Synonym":"Meaning")+" accepted. +"+Number(result.points_awarded||10)+" points.","good");
     $("gameMessage").textContent=G.streak%3===0?"Three in a row! Streak bonus unlocked.":"Your arrow found its mark.";
