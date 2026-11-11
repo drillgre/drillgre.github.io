@@ -16,7 +16,7 @@
     .dash-hero h1{font-size:32px;letter-spacing:-1.2px;margin:6px 0}
     .dash-hero p{color:var(--muted);margin:0;font-size:13px}
     .dash-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--blue);color:#fff;padding:12px 17px;font-weight:800;white-space:nowrap}
-    .dash-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:18px 0}
+    .dash-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px;margin:18px 0}
     .progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
     .progress-track{height:10px;border-radius:99px;background:#e9edf5;overflow:hidden;margin:11px 0 8px}
     .progress-track span{display:block;height:100%;width:0;background:var(--blue);transition:width .2s}
@@ -35,6 +35,13 @@
     .dash-stat{background:white;border:1px solid var(--line);border-radius:14px;padding:18px}
     .dash-stat strong{display:block;font-size:28px;color:var(--navy)}
     .dash-stat span{font-size:12px;color:var(--muted)}
+    .archery-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+    .archery-heading h2{margin-bottom:5px}
+    .archery-stat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:15px 0 20px}
+    .archery-stat{background:#f7f9fd;border:1px solid var(--line);border-radius:11px;padding:14px}
+    .archery-stat strong{display:block;font-size:23px;color:var(--navy);line-height:1.2}
+    .archery-stat span{display:block;font-size:11px;color:var(--muted);margin-top:5px}
+    .archery-progress-note{font-size:12px;color:var(--muted);margin:8px 0 0}
     .dash-columns{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
     .dash-panel{background:white;border:1px solid var(--line);border-radius:15px;padding:20px;margin:14px 0}
     .dash-panel h2{font-size:18px;margin:0 0 14px}
@@ -49,8 +56,8 @@
     .dash-status{padding:13px 15px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;margin:15px 0}
     .dash-status.error{color:#9c3023;background:#fff4f2;border-color:#f0c9c3}
     .dash-actions{display:flex;gap:9px;flex-wrap:wrap}
-    @media(max-width:950px){.dash-grid{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}.dash-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:1050px){.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archery-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archery-heading{align-items:flex-start;flex-direction:column}}
     @media(max-width:560px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-hero h1{font-size:27px}.progress-secondary{grid-template-columns:1fr}.quiz-attempt-row{grid-template-columns:1fr}.quiz-attempt-row a{justify-self:start}}
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
@@ -109,6 +116,7 @@
       <div class="dash-stat"><strong id="mocksStarted">0</strong><span>Mock tests attempted</span></div>
       <div class="dash-stat"><strong id="mocksCompleted">0</strong><span>Mock tests completed</span></div>
       <div class="dash-stat"><strong id="questionBankCompleted">0</strong><span>Question Bank completed</span></div>
+      <div class="dash-stat"><strong id="wordsNailed">0</strong><span>Words nailed</span></div>
     </div>
     <section class="dash-panel">
       <h2>Learning progress</h2>
@@ -125,6 +133,25 @@
         <h3 style="font-size:14px;margin:0 0 9px">Lessons completed</h3>
         <div id="completedLessonList" class="completed-lesson-list"></div>
       </div>
+    </section>
+    <section class="dash-panel">
+      <div class="archery-heading">
+        <div>
+          <h2>Word Archery progress</h2>
+          <p class="account-muted" style="margin:0">Your saved performance across Synonym Shot and Meaning Shot.</p>
+        </div>
+        <a class="dash-button" href="/word-archery.html">Play Word Archery</a>
+      </div>
+      <div class="archery-stat-grid">
+        <div class="archery-stat"><strong id="archeryAttempts">0</strong><span>Total attempts</span></div>
+        <div class="archery-stat"><strong id="archeryCorrect">0</strong><span>Correct answers</span></div>
+        <div class="archery-stat"><strong id="archeryPoints">0</strong><span>Total points</span></div>
+        <div class="archery-stat"><strong id="archeryStreak">0</strong><span>Current streak</span></div>
+        <div class="archery-stat"><strong id="archeryAccuracy">0%</strong><span>Success rate</span></div>
+      </div>
+      <div class="progress-head"><strong>Word Archery accuracy</strong><span id="archeryAccuracyText">0%</span></div>
+      <div class="progress-track"><span id="archeryAccuracyBar"></span></div>
+      <p id="archeryProgressNote" class="archery-progress-note">Your saved Word Archery statistics will appear here.</p>
     </section>
     <div class="dash-columns">
       <section class="dash-panel">
