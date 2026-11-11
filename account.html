@@ -24,6 +24,14 @@
     .account-primary:disabled{opacity:.65;cursor:wait}
     .account-secondary{border:1px solid var(--line);border-radius:10px;background:white;padding:11px 15px;font-weight:700}
     .account-link{border:0;background:transparent;color:var(--blue);padding:10px 0;font:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer}
+    .social-auth{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0 15px}
+    .social-auth button{min-height:48px;display:flex;align-items:center;justify-content:center;gap:11px;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#1f2937;font:inherit;font-size:14px;font-weight:750;cursor:pointer;transition:background .15s,border-color .15s}
+    .social-auth button:hover{background:#f8fafc;border-color:#94a3b8}
+    .social-auth button:disabled{opacity:.6;cursor:wait}
+    .social-auth svg{width:19px;height:19px;flex:0 0 auto}
+    .social-divider{display:flex;align-items:center;gap:12px;color:#8490a3;font-size:11px;margin:14px 0}
+    .social-divider:before,.social-divider:after{content:"";height:1px;flex:1;background:var(--line)}
+    @media(max-width:600px){.social-auth{grid-template-columns:1fr}}
     .account-message{padding:12px;border-radius:10px;background:#f3f6ff;color:#33466f;font-size:13px;line-height:1.6;margin:14px 0}
     .account-message.error{background:#fff4f2;color:#9c3023}
     .otp-input{max-width:260px;font-size:24px!important;letter-spacing:8px;text-align:center;font-weight:850}
@@ -71,6 +79,24 @@
     <div id="accountMessage" class="account-message" hidden role="status"></div>
 
     <div id="accountForms">
+      <div class="social-auth" aria-label="Sign in with a social account">
+        <button id="googleOAuth" type="button">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.93c-.58 2.96-2.25 5.48-4.73 7.18l7.66 5.94c4.47-4.13 7.12-10.21 7.12-17.59z"/>
+            <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.94-2.13 15.92-5.86l-7.66-5.94c-2.13 1.43-4.87 2.28-8.26 2.28-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+        <button id="appleOAuth" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+            <path d="M16.37 12.3c.02 2.2 1.93 2.93 1.95 2.94-.02.05-.3 1.04-.99 2.06-.6.9-1.23 1.8-2.22 1.82-.97.02-1.28-.59-2.39-.59-1.1 0-1.45.57-2.36.61-.95.04-1.67-.97-2.28-1.86-1.24-1.8-2.19-5.08-.91-7.3.63-1.1 1.76-1.8 2.99-1.82.93-.02 1.8.65 2.38.65.57 0 1.64-.8 2.77-.68.47.02 1.8.19 2.65 1.43-.07.04-1.58.92-1.59 2.74ZM14.55 5.9c.5-.61.84-1.46.75-2.3-.72.03-1.59.48-2.1 1.08-.46.53-.86 1.4-.75 2.22.8.06 1.6-.4 2.1-1Z"/>
+          </svg>
+          <span>Continue with Apple</span>
+        </button>
+      </div>
+      <div class="social-divider"><span>or use email</span></div>
       <div class="account-tabs">
         <button id="loginTab" class="active" type="button">Sign in</button>
         <button id="registerTab" type="button">Create account</button>
