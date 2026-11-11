@@ -51,6 +51,7 @@ declare
   v_total_points integer := 0;
   v_rate numeric := 0;
   v_meaning text;
+  v_row record;
 begin
   if v_user_id is null then
     raise exception 'Sign in to save Word Archery results.';
@@ -58,8 +59,8 @@ begin
   if p_answer_mode not in ('synonym','meaning') then
     raise exception 'Choose either synonym or meaning mode.';
   end if;
-  if p_answer is null or length(trim(p_answer)) < 1 or length(p_answer) > 250 then
-    raise exception 'Enter an answer between 1 and 250 characters.';
+  if p_answer is null or length(p_answer) > 250 then
+    raise exception 'Your answer must be no longer than 250 characters.';
   end if;
 
   select * into v_word
@@ -78,7 +79,7 @@ begin
   if p_answer_mode = 'synonym' then
     for v_synonym in
       select trim(value)
-      from regexp_split_to_table(coalesce(v_word.synonyms,''), '[,;|]') as value
+      from regexp_split_to_table(coalesce(v_word.synonyms,''), '[,;|]') as s(value)
     loop
       v_target := trim(regexp_replace(lower(v_synonym), '[^a-z0-9]+', ' ', 'g'));
       if v_target <> '' and v_target = v_answer then
@@ -145,18 +146,23 @@ begin
   end if;
 
   if v_correct then
-    select count(*)::integer into v_streak_before
-    from (
+    -- Count the complete current consecutive streak so the bonus is awarded
+    -- on every third bullseye, not on every bullseye after the second.
+    for v_row in
       select is_correct
       from public.gre_word_archery_attempts
       where learner_id = v_user_id
       order by created_at desc, id desc
-      limit 2
-    ) recent
-    where is_correct;
+      limit 100
+    loop
+      if not v_row.is_correct then
+        exit;
+      end if;
+      v_streak_before := v_streak_before + 1;
+    end loop;
 
-    v_points := 10 + case when v_streak_before = 2 then 5 else 0 end;
     v_streak_after := v_streak_before + 1;
+    v_points := 10 + case when mod(v_streak_after,3) = 0 then 5 else 0 end;
   else
     v_points := 0;
     v_streak_after := 0;
