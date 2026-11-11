@@ -69,12 +69,17 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .word-prompt-label{color:#8fa1bf;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:900}
 .word-prompt{color:#fff;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.05em;font-weight:950;margin:5px 0 0;overflow-wrap:anywhere}
 .word-category{color:#9fb0ca;font-size:.73rem;margin-top:5px}
-.answer-area{display:grid;gap:9px}
+.answer-area{display:grid;gap:10px}
 .answer-mode-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.11em;color:#b6c3d8;font-weight:850}
-.answer-row{display:flex;gap:8px}
-.answer-input{min-width:0;background:#f8faff;border-color:#526582;min-height:48px}
-.answer-input:disabled{opacity:.7}
-.answer-input::placeholder{color:#8895a9}
+.answer-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.answer-option{display:flex;align-items:flex-start;gap:10px;min-height:64px;padding:11px 12px;text-align:left;border:1px solid #526582;border-radius:12px;background:#1a2a47;color:#e8eef9;font:inherit;font-size:.8rem;line-height:1.45;cursor:pointer;transition:background .16s,border-color .16s,transform .16s}
+.answer-option:hover:not(:disabled){border-color:#eac46f;background:#263b5e;transform:translateY(-1px)}
+.answer-option[aria-pressed="true"]{border:2px solid #ffd16f;background:#3a3428;color:#fff4cf;padding:10px 11px;box-shadow:0 0 0 2px #ffd16f18}
+.answer-option:disabled{opacity:.58;cursor:default}
+.option-letter{flex:0 0 23px;width:23px;height:23px;display:grid;place-items:center;border-radius:7px;background:#314665;color:#f8d98c;font-size:.7rem;font-weight:950}
+.answer-option[aria-pressed="true"] .option-letter{background:#ffd16f;color:#2b210e}
+.answer-option-text{overflow-wrap:anywhere}
+.answer-fire-row{display:flex;justify-content:flex-end}
 .feedback{min-height:23px;color:#b7c4d9;font-size:.78rem;line-height:1.45}
 .feedback.good{color:#8ee0ac;font-weight:800}
 .feedback.bad{color:#ff9fa5;font-weight:800}
@@ -94,21 +99,21 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .end-summary{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin:15px}
 .end-summary strong{display:block;font-size:1.5rem;color:#162a50}
 .end-summary span{font-size:.7rem;color:#77849a;text-transform:uppercase;letter-spacing:.1em;font-weight:850}
-@keyframes enemy-launch{0%{opacity:0;transform:translateX(0)}12%{opacity:1}90%{opacity:1}100%{opacity:1;transform:translateX(320px)}}
-@keyframes enemy-impact{0%{opacity:1;transform:translateX(320px)}100%{opacity:0;transform:translateX(455px)}}
-@keyframes enemy-fade{from{opacity:1;filter:blur(0);transform:translateX(320px) scale(1)}to{opacity:0;filter:blur(8px);transform:translateX(320px) scale(.72)}}
-@keyframes player-shot{0%{opacity:1;transform:translateX(0)}14%{opacity:1}100%{opacity:0;transform:translateX(-490px)}}
-@keyframes player-fade{to{opacity:0;filter:blur(8px);transform:scale(.7)}}
+@keyframes enemy-launch{0%{opacity:0;transform:translateX(0)}12%{opacity:1}100%{opacity:1;transform:translateX(135px)}}
+@keyframes enemy-meet-fade{0%{opacity:1;filter:blur(0);transform:translateX(135px)}70%{opacity:1;filter:blur(0);transform:translateX(135px)}100%{opacity:0;filter:blur(7px);transform:translateX(135px) scale(.88)}}
+@keyframes player-meet-fade{0%{opacity:0;filter:blur(0);transform:translateX(0)}12%{opacity:1}70%{opacity:1;filter:blur(0);transform:translateX(-225px)}100%{opacity:0;filter:blur(7px);transform:translateX(-225px) scale(.88)}}
+@keyframes enemy-impact{0%{opacity:1;transform:translateX(135px)}70%{opacity:1;transform:translateX(330px)}100%{opacity:0;filter:blur(5px);transform:translateX(410px)}}
+@keyframes player-fade{0%{opacity:1;filter:blur(0);transform:translateX(0)}100%{opacity:0;filter:blur(8px);transform:translateX(-12px) scale(.7)}}
 .enemy-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
 .player-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
-.scene.enemy-fired .enemy-arrow{animation:enemy-launch .82s cubic-bezier(.18,.68,.28,1) forwards}
-.scene.correct .enemy-arrow{animation:enemy-fade .42s ease-out forwards}
-.scene.correct .player-arrow{opacity:1;animation:player-shot .72s cubic-bezier(.2,.68,.25,1) forwards}
-.scene.wrong .player-arrow{opacity:1;animation:player-fade .48s ease-out forwards}
-.scene.wrong .enemy-arrow{animation:enemy-impact .62s ease-in forwards}
+.scene.enemy-fired .enemy-arrow{animation:enemy-launch .72s cubic-bezier(.18,.68,.28,1) forwards}
+.scene.correct .enemy-arrow{animation:enemy-meet-fade .78s ease-in-out forwards}
+.scene.correct .player-arrow{opacity:1;animation:player-meet-fade .78s ease-in-out forwards}
+.scene.wrong .player-arrow{opacity:1;animation:player-fade .38s ease-out forwards}
+.scene.wrong .enemy-arrow{animation:enemy-impact .65s cubic-bezier(.18,.68,.28,1) forwards}
 .impact{opacity:0;transform-origin:center}
-.scene.correct .impact-player{animation:impact-pop .42s ease-out .62s forwards}
-.scene.wrong .impact-target{animation:impact-pop .42s ease-out .5s forwards}
+.scene.correct .impact-player{animation:impact-pop .52s ease-out .52s forwards}
+.scene.wrong .impact-target{animation:impact-pop .42s ease-out .42s forwards}
 @keyframes impact-pop{0%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1.8)}}
 @media(max-width:780px){
  main{width:min(100% - 24px,680px);padding:22px 0 40px}
@@ -121,11 +126,15 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
  .arena{min-height:160px;padding:8px 8px 3px}
  .arena svg{min-height:150px}
  .challenge{grid-template-columns:1fr;padding:16px}
- .answer-row{flex-direction:column}
+ .answer-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .answer-fire-row{justify-content:stretch}
+ .answer-fire-row .btn{width:100%}
  .game-bottom{align-items:flex-start}
 }
 @media(max-width:430px){
  .mode-options{grid-template-columns:1fr}
+ .answer-options{grid-template-columns:1fr}
+ .answer-option{min-height:54px}
  .game-stat span{font-size:.54rem}
  .game-stat strong{font-size:.9rem}
  .arena-caption{font-size:.5rem}
@@ -170,7 +179,7 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
     <div class="setup-grid">
       <div>
         <h2>Choose your weapon</h2>
-        <p class="sub">Pick the kind of answer you want to practise. You can change it before every new duel.</p>
+        <p class="sub">Choose your challenge type before the duel begins. Every round gives you four answer options to choose from.</p>
         <div class="mode-options">
           <label class="mode-option">
             <input type="radio" name="answerMode" value="synonym" checked>
@@ -254,12 +263,13 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
         </g>
         <g id="playerArrow" class="player-arrow" filter="url(#arrowGlow)">
           <path d="M725 180 L815 180" stroke="#ffd16f" stroke-width="6" stroke-linecap="round"/>
-          <path d="M815 180 L797 169 L801 180 L797 191Z" fill="#fff0a8"/>
-          <path d="M725 180 L741 168 L738 180 L741 192Z" fill="#ffe5a0"/>
-          <path d="M787 180 L800 165 M787 180 L800 195" stroke="#fff" stroke-width="3"/>
+          <path d="M725 180 L743 169 L739 180 L743 191Z" fill="#fff0a8"/>
+          <path d="M815 180 L799 168 L802 180 L799 192Z" fill="#ffe5a0"/>
+          <path d="M803 180 L815 165 M803 180 L815 195" stroke="#fff" stroke-width="3"/>
         </g>
         <g class="impact impact-player" fill="none" stroke="#ffe38c" stroke-width="5">
-          <path d="M240 145 L240 115 M225 130 L195 130 M255 130 L285 130 M218 108 L198 88 M262 108 L282 88"/>
+          <path d="M500 145 L500 112 M483 128 L450 128 M517 128 L550 128 M486 101 L465 80 M514 101 L535 80"/>
+          <circle cx="500" cy="128" r="12" fill="#ffe38c" fill-opacity=".24" stroke="#fff0bd"/>
         </g>
         <g class="impact impact-target" fill="none" stroke="#ff7580" stroke-width="5">
           <path d="M760 145 L760 115 M745 130 L715 130 M775 130 L805 130 M738 108 L718 88 M782 108 L802 88"/>
@@ -278,8 +288,9 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
         <div class="word-category" id="challengeCategory">A word will appear here</div>
       </div>
       <form class="answer-area" id="answerForm">
-        <label class="answer-mode-label" id="answerModeLabel" for="answerInput">Your synonym</label>
-        <div class="answer-row"><input id="answerInput" class="answer-input" type="text" maxlength="250" autocomplete="off" autocapitalize="off" placeholder="Type your answer…" disabled><button id="fireBtn" class="btn btn-gold" type="submit" disabled>Fire</button></div>
+        <label class="answer-mode-label" id="answerModeLabel">Choose the correct synonym</label>
+        <div id="answerOptions" class="answer-options" role="group" aria-label="Choose an answer"></div>
+        <div class="answer-fire-row"><button id="fireBtn" class="btn btn-gold" type="submit" disabled>Fire selected answer</button></div>
         <div id="feedback" class="feedback" role="status" aria-live="polite">The opponent is preparing a word challenge.</div>
       </form>
     </div>
@@ -308,7 +319,7 @@ const db=window.supabase.createClient(ARCHERY_SUPABASE_URL,ARCHERY_SUPABASE_KEY)
 const $=id=>document.getElementById(id);
 const LOCAL_KEY="drillgre_word_archery_guest_v1";
 const G={
-  user:null,localOnly:false,words:[],pool:[],used:new Set(),mode:"synonym",limit:10,round:0,score:0,
+  user:null,localOnly:false,words:[],pool:[],used:new Set(),mode:"synonym",options:[],selectedAnswer:"",limit:10,round:0,score:0,
   correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,timer:null,seconds:20,
   stats:{total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}
 };
@@ -319,29 +330,50 @@ function normalise(value){
 function stopWords(){
   return new Set("the and for with from into onto that this these those their there then than which what when where while whose your you are was were been being have has had does did doing not but can could would should will may might must about over under between through such some more most very often also only each any all one two three its our out per who whom how why to of in on at a an or be as is".split(" "));
 }
-function meaningMatches(answer,meanings){
-  const typed=normalise(answer);
-  if(!typed)return false;
-  const ignored=stopWords();
-  const answerWords=[...new Set(typed.split(" ").filter(word=>word.length>2&&!ignored.has(word)))];
-  for(const meaning of meanings){
-    const target=normalise(meaning);
-    if(!target)continue;
-    if(typed===target)return true;
-    const targetWords=[...new Set(target.split(" ").filter(word=>word.length>2&&!ignored.has(word)))];
-    if(!targetWords.length)continue;
-    const overlap=answerWords.filter(word=>targetWords.includes(word)).length;
-    const required=Math.max(1,Math.ceil(targetWords.length*.5));
-    if(overlap>=required && answerWords.length<=targetWords.length+3)return true;
-  }
-  return false;
+function answerCandidates(word,mode){
+  if(mode==="synonym")return String(word.synonyms||"").split(/[,;|]/).map(x=>x.trim()).filter(Boolean);
+  return (word.meanings||[]).map(x=>String(x||"").trim()).filter(Boolean);
 }
 function localIsCorrect(word,mode,answer){
-  if(mode==="synonym"){
-    const accepted=String(word.synonyms||"").split(/[,;|]/).map(normalise).filter(Boolean);
-    return accepted.includes(normalise(answer));
-  }
-  return meaningMatches(answer,word.meanings||[]);
+  return answerCandidates(word,mode).map(normalise).filter(Boolean).includes(normalise(answer));
+}
+function shuffleArray(items){
+  const result=items.slice();
+  for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}
+  return result;
+}
+function buildAnswerOptions(word,mode){
+  const correctPool=answerCandidates(word,mode);
+  if(!correctPool.length)return [];
+  const correct=correctPool[Math.floor(Math.random()*correctPool.length)];
+  const correctKey=normalise(correct);
+  const distractors=new Map();
+  G.words.forEach(other=>{
+    if(other.id===word.id)return;
+    answerCandidates(other,mode).forEach(candidate=>{
+      const key=normalise(candidate);
+      if(key&&key!==correctKey&&!distractors.has(key))distractors.set(key,candidate);
+    });
+  });
+  return shuffleArray([correct,...shuffleArray([...distractors.values()]).slice(0,3)]);
+}
+function renderAnswerOptions(){
+  const host=$("answerOptions");
+  host.innerHTML=G.options.map((option,index)=>
+    '<button class="answer-option" type="button" data-answer-option="'+index+'" aria-pressed="false">'+
+    '<span class="option-letter">'+String.fromCharCode(65+index)+'</span>'+
+    '<span class="answer-option-text">'+esc(option)+'</span></button>'
+  ).join("");
+  $("fireBtn").disabled=true;
+  host.querySelectorAll("[data-answer-option]").forEach(button=>{
+    button.addEventListener("click",()=>{
+      if(G.locked)return;
+      G.selectedAnswer=G.options[Number(button.dataset.answerOption)]||"";
+      host.querySelectorAll("[data-answer-option]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
+      $("fireBtn").disabled=!G.selectedAnswer;
+      setFeedback("Answer selected. Fire when you are ready.");
+    });
+  });
 }
 function statsStorageKey(){
   return G.user?("drillgre_word_archery_user_"+G.user.id):LOCAL_KEY;
@@ -433,31 +465,33 @@ function nextRound(){
   G.current=chooseWord();
   if(!G.current){finishGame("There are no words with answers for this mode. Try the other answer mode.");return}
   G.locked=false;
+  G.selectedAnswer="";
+  G.options=buildAnswerOptions(G.current,G.mode);
   $("promptLabel").textContent="Incoming word · "+(G.mode==="synonym"?"Synonym Shot":"Meaning Shot");
   $("challengeWord").textContent=G.current.word;
   $("challengeCategory").textContent=G.current.category||"GRE vocabulary";
-  $("answerModeLabel").textContent=G.mode==="synonym"?"Your synonym":"Your short meaning";
-  $("answerInput").placeholder=G.mode==="synonym"?"Type one synonym…":"Write a short meaning…";
-  $("answerInput").disabled=false;
-  $("answerInput").value="";
-  $("fireBtn").disabled=false;
+  $("answerModeLabel").textContent=G.mode==="synonym"?"Choose the correct synonym":"Choose the short meaning";
+  renderAnswerOptions();
   $("nextRoundBtn").classList.add("hidden");
-  setFeedback("The Red Fletch has sent a word challenge. Shoot back with your answer.");
+  if(!G.options.length){
+    G.locked=true;
+    setFeedback("No answer options are available for this word and mode. Try the other answer mode.","bad");
+    return;
+  }
+  setFeedback("Choose one of the options, then fire your arrow.");
   updateGameHud();
   fireOpponentArrow();
   startTimer();
-  setTimeout(()=>$("answerInput").focus({preventScroll:true}),180);
 }
 async function resolveAnswer(answer,timedOut=false){
   if(G.locked||!G.current)return;
   if(!timedOut&&!String(answer||"").trim()){
-    setFeedback("Enter a synonym or short meaning before firing.","bad");
-    $("answerInput").focus();
+    setFeedback("Choose one of the answer options before firing.","bad");
     return;
   }
   G.locked=true;
   clearTimer();
-  $("answerInput").disabled=true;
+  $("answerOptions").querySelectorAll("button").forEach(button=>button.disabled=true);
   $("fireBtn").disabled=true;
   let result;
   try{
@@ -483,8 +517,8 @@ async function resolveAnswer(answer,timedOut=false){
     }
   }catch(error){
     G.locked=false;
-    $("answerInput").disabled=false;
-    $("fireBtn").disabled=false;
+    $("answerOptions").querySelectorAll("button").forEach(button=>button.disabled=false);
+    $("fireBtn").disabled=!G.selectedAnswer;
     setFeedback("Could not record this attempt. "+(error.message||"Please try again."),"bad");
     return;
   }
@@ -589,7 +623,7 @@ async function init(){
 $("startGame").addEventListener("click",startGame);
 $("answerForm").addEventListener("submit",event=>{
   event.preventDefault();
-  resolveAnswer($("answerInput").value,false);
+  resolveAnswer(G.selectedAnswer,false);
 });
 $("nextRoundBtn").addEventListener("click",nextRound);
 $("quitBtn").addEventListener("click",()=>finishGame("You ended this duel. Your completed attempts and points have been retained."));
