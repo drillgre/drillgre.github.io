@@ -107,8 +107,8 @@ begin
       -- definition's meaningful words, excluding common grammatical words.
       select count(distinct a.token)::integer
       into v_overlap
-      from unnest(regexp_split_to_array(v_answer, '\s+')) as a(token)
-      join unnest(regexp_split_to_array(v_target, '\s+')) as t(token)
+      from unnest(regexp_split_to_array(v_answer, '[[:space:]]+')) as a(token)
+      join unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
         on a.token = t.token
       where length(a.token) > 2
         and a.token not in (
@@ -124,7 +124,7 @@ begin
 
       select count(distinct t.token)::integer
       into v_target_count
-      from unnest(regexp_split_to_array(v_target, '\s+')) as t(token)
+      join unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
       where length(t.token) > 2
         and t.token not in (
           'the','and','for','with','from','into','onto','that','this','these',
