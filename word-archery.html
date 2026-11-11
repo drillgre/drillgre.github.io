@@ -60,11 +60,11 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .game-stat span{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:#9ba9c2;font-weight:800}
 .game-stat strong{display:block;margin-top:3px;color:#fff;font-size:1.2rem;font-weight:900}
 .game-stat strong.gold{color:#ffd57c}
-.arena{position:relative;background:radial-gradient(ellipse at 50% 72%,#263858 0,#142440 40%,#0b1428 78%);padding:8px 18px 4px;min-height:230px}
-.arena:before{content:"";position:absolute;left:0;right:0;bottom:24px;height:1px;background:linear-gradient(90deg,transparent,#7285a7aa,transparent)}
-.arena:after{content:"";position:absolute;left:0;right:0;bottom:0;height:35px;background:linear-gradient(0deg,#060d1caa,transparent);pointer-events:none}
-.arena svg{display:block;width:100%;height:auto;max-height:285px;position:relative;z-index:1}
-.arena-caption{position:absolute;left:18px;right:18px;bottom:9px;z-index:2;display:flex;justify-content:space-between;color:#8394b2;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:900}
+.arena{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 50% 46%,#345477 0,#192f4e 36%,#0c1930 69%,#07101f 100%);padding:12px 18px 18px;min-height:270px}
+.arena:before{content:"";position:absolute;left:5%;right:5%;bottom:34px;height:2px;background:linear-gradient(90deg,transparent,#e0bd7777 18%,#9fc3e077 50%,#e0bd7777 82%,transparent);box-shadow:0 0 18px #8dbbdf44;z-index:0}
+.arena:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 15% 18%,#fff 0 1px,transparent 2px),radial-gradient(circle at 29% 72%,#f3dba4 0 1px,transparent 2px),radial-gradient(circle at 72% 21%,#fff 0 1px,transparent 2px),radial-gradient(circle at 85% 68%,#d3e7ff 0 1px,transparent 2px),linear-gradient(180deg,transparent 65%,#050b17aa 100%);background-size:100% 100%;pointer-events:none;z-index:0}
+.arena svg{display:block;width:100%;height:auto;max-height:315px;position:relative;z-index:1;overflow:visible}
+.arena-caption{position:absolute;left:24px;right:24px;bottom:10px;z-index:2;display:flex;justify-content:space-between;color:#bdcce2;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;font-weight:950;text-shadow:0 2px 8px #000}
 .challenge{display:grid;grid-template-columns:1fr minmax(220px,.8fr);gap:16px;align-items:center;padding:22px clamp(16px,3vw,30px) 25px;background:linear-gradient(110deg,#121f39,#172744)}
 .word-prompt-label{color:#8fa1bf;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:900}
 .word-prompt{color:#fff;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.05em;font-weight:950;margin:5px 0 0;overflow-wrap:anywhere}
@@ -100,6 +100,20 @@ html.wa-pseudo-fullscreen #gamePanel .arena svg{width:100%;max-height:42vh;max-h
 html.wa-pseudo-fullscreen #gamePanel .challenge{flex:0 0 auto}
 html.wa-pseudo-fullscreen #gamePanel .game-bottom{flex:0 0 auto}
 html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;right:12px}
+.missed-panel{margin-top:16px;padding:clamp(18px,3vw,26px);background:#fff9ee;border:1px solid #f1d9ab;border-radius:20px;box-shadow:0 12px 32px #7e52110c}
+.missed-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:15px}
+.missed-head h2{margin:5px 0;color:#26334a;font-size:1.3rem;letter-spacing:-.03em}
+.missed-head p{margin:0;color:#75684d;font-size:.83rem;line-height:1.5}
+.missed-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.missed-word{padding:14px 15px;background:#fff;border:1px solid #eedfbd;border-radius:13px;min-width:0}
+.missed-word-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px}
+.missed-word-name{font-size:1.05rem;font-weight:950;color:#26334a;overflow-wrap:anywhere}
+.missed-word-mode{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#9a6b24}
+.missed-answer{font-size:.76rem;line-height:1.5;color:#6b7484;margin-top:5px;overflow-wrap:anywhere}
+.missed-answer b{color:#39445a}
+.missed-sync{font-size:.66rem;font-weight:800;color:#31704c;margin-top:8px}
+.missed-sync.warn{color:#a24c35}
+@media(max-width:650px){.missed-list{grid-template-columns:1fr}.missed-head .btn{width:100%}}
 .end-panel{padding:25px;text-align:center;background:#fff;border:1px solid #e4e9f2;border-radius:20px;margin-top:16px}
 .end-panel h2{font-size:1.65rem;margin:0 0 7px;color:#142449}
 .end-panel p{color:#68758d;line-height:1.6}
@@ -111,6 +125,18 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
 @keyframes player-meet-fade{0%{opacity:0;filter:blur(0);transform:translateX(0)}12%{opacity:1}70%{opacity:1;filter:blur(0);transform:translateX(-225px)}100%{opacity:0;filter:blur(7px);transform:translateX(-225px) scale(.88)}}
 @keyframes enemy-impact{0%{opacity:1;filter:blur(0);transform:translateX(0)}72%{opacity:1;filter:blur(0);transform:translateX(330px)}100%{opacity:0;filter:blur(5px);transform:translateX(410px)}}
 @keyframes player-fade{0%{opacity:1;filter:blur(0);transform:translateX(0)}100%{opacity:0;filter:blur(8px);transform:translateX(-12px) scale(.7)}}
+@keyframes bow-release-left{0%{transform:scaleX(1)}32%{transform:scaleX(.88) translateX(4px)}100%{transform:scaleX(1)}}
+@keyframes bow-release-right{0%{transform:scaleX(1)}32%{transform:scaleX(.88) translateX(-4px)}100%{transform:scaleX(1)}}
+@keyframes bow-recoil-left{0%{transform:scaleX(.94)}100%{transform:scaleX(1)}}
+.clash-sigil{transform-origin:500px 148px;transition:opacity .3s,transform .3s}
+.scene.correct .clash-sigil{opacity:.08;transform:scale(1.28)}
+@media(prefers-reduced-motion:reduce){.battle-bow,.enemy-arrow,.player-arrow,.impact,.clash-sigil{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.battle-bow{filter:drop-shadow(0 0 14px #f5bd6b35);transform-box:fill-box;transform-origin:center}
+.bow-limb{stroke-dasharray:1;stroke-dashoffset:0}
+.bow-string{filter:drop-shadow(0 0 5px #fff0bd)}
+.scene.enemy-fired .enemy-bow{animation:bow-release-left .52s cubic-bezier(.2,.7,.25,1) both}
+.scene.correct .player-bow{animation:bow-release-right .48s cubic-bezier(.2,.7,.25,1) both}
+.scene.wrong .enemy-bow{animation:bow-recoil-left .55s ease-out both}
 .enemy-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
 .player-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
 .scene.enemy-fired .enemy-arrow{animation:enemy-launch .72s cubic-bezier(.18,.68,.28,1) forwards}
@@ -139,8 +165,8 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
  .game-top{grid-template-columns:repeat(4,minmax(0,1fr));padding:10px}
  .game-stat{padding:5px 7px}
  .game-stat strong{font-size:1rem}
- .arena{min-height:160px;padding:8px 8px 3px}
- .arena svg{min-height:150px}
+ .arena{min-height:170px;padding:12px 8px 22px}
+ .arena svg{min-height:160px}
  .challenge{grid-template-columns:1fr;padding:16px}
  .answer-options{grid-template-columns:repeat(2,minmax(0,1fr))}
  .answer-fire-row{justify-content:stretch}
@@ -155,6 +181,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
  .game-stat strong{font-size:.9rem}
  .arena-caption{font-size:.5rem}
  .game-actions{width:100%}.game-actions .btn{flex:1}
+ .missed-panel{padding:16px}
  .stat{padding:11px}
  .stat strong{font-size:1.45rem}
 }
@@ -195,7 +222,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
     <div class="setup-grid">
       <div>
         <h2>Choose your weapon</h2>
-        <p class="sub">Choose your challenge type before the duel begins. Every round gives you four answer options to choose from.</p>
+        <p class="sub">Choose your challenge type before the duel begins. Every round gives you four options, a timed shot, and an automatic next round after the arrows resolve.</p>
         <div class="mode-options">
           <label class="mode-option">
             <input type="radio" name="answerMode" value="synonym" checked>
@@ -215,7 +242,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
         <ul>
           <li>A word challenge appears and the 20-second clock starts.</li>
           <li>Choose one of the four options. Your selection triggers the opponent's arrow.</li>
-          <li>Fire your answer. A correct shot meets the opponent's arrow in a blazing collision.</li>
+          <li>Fire your answer. A correct shot meets the opponent's arrow in a bright collision burst, then the next word appears automatically.</li>
           <li>A wrong answer, or a timeout, lets the opponent's arrow hit your shield. You lose one life.</li>
           <li>Earn <b>10 points</b> per bullseye and <b>5 bonus points</b> for every third consecutive hit.</li>
         </ul>
@@ -246,31 +273,36 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
         <g fill="#d6e3ff" opacity=".6"><circle cx="375" cy="42" r="2"/><circle cx="426" cy="88" r="1.5"/><circle cx="600" cy="33" r="2"/><circle cx="668" cy="82" r="1.5"/><circle cx="520" cy="18" r="1.5"/></g>
         <path d="M0 236 Q130 190 250 232 T500 225 T750 228 T1000 214 V300 H0Z" fill="#152b40" opacity=".78"/>
         <path d="M0 260 Q180 230 350 258 T680 256 T1000 242" fill="none" stroke="#66809a" stroke-opacity=".32" stroke-width="2"/>
-        <g id="opponentArcher" transform="translate(100 60)">
-          <path d="M93 82 Q68 95 76 145 L83 197 L127 197 L132 146 Q140 107 115 83Z" fill="#7a3045" stroke="#df7c76" stroke-width="3"/>
-          <circle cx="105" cy="49" r="26" fill="#d99a78" stroke="#6a3345" stroke-width="4"/>
-          <path d="M79 43 Q81 15 109 18 Q137 18 132 48 Q122 35 107 35 Q91 40 79 43Z" fill="#2b2637"/>
-          <path d="M85 72 L63 95 L78 108 L100 88Z M123 73 L151 96 L138 111 L113 90Z" fill="#d99a78" stroke="#6a3345" stroke-width="3"/>
-          <path d="M87 194 L78 237 L58 253 L68 262 L105 246 L113 203Z M123 194 L135 237 L155 251 L146 263 L107 246 L101 202Z" fill="#293c59" stroke="#d99a78" stroke-width="3"/>
-          <path d="M151 92 Q196 144 151 202" fill="none" stroke="url(#bowWood)" stroke-width="8" stroke-linecap="round"/>
-          <path d="M151 92 L151 202" stroke="#f0d9a1" stroke-width="2"/>
-          <path d="M144 121 L174 121" stroke="#f4c76b" stroke-width="3"/>
-          <path d="M166 114 L179 121 L166 128" fill="none" stroke="#f4c76b" stroke-width="3"/>
-          <path d="M52 84 L33 113 L42 119 L64 95" fill="#a64d5b"/>
-          <circle cx="105" cy="49" r="5" fill="#2a2330"/>
+        <g id="opponentBow" class="battle-bow enemy-bow">
+          <path d="M270 38 C168 79 150 150 270 262" fill="none" stroke="#070e1c" stroke-width="30" stroke-linecap="round" opacity=".72"/>
+          <path class="bow-limb" d="M270 38 C168 79 150 150 270 262" fill="none" stroke="url(#enemyMetal)" stroke-width="19" stroke-linecap="round"/>
+          <path d="M266 43 C178 84 164 151 267 255" fill="none" stroke="#ffc5a5" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+          <path class="bow-string" d="M270 38 L270 262" stroke="#ffe3c1" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M263 42 L281 33 M263 258 L281 267" stroke="#ffdd9c" stroke-width="7" stroke-linecap="round"/>
+          <path d="M253 138 Q236 150 253 162 L276 162 L276 138Z" fill="#7f3348" stroke="#ffc18d" stroke-width="3"/>
+          <path d="M253 144 L270 144 M253 156 L270 156" stroke="#ffcf91" stroke-width="2"/>
+          <path d="M237 111 L249 119 M228 143 L242 146 M233 180 L248 175" stroke="#ff9b88" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="270" cy="38" r="7" fill="#ffe2b2" stroke="#8f384c" stroke-width="3"/>
+          <circle cx="270" cy="262" r="7" fill="#ffe2b2" stroke="#8f384c" stroke-width="3"/>
+          <path d="M190 104 Q215 150 190 196" fill="none" stroke="#ff8e82" stroke-width="2" stroke-dasharray="4 8" opacity=".5"/>
         </g>
-        <g id="learnerArcher" transform="translate(900 60) scale(-1 1)">
-          <path d="M93 82 Q68 95 76 145 L83 197 L127 197 L132 146 Q140 107 115 83Z" fill="#234b78" stroke="#7baeea" stroke-width="3"/>
-          <circle cx="105" cy="49" r="26" fill="#d8ad8a" stroke="#284e77" stroke-width="4"/>
-          <path d="M79 43 Q81 15 109 18 Q137 18 132 48 Q122 35 107 35 Q91 40 79 43Z" fill="#202b42"/>
-          <path d="M85 72 L63 95 L78 108 L100 88Z M123 73 L151 96 L138 111 L113 90Z" fill="#d8ad8a" stroke="#284e77" stroke-width="3"/>
-          <path d="M87 194 L78 237 L58 253 L68 262 L105 246 L113 203Z M123 194 L135 237 L155 251 L146 263 L107 246 L101 202Z" fill="#293c59" stroke="#d8ad8a" stroke-width="3"/>
-          <path d="M151 92 Q196 144 151 202" fill="none" stroke="url(#bowWood)" stroke-width="8" stroke-linecap="round"/>
-          <path d="M151 92 L151 202" stroke="#f0d9a1" stroke-width="2"/>
-          <path d="M144 121 L174 121" stroke="#f4c76b" stroke-width="3"/>
-          <path d="M166 114 L179 121 L166 128" fill="none" stroke="#f4c76b" stroke-width="3"/>
-          <path d="M52 84 L33 113 L42 119 L64 95" fill="#35669a"/>
-          <circle cx="105" cy="49" r="5" fill="#252d3a"/>
+        <g id="playerBow" class="battle-bow player-bow">
+          <path d="M730 38 C832 79 850 150 730 262" fill="none" stroke="#070e1c" stroke-width="30" stroke-linecap="round" opacity=".72"/>
+          <path class="bow-limb" d="M730 38 C832 79 850 150 730 262" fill="none" stroke="url(#playerMetal)" stroke-width="19" stroke-linecap="round"/>
+          <path d="M734 43 C822 84 836 151 733 255" fill="none" stroke="#fff1b3" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+          <path class="bow-string" d="M730 38 L730 262" stroke="#fff0bd" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M737 42 L719 33 M737 258 L719 267" stroke="#fff0a8" stroke-width="7" stroke-linecap="round"/>
+          <path d="M747 138 Q764 150 747 162 L724 162 L724 138Z" fill="#a87832" stroke="#fff0a8" stroke-width="3"/>
+          <path d="M747 144 L730 144 M747 156 L730 156" stroke="#fff2bc" stroke-width="2"/>
+          <path d="M763 111 L751 119 M772 143 L758 146 M767 180 L752 175" stroke="#ffdf8c" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="730" cy="38" r="7" fill="#fff1b5" stroke="#9a672b" stroke-width="3"/>
+          <circle cx="730" cy="262" r="7" fill="#fff1b5" stroke="#9a672b" stroke-width="3"/>
+          <path d="M810 104 Q785 150 810 196" fill="none" stroke="#ffe6a0" stroke-width="2" stroke-dasharray="4 8" opacity=".55"/>
+        </g>
+        <g class="clash-sigil" fill="none" stroke="#a9c9e8" opacity=".36">
+          <circle cx="500" cy="148" r="90" stroke-width="1.2" stroke-dasharray="2 10"/>
+          <circle cx="500" cy="148" r="66" stroke-width="1.2"/>
+          <path d="M500 44 L500 62 M500 234 L500 252 M396 148 L414 148 M586 148 L604 148 M426 74 L439 87 M561 209 L574 222 M574 74 L561 87 M439 209 L426 222" stroke-width="2"/>
         </g>
         <g id="enemyArrow" class="enemy-arrow" filter="url(#arrowGlow)">
           <path d="M275 180 L365 180" stroke="#ff6870" stroke-width="6" stroke-linecap="round"/>
@@ -301,7 +333,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
           <path d="M18 -22 L18 18" stroke="#d6e5ff" stroke-opacity=".35"/>
         </g>
       </svg>
-      <div class="arena-caption"><span>Opponent · The Red Fletch</span><span>You · The Golden Arrow</span></div>
+      <div class="arena-caption"><span>Crimson Bow · Opponent</span><span>Your Bow · Golden Arrow</span></div>
     </div>
     <div class="challenge">
       <div>
@@ -320,6 +352,14 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
       <div class="game-message" id="gameMessage">Aim carefully. Every answer counts.</div>
       <div class="game-actions"><button id="nextRoundBtn" class="btn btn-gold hidden" type="button">Next arrow →</button><button id="quitBtn" class="btn" type="button">End duel</button></div>
     </div>
+  </section>
+
+  <section id="missedPanel" class="missed-panel hidden" aria-live="polite">
+    <div class="missed-head">
+      <div><div class="eyebrow">Your recovery targets</div><h2>Words to revisit</h2><p>Missed words are automatically added to <b>Revisit</b> in Vocab Mountain.</p></div>
+      <a class="btn btn-primary" href="/vocab.html">Open Vocab Mountain ↗</a>
+    </div>
+    <div id="missedList" class="missed-list"></div>
   </section>
 
   <section id="endPanel" class="end-panel hidden">
@@ -342,7 +382,7 @@ const $=id=>document.getElementById(id);
 const LOCAL_KEY="drillgre_word_archery_guest_v1";
 const G={
   user:null,localOnly:false,words:[],pool:[],used:new Set(),mode:"synonym",options:[],selectedAnswer:"",limit:10,round:0,score:0,
-  correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,opponentLaunched:false,timer:null,seconds:20,
+  correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,opponentLaunched:false,timer:null,advanceTimer:null,seconds:20,missedWords:new Map(),
   stats:{total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}
 };
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -397,6 +437,63 @@ function renderAnswerOptions(){
       setFeedback("The Red Fletch has fired! Lock in your answer.");
     });
   });
+}
+function reviewProgressStorageKey(){
+  return G.user
+    ? "drillgre_vocab_word_status_user_"+G.user.id
+    : "drillgre_vocab_word_status_guest_v1";
+}
+function saveLocalReviewStatus(wordId){
+  try{
+    const key=reviewProgressStorageKey();
+    const saved=JSON.parse(localStorage.getItem(key)||"{}");
+    saved[String(wordId)]="review";
+    localStorage.setItem(key,JSON.stringify(saved));
+  }catch(error){
+    // The session review list still remains available if browser storage is blocked.
+  }
+}
+function renderMissedWords(){
+  const entries=[...G.missedWords.values()];
+  $("missedPanel").classList.toggle("hidden",entries.length===0);
+  $("missedList").innerHTML=entries.map(item=>
+    '<article class="missed-word">'+
+      '<div class="missed-word-top"><span class="missed-word-name">'+esc(item.word)+'</span><span class="missed-word-mode">'+(item.mode==="synonym"?"Synonym shot":"Meaning shot")+'</span></div>'+
+      '<div class="missed-answer"><b>Your answer:</b> '+esc(item.given||"No answer · Time expired")+'</div>'+
+      '<div class="missed-answer"><b>Correct answer:</b> '+esc(item.correctAnswers.join(" · ")||"No answer stored")+'</div>'+
+      '<div class="missed-sync '+(item.reviewSaved===false?"warn":"")+'">'+esc(item.reviewLabel||"Adding to Vocab Mountain…")+'</div>'+
+    '</article>'
+  ).join("");
+}
+async function addMissedWordToReview(word,answer,timedOut){
+  const correctAnswers=answerCandidates(word,G.mode);
+  const item={
+    id:String(word.id),word:word.word,mode:G.mode,
+    given:timedOut?"":String(answer||"").trim(),
+    correctAnswers,timedOut,reviewSaved:null,reviewLabel:G.user?"Saving to Vocab Mountain…":"Saved on this device · Vocab Mountain Revisit"
+  };
+  G.missedWords.set(item.id,item);
+  saveLocalReviewStatus(item.id);
+  renderMissedWords();
+  if(!G.user)return;
+  try{
+    const {error}=await db.from("vocab_word_progress").upsert({
+      learner_id:G.user.id,
+      vocab_word_id:item.id,
+      status:"review",
+      updated_at:new Date().toISOString()
+    },{onConflict:"learner_id,vocab_word_id"});
+    if(error)throw error;
+    item.reviewSaved=true;
+    item.reviewLabel="Saved to Vocab Mountain · Revisit";
+  }catch(error){
+    item.reviewSaved=false;
+    item.reviewLabel="Device copy saved, but account sync failed. Check vocab-word-progress.sql.";
+  }
+  renderMissedWords();
+}
+function clearAdvanceTimer(){
+  if(G.advanceTimer){clearTimeout(G.advanceTimer);G.advanceTimer=null;}
 }
 function statsStorageKey(){
   return G.user?("drillgre_word_archery_user_"+G.user.id):LOCAL_KEY;
@@ -484,6 +581,7 @@ function chooseWord(){
 }
 function nextRound(){
   clearTimer();
+  clearAdvanceTimer();
   if((G.limit>0&&G.round>=G.limit)||G.lives<=0){finishGame();return}
   G.round++;
   G.current=chooseWord();
@@ -567,6 +665,7 @@ async function resolveAnswer(answer,timedOut=false){
     const accepted=G.mode==="synonym"
       ? String(G.current.synonyms||"No synonyms recorded").split(/[,;|]/).map(x=>x.trim()).filter(Boolean).join(", ")
       : (G.current.meanings||[]).join(" · ");
+    await addMissedWordToReview(G.current,answer,timedOut);
     setFeedback((timedOut?"Time is up. ":"Not quite. ")+"A good answer: "+accepted,"bad");
     $("gameMessage").textContent="The Red Fletch hit your shield. "+G.lives+" lives remaining.";
   }
@@ -581,12 +680,21 @@ async function resolveAnswer(answer,timedOut=false){
   }
   paintStats();
   updateGameHud();
-  $("nextRoundBtn").textContent=(G.limit>0&&G.round>=G.limit)||G.lives<=0?"See results":"Next arrow →";
+  const finalRound=(G.limit>0&&G.round>=G.limit)||G.lives<=0;
+  $("nextRoundBtn").textContent=finalRound?"See results now":"Next arrow now →";
   $("nextRoundBtn").classList.remove("hidden");
   $("gameMessage").textContent += " · "+G.correct+"/"+G.attempts+" correct this duel";
+  $("gameMessage").textContent += " · Moving forward automatically";
+  clearAdvanceTimer();
+  G.advanceTimer=setTimeout(()=>{
+    G.advanceTimer=null;
+    nextRound();
+  },1600);
 }
 function finishGame(message){
   clearTimer();
+  clearAdvanceTimer();
+  renderMissedWords();
   if(document.fullscreenElement===$("gamePanel"))document.exitFullscreen().catch(()=>{});
   document.documentElement.classList.remove("wa-pseudo-fullscreen");
   $("gamePanel").classList.add("hidden");
@@ -614,6 +722,10 @@ async function startGame(){
     return;
   }
   G.used=new Set();G.round=0;G.score=0;G.correct=0;G.attempts=0;G.streak=0;G.lives=3;
+  G.missedWords=new Map();
+  $("missedPanel").classList.add("hidden");
+  $("missedList").innerHTML="";
+  clearAdvanceTimer();
   $("setupPanel").classList.add("hidden");
   $("endPanel").classList.add("hidden");
   $("gamePanel").classList.remove("hidden");
