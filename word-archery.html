@@ -83,11 +83,11 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .game-actions{display:flex;gap:9px;flex-wrap:wrap}
 .life{color:#ff8790;letter-spacing:2px}
 .fullscreen-btn{position:absolute;top:12px;right:12px;z-index:4;background:#1b2a45dd;border:1px solid #51617c;color:#dce7fb;padding:8px 10px;border-radius:10px;font-size:.72rem;font-weight:850;cursor:pointer}
-#gameShell:fullscreen{width:100vw;height:100vh;border-radius:0;overflow:auto;display:flex;flex-direction:column;background:#0b1428}
-#gameShell:fullscreen .arena{flex:1;display:flex;align-items:center;justify-content:center;min-height:260px}
-#gameShell:fullscreen .arena svg{max-height:40vh}
-#gameShell:fullscreen .challenge{flex:0 0 auto}
-#gameShell:fullscreen .game-bottom{flex:0 0 auto}
+#gamePanel:fullscreen{width:100vw;height:100vh;max-height:100vh;margin:0;border-radius:0;overflow:auto;display:flex;flex-direction:column;background:#0b1428}
+#gamePanel:fullscreen .arena{flex:1;display:flex;align-items:center;justify-content:center;min-height:260px}
+#gamePanel:fullscreen .arena svg{max-height:40vh}
+#gamePanel:fullscreen .challenge{flex:0 0 auto}
+#gamePanel:fullscreen .game-bottom{flex:0 0 auto}
 .end-panel{padding:25px;text-align:center;background:#fff;border:1px solid #e4e9f2;border-radius:20px;margin-top:16px}
 .end-panel h2{font-size:1.65rem;margin:0 0 7px;color:#142449}
 .end-panel p{color:#68758d;line-height:1.6}
@@ -488,11 +488,13 @@ async function resolveAnswer(answer,timedOut=false){
   if(correct){
     G.correct++;
     G.score+=Number(result.points_awarded||10);
-    G.streak++;
+    G.streak=Number(result.streak??(G.streak+1));
     $("battleScene").classList.remove("wrong");
     $("battleScene").classList.add("correct");
     setFeedback("Bullseye! "+(G.mode==="synonym"?"Synonym":"Meaning")+" accepted. +"+Number(result.points_awarded||10)+" points.","good");
-    $("gameMessage").textContent=G.streak%3===0?"Three in a row! Streak bonus unlocked.":"Your arrow found its mark.";
+    $("gameMessage").textContent=Number(result.points_awarded||0)>10
+      ?"Bullseye! Every third consecutive hit earns a +5 streak bonus."
+      :"Your arrow found its mark.";
   }else{
     G.lives=Math.max(0,G.lives-1);
     G.streak=0;
