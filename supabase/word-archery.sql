@@ -43,6 +43,7 @@ declare
   v_correct boolean := false;
   v_overlap integer;
   v_target_count integer;
+  v_answer_count integer;
   v_streak_before integer := 0;
   v_streak_after integer := 0;
   v_points integer := 0;
@@ -122,6 +123,21 @@ begin
           'out','per','who','whom','how','why'
         );
 
+      select count(distinct a.token)::integer
+      into v_answer_count
+      from unnest(regexp_split_to_array(v_answer, '[[:space:]]+')) as a(token)
+      where length(a.token) > 2
+        and a.token not in (
+          'the','and','for','with','from','into','onto','that','this','these',
+          'those','their','there','then','than','which','what','when','where',
+          'while','whose','your','you','are','was','were','been','being',
+          'have','has','had','does','did','doing','not','but','can','could',
+          'would','should','will','may','might','must','about','over','under',
+          'between','through','such','some','more','most','very','often',
+          'also','only','each','any','all','one','two','three','its','our',
+          'out','per','who','whom','how','why'
+        );
+
       select count(distinct t.token)::integer
       into v_target_count
       from unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
@@ -138,7 +154,8 @@ begin
         );
 
       if coalesce(v_target_count,0) > 0
-        and coalesce(v_overlap,0) >= greatest(1,ceil(v_target_count * 0.5)::integer) then
+        and coalesce(v_overlap,0) >= greatest(1,ceil(v_target_count * 0.5)::integer)
+        and coalesce(v_answer_count,0) <= v_target_count + 3 then
         v_correct := true;
         exit;
       end if;
