@@ -17,6 +17,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 11. `question-bank-public-count.sql`
 12. `question-bank-bookmarks-superquiz.sql`
 13. `word-archery.sql`
+14. `word-archery-leaderboard.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -25,7 +26,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
 These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket. The eleventh script exposes only the aggregate count of published practice questions to visitors. The twelfth script adds private learner bookmarks, aggregate question-attempt counts, and Superquiz support through the persistent quiz engine.
-The thirteenth script adds Word Archery scoring, account-level points, streak bonuses, answer attempts, and success-rate statistics.
+The thirteenth script adds Word Archery scoring, account-level points, streak bonuses, answer attempts, and success-rate statistics. The fourteenth script adds the public Word Archery rankings using the existing learner leaderboard opt-in. Run it after the thirteenth script.
 
 ## Production security checklist
 
@@ -65,6 +66,8 @@ The database verifies that every question selected for a Superquiz is currently 
 ## Word Archery
 
 Run `word-archery.sql` after `vocab-mountain.sql` and `security-hardening.sql`. Word Archery uses published Vocab Mountain words and validates either synonyms or short meanings. Signed-in learners have points, attempts, streaks, and success rates saved to their accounts. Guests can play with statistics stored only in the current browser. Correct answers earn 10 points, with a 5-point bonus on every third consecutive correct answer. The page includes timed rounds, three lives, animated opponent/player arrows, and an optional full-screen arena.
+
+Run `word-archery-leaderboard.sql` after `word-archery.sql` to add the public Word Archery leaderboard. It uses the existing `profiles.leaderboard_opt_in` preference, so learners who join the leaderboard appear on both the Quant and Word Archery boards. The Word Archery board ranks signed-in learners by total saved points, then success rate and attempts. It publishes only first name and aggregated scores. Guest-only local scores are not included.
 
 ## Vocab Mountain content management
 
