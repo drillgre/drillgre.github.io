@@ -24,6 +24,7 @@ The second script creates the learner profile fields and Auth user trigger, appl
 The third script configures learner read access, protects question answers from direct client queries, and provides the admin-only question detail RPC used by the question editor.
 
 These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket. The eleventh script exposes only the aggregate count of published practice questions to visitors. The twelfth script adds private learner bookmarks, aggregate question-attempt counts, and Superquiz support through the persistent quiz engine.
+The thirteenth script adds Word Archery scoring, account-level points, streak bonuses, answer attempts, and success-rate statistics.
 
 ## Production security checklist
 
@@ -59,6 +60,10 @@ Run `question-bank-bookmarks-superquiz.sql` after `question-bank-public-count.sq
 - Timed, extra-time, double-time, and untimed Superquiz sessions using the same autosave, resume, results, and answer-review engine as topic quizzes. Superquiz attempts appear in **Your quizzes**.
 
 The database verifies that every question selected for a Superquiz is currently published, available for practice, and bookmarked by the signed-in learner. The attempt-count ledger begins collecting records after this migration is applied; earlier attempts cannot be reconstructed reliably.
+
+## Word Archery
+
+Run `word-archery.sql` after `vocab-mountain.sql` and `security-hardening.sql`. Word Archery uses published Vocab Mountain words and validates either synonyms or short meanings. Signed-in learners have points, attempts, streaks, and success rates saved to their accounts. Guests can play with statistics stored only in the current browser. Correct answers earn 10 points, with a 5-point bonus on every third consecutive correct answer. The page includes timed rounds, three lives, animated opponent/player arrows, and an optional full-screen arena.
 
 ## Vocab Mountain content management
 
