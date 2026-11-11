@@ -14,8 +14,32 @@
   const toggle = document.querySelector("[data-site-nav-toggle]");
   const links = document.querySelector("[data-site-nav-links]");
 
-  // Native <details> state can be restored when users return through browser
-  // history. Keep the Quant menu closed on page entry and after navigation.
+  // Convert the Vocab Mountain link into the shared Verbal dropdown.
+  const vocabLink = document.querySelector('.drillgre-nav-links a[href="/vocab.html"]');
+  if (vocabLink && !vocabLink.closest(".drillgre-verbal-dropdown")) {
+    const verbalMenu = document.createElement("details");
+    verbalMenu.className = "drillgre-nav-dropdown drillgre-verbal-dropdown";
+    const summary = document.createElement("summary");
+    summary.textContent = "Verbal";
+    const submenu = document.createElement("div");
+    submenu.className = "drillgre-nav-submenu";
+    const vocabItem = document.createElement("a");
+    vocabItem.href = "/vocab.html";
+    vocabItem.textContent = "Vocab Mountain";
+    const archeryItem = document.createElement("a");
+    archeryItem.href = "/word-archery.html";
+    archeryItem.textContent = "Word Archery";
+    const currentPath = window.location.pathname.endsWith("/")
+      ? window.location.pathname.slice(0,-1)
+      : window.location.pathname;
+    if (currentPath === "/vocab.html") vocabItem.setAttribute("aria-current","page");
+    if (currentPath === "/word-archery.html") archeryItem.setAttribute("aria-current","page");
+    submenu.append(vocabItem,archeryItem);
+    verbalMenu.append(summary,submenu);
+    vocabLink.replaceWith(verbalMenu);
+  }
+
+  // Close both Quant and Verbal menus on page entry and after navigation.
   const navDropdowns = [...document.querySelectorAll(".drillgre-nav-dropdown")];
   const closeDropdowns = () => navDropdowns.forEach(dropdown => { dropdown.open = false; });
   closeDropdowns();
