@@ -24,8 +24,15 @@
     .leader-status{font-size:13px;color:var(--muted);padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:15px 0}
     .leader-status.error{color:#9a2e20;border-color:#f3d0cb;background:#fff5f4}
     .leader-board{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+    .leader-board-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 12px}
+    .leader-board-tab{border:1px solid var(--line);border-radius:999px;background:#fff;color:#34435f;padding:10px 16px;font:inherit;font-size:13px;font-weight:850;cursor:pointer}
+    .leader-board-tab[aria-pressed="true"]{background:#182b50;border-color:#182b50;color:#fff;box-shadow:0 6px 16px #14244920}
     .leader-board-head{display:grid;grid-template-columns:60px minmax(120px,1fr) 100px 105px 105px 145px;gap:10px;padding:14px 20px;background:#f7f9fd;color:#66738c;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850}
     .leader-row{display:grid;grid-template-columns:60px minmax(120px,1fr) 100px 105px 105px 145px;gap:10px;align-items:center;padding:17px 20px;border-top:1px solid #edf0f5;font-size:14px}
+    .leader-wa-head,.leader-wa-row{grid-template-columns:60px minmax(120px,1fr) 120px 120px 110px}
+    .leader-wa-detail{font-size:11px;color:var(--muted);margin-top:3px}
+    .leader-wa-points{font-size:18px;font-weight:950;color:#2454d7}
+    .leader-wa-rate{font-weight:850;color:#24734b}
     .leader-rank{font-weight:850;color:#365fca}
     .leader-name{font-weight:800;color:#1a2740}
     .leader-score{font-weight:900;color:#2454d7;font-size:17px}
@@ -37,6 +44,8 @@
       .leader-board-head{display:none}
       .leader-row{grid-template-columns:42px 1fr auto;gap:8px;padding:14px}
       .leader-attempts{grid-column:2/4}.leader-quizzes{grid-column:2/4}.leader-question-bank{grid-column:2/4}
+      .leader-wa-row{grid-template-columns:42px 1fr auto}
+      .leader-wa-detail{grid-column:2/4}
       .leader-hero{padding:23px}
     }
   </style>
@@ -75,22 +84,26 @@
   <section class="leader-hero">
     <div class="eyebrow">FREE GRE preparation initiative</div>
     <h1>DrillGRE leaderboard</h1>
-    <p>Recognising consistent progress in GRE Quant practice. Completed topic quizzes and Question Bank questions contribute to the participation count and tie-breakers; the best completed mock score remains the primary ranking measure. Participation is voluntary.</p>
+    <p>Recognising consistent progress across DrillGRE practice. Choose the Quant leaderboard to compare mock-test performance, or Word Archery to compare vocabulary points and accuracy. Participation is voluntary and requires learner opt-in.</p>
   </section>
   <div class="leader-toolbar">
     <section id="leaderOptIn" class="leader-opt" hidden>
       <strong id="leaderOptTitle">Join the leaderboard</strong>
-      <p id="leaderOptCopy">Choose whether to display your first name, best mock score, completed mock and quiz counts, and completed Question Bank question count publicly. Your email address is never shown.</p>
+      <p id="leaderOptCopy">Choose whether to display your first name and learning statistics on the public Quant and Word Archery leaderboards. Your email address is never shown.</p>
       <button id="leaderOptButton" class="leader-button" type="button">Join leaderboard</button>
     </section>
     <div class="leader-sub" id="leaderSignInNote">Sign in to manage your leaderboard participation.</div>
   </div>
+  <div class="leader-board-tabs" role="group" aria-label="Choose leaderboard">
+    <button class="leader-board-tab" type="button" data-leader-board="quant" aria-pressed="true">Quant &amp; Mock Tests</button>
+    <button class="leader-board-tab" type="button" data-leader-board="archery" aria-pressed="false">Word Archery</button>
+  </div>
   <div id="leaderStatus" class="leader-status" role="status">Loading leaderboard…</div>
   <section class="leader-board" aria-label="DrillGRE leaderboard">
-    <div class="leader-board-head"><span>Rank</span><span>Learner</span><span>Best score</span><span>Mocks completed</span><span>Quizzes completed</span><span>Questions completed</span></div>
+    <div id="leaderBoardHead" class="leader-board-head"><span>Rank</span><span>Learner</span><span>Best score</span><span>Mocks completed</span><span>Quizzes completed</span><span>Questions completed</span></div>
     <div id="leaderRows"><div class="leader-empty">Loading rankings…</div></div>
   </section>
-  <p class="leader-privacy">Privacy: learners must opt in before appearing here. Only first name, best completed mock score, mock count, completed quiz count and completed Question Bank question count are displayed. You can remove yourself from the leaderboard at any time. Scores are provisional DrillGRE practice scores, not official ETS scores.</p>
+  <p class="leader-privacy">Privacy: learners must opt in before appearing on either board. Both boards display only first name and aggregated practice statistics. Word Archery rankings use total points, with success rate and number of attempts as tie-breakers. You can remove yourself from both leaderboards at any time. Quant mock scores are provisional DrillGRE practice scores, not official ETS scores.</p>
 </main>
 <footer style="max-width:1040px;margin:auto;padding:22px 20px;color:#69758b;font-size:12px">DrillGRE · A FREE GRE preparation initiative</footer>
 </body>
