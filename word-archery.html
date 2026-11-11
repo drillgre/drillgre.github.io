@@ -170,10 +170,10 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
 .scene.correct .coin-d{animation:coin-split-d .48s ease-out .59s both}
 .scene.correct .coin-conversion-rays{animation:coin-ray-burst .42s ease-out .59s both}
 @keyframes arrow-conversion{0%{opacity:0;transform:scale(.15)}35%{opacity:1;transform:scale(1.18)}72%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.42)}}
-@keyframes coin-split-a{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(470px,94px) scale(.9)}}
-@keyframes coin-split-b{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(532px,102px) scale(.82)}}
-@keyframes coin-split-c{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(470px,164px) scale(.78)}}
-@keyframes coin-split-d{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(532px,160px) scale(.9)}}
+@keyframes coin-split-a{0%{opacity:0;transform:scale(.1)}35%{opacity:1}100%{opacity:0;transform:scale(.9)}}
+@keyframes coin-split-b{0%{opacity:0;transform:scale(.1)}35%{opacity:1}100%{opacity:0;transform:scale(.82)}}
+@keyframes coin-split-c{0%{opacity:0;transform:scale(.1)}35%{opacity:1}100%{opacity:0;transform:scale(.78)}}
+@keyframes coin-split-d{0%{opacity:0;transform:scale(.1)}35%{opacity:1}100%{opacity:0;transform:scale(.9)}}
 @keyframes coin-ray-burst{0%{opacity:0;transform:scale(.2)}35%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
 .scene.wrong .player-arrow{opacity:1;animation:player-fade .38s ease-out forwards}
 .scene.wrong .enemy-arrow{animation:enemy-impact .92s cubic-bezier(.18,.68,.28,1) forwards}
@@ -356,23 +356,23 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
           <path d="M830 150 L640 150" stroke="#fff8d8" stroke-width="1.5" opacity=".7"/>
         </g>
         <g class="arrow-coins" fill="none" stroke-linecap="round">
-          <g class="arrow-coin coin-a" transform="translate(500 128)">
+          <g transform="translate(470 94)"><g class="arrow-coin coin-a">
             <circle r="16" fill="#eab94f" stroke="#fff0a6" stroke-width="3"/>
             <circle r="10" stroke="#9c6925" stroke-width="1.5"/>
             <path d="M-4 -6 L4 -6 M-5 0 L5 0 M-4 6 L4 6" stroke="#87551e" stroke-width="2"/>
-          </g>
-          <g class="arrow-coin coin-b" transform="translate(500 128)">
+          </g></g>
+          <g transform="translate(532 102)"><g class="arrow-coin coin-b">
             <circle r="12" fill="#f7d774" stroke="#fff6c7" stroke-width="2.5"/>
             <circle r="7" stroke="#a16a20" stroke-width="1"/>
             <path d="M-3 -4 L3 -4 M-3 0 L3 0 M-3 4 L3 4" stroke="#87551e" stroke-width="1.5"/>
-          </g>
-          <g class="arrow-coin coin-c" transform="translate(500 128)">
+          </g></g>
+          <g transform="translate(470 164)"><g class="arrow-coin coin-c">
             <circle r="10" fill="#d99b35" stroke="#ffed9c" stroke-width="2"/>
             <circle r="6" stroke="#88551e" stroke-width="1"/>
-          </g>
-          <g class="arrow-coin coin-d" transform="translate(500 128)">
+          </g></g>
+          <g transform="translate(532 160)"><g class="arrow-coin coin-d">
             <circle r="8" fill="#ffdf7b" stroke="#fff2b9" stroke-width="2"/>
-          </g>
+          </g></g>
           <path class="coin-conversion-rays" d="M500 92 L500 62 M500 164 L500 194 M464 128 L434 128 M536 128 L566 128 M475 103 L454 82 M525 153 L546 174 M525 103 L546 82 M475 153 L454 174" stroke="#ffe6a0" stroke-width="4"/>
         </g>
         <g class="impact impact-player" fill="none" stroke-linecap="round">
