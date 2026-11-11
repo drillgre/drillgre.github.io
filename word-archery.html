@@ -308,7 +308,7 @@ const db=window.supabase.createClient(ARCHERY_SUPABASE_URL,ARCHERY_SUPABASE_KEY)
 const $=id=>document.getElementById(id);
 const LOCAL_KEY="drillgre_word_archery_guest_v1";
 const G={
-  user:null,words:[],pool:[],used:new Set(),mode:"synonym",limit:10,round:0,score:0,
+  user:null,localOnly:false,words:[],pool:[],used:new Set(),mode:"synonym",limit:10,round:0,score:0,
   correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,timer:null,seconds:20,
   stats:{total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}
 };
@@ -343,13 +343,16 @@ function localIsCorrect(word,mode,answer){
   }
   return meaningMatches(answer,word.meanings||[]);
 }
+function statsStorageKey(){
+  return G.user?("drillgre_word_archery_user_"+G.user.id):LOCAL_KEY;
+}
 function readGuestStats(){
   try{
-    return Object.assign({total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0},JSON.parse(localStorage.getItem(LOCAL_KEY)||"{}"));
+    return Object.assign({total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0},JSON.parse(localStorage.getItem(statsStorageKey())||"{}"));
   }catch{return {total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}}
 }
 function saveGuestStats(){
-  try{localStorage.setItem(LOCAL_KEY,JSON.stringify(G.stats))}catch{}
+  try{localStorage.setItem(statsStorageKey(),JSON.stringify(G.stats))}catch{}
 }
 function paintStats(){
   $("statPoints").textContent=Number(G.stats.total_points||0).toLocaleString();
@@ -370,10 +373,12 @@ async function loadStats(){
   $("loginNote").textContent="Signed in. Your points, attempts and success rate are saved to your learner account.";
   const {data,error}=await db.rpc("get_word_archery_stats");
   if(error){
-    $("statsSource").textContent="Account stats unavailable";
-    $("loginNote").textContent="Run supabase/word-archery.sql to enable saved scores. You can still play this game.";
+    G.localOnly=true;
+    $("statsSource").textContent="Saved on this device";
+    $("loginNote").textContent="Account statistics are not available yet. Run supabase/word-archery.sql to enable cross-device syncing. You can still play, and your score will be saved on this device.";
     G.stats=readGuestStats();
   }else{
+    G.localOnly=false;
     G.stats=Object.assign({},G.stats,data||{});
   }
   paintStats();
@@ -456,7 +461,7 @@ async function resolveAnswer(answer,timedOut=false){
   $("fireBtn").disabled=true;
   let result;
   try{
-    if(G.user){
+    if(G.user&&!G.localOnly){
       const {data,error}=await db.rpc("submit_word_archery_attempt",{
         p_vocab_word_id:G.current.id,p_answer_mode:G.mode,p_answer:timedOut?"":answer
       });
