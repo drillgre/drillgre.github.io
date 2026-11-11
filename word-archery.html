@@ -55,10 +55,10 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .hidden{display:none!important}
 .game-shell{position:relative;overflow:hidden;padding:0;background:#0b1428;border:1px solid #202f4c;border-radius:24px;color:var(--wa-ink);box-shadow:0 18px 50px #101e3b30}
 .coin-layer{position:absolute;inset:0;z-index:20;pointer-events:none;overflow:hidden}
-.coin-particle{position:absolute;left:0;top:0;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;border:2px solid #fff1a7;background:radial-gradient(circle at 34% 27%,#fff8ca 0 9%,#f8d56d 23%,#db9a28 66%,#98601b 100%);box-shadow:0 0 0 2px #a96f25aa,0 3px 12px #ffc65c88,inset 0 0 0 2px #fff4b755;color:#805013;font:900 12px Georgia,serif;text-shadow:0 1px 0 #fff4b0;opacity:0;animation:coin-to-score 1.05s cubic-bezier(.16,.72,.2,1) var(--coin-delay,0s) forwards}
+.coin-particle{position:absolute;left:0;top:0;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;border:2px solid #fff1a7;background:radial-gradient(circle at 34% 27%,#fff8ca 0 9%,#f8d56d 23%,#db9a28 66%,#98601b 100%);box-shadow:0 0 0 2px #a96f25aa,0 3px 12px #ffc65c88,inset 0 0 0 2px #fff4b755;color:#805013;font:900 12px Georgia,serif;text-shadow:0 1px 0 #fff4b0;opacity:0;animation:coin-to-score .88s cubic-bezier(.16,.72,.2,1) var(--coin-delay,0s) forwards}
 .coin-particle:before{content:"";position:absolute;inset:4px;border:1px solid #9c671f99;border-radius:50%}
 .coin-particle span{position:relative;z-index:1}
-.coin-points-label{position:absolute;left:0;top:0;color:#ffe08a;font-size:1rem;font-weight:1000;text-shadow:0 2px 10px #ffb62e;white-space:nowrap;opacity:0;animation:coin-label-fly .9s ease-out .08s forwards}
+.coin-points-label{position:absolute;left:0;top:0;color:#ffe08a;font-size:1rem;font-weight:1000;text-shadow:0 2px 10px #ffb62e;white-space:nowrap;opacity:0;animation:coin-label-fly .76s ease-out .04s forwards}
 @keyframes coin-to-score{0%{opacity:0;transform:translate(-50%,-50%) scale(.25) rotateY(0deg)}16%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotateY(160deg)}42%{opacity:1;transform:translate(calc(-50% + var(--coin-mid-x)),calc(-50% + var(--coin-mid-y))) scale(.9) rotateY(380deg)}100%{opacity:0;transform:translate(calc(-50% + var(--coin-dx)),calc(-50% + var(--coin-dy))) scale(.35) rotateY(760deg)}}
 @keyframes coin-label-fly{0%{opacity:0;transform:translate(-50%,-50%) scale(.65)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--coin-dx)),calc(-50% + var(--coin-dy))) scale(.75)}}
 .game-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:15px 18px;background:#111d35;border-bottom:1px solid #263653}
@@ -131,7 +131,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
 .end-summary span{font-size:.7rem;color:#77849a;text-transform:uppercase;letter-spacing:.1em;font-weight:850}
 @keyframes enemy-launch{0%{opacity:0;transform:translateX(0)}12%{opacity:1}100%{opacity:1;transform:translateX(135px)}}
 @keyframes enemy-meet-fade{0%{opacity:1;filter:blur(0);transform:translateX(135px)}70%{opacity:1;filter:blur(0);transform:translateX(135px)}100%{opacity:0;filter:blur(7px);transform:translateX(135px) scale(.88)}}
-@keyframes player-meet-fade{0%{opacity:0;filter:blur(0);transform:translateX(0)}12%{opacity:1}70%{opacity:1;filter:blur(0);transform:translateX(-135px)}100%{opacity:0;filter:blur(7px);transform:translateX(-135px) scale(.88)}}
+@keyframes player-meet-fade{0%{opacity:0;filter:blur(0);transform:translateX(0)}12%{opacity:1}76%{opacity:1;filter:blur(0);transform:translateX(-135px) scale(1)}100%{opacity:0;filter:blur(6px);transform:translateX(-135px) scale(.72)}}
 @keyframes enemy-impact{0%{opacity:1;filter:blur(0);transform:translateX(135px)}72%{opacity:1;filter:blur(0);transform:translateX(330px)}100%{opacity:0;filter:blur(5px);transform:translateX(410px)}}
 @keyframes enemy-impact-timeout{0%{opacity:1;filter:blur(0);transform:translateX(0)}72%{opacity:1;filter:blur(0);transform:translateX(330px)}100%{opacity:0;filter:blur(5px);transform:translateX(410px)}}
 @keyframes player-fade{0%{opacity:1;filter:blur(0);transform:translateX(0)}100%{opacity:0;filter:blur(8px);transform:translateX(-12px) scale(.7)}}
@@ -162,6 +162,19 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
 .scene.enemy-fired .enemy-arrow{animation:enemy-launch .72s cubic-bezier(.18,.68,.28,1) forwards}
 .scene.correct .enemy-arrow{animation:enemy-meet-fade .78s ease-in-out forwards}
 .scene.correct .player-arrow{opacity:1;animation:player-meet-fade .78s ease-in-out forwards}
+.arrow-coins{opacity:0;transform-box:fill-box;transform-origin:center}
+.scene.correct .arrow-coins{animation:arrow-conversion .48s cubic-bezier(.16,.75,.24,1) .59s both}
+.scene.correct .coin-a{animation:coin-split-a .48s ease-out .59s both}
+.scene.correct .coin-b{animation:coin-split-b .48s ease-out .59s both}
+.scene.correct .coin-c{animation:coin-split-c .48s ease-out .59s both}
+.scene.correct .coin-d{animation:coin-split-d .48s ease-out .59s both}
+.scene.correct .coin-conversion-rays{animation:coin-ray-burst .42s ease-out .59s both}
+@keyframes arrow-conversion{0%{opacity:0;transform:scale(.15)}35%{opacity:1;transform:scale(1.18)}72%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.42)}}
+@keyframes coin-split-a{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(470px,94px) scale(.9)}}
+@keyframes coin-split-b{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(532px,102px) scale(.82)}}
+@keyframes coin-split-c{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(470px,164px) scale(.78)}}
+@keyframes coin-split-d{0%{opacity:0;transform:translate(500px,128px) scale(.1)}35%{opacity:1}100%{opacity:0;transform:translate(532px,160px) scale(.9)}}
+@keyframes coin-ray-burst{0%{opacity:0;transform:scale(.2)}35%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
 .scene.wrong .player-arrow{opacity:1;animation:player-fade .38s ease-out forwards}
 .scene.wrong .enemy-arrow{animation:enemy-impact .92s cubic-bezier(.18,.68,.28,1) forwards}
 .scene.wrong-timeout .enemy-arrow{animation:enemy-impact-timeout .92s cubic-bezier(.18,.68,.28,1) forwards}
@@ -296,32 +309,32 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
         <path d="M0 236 Q130 190 250 232 T500 225 T750 228 T1000 214 V300 H0Z" fill="#152b40" opacity=".78"/>
         <path d="M0 260 Q180 230 350 258 T680 256 T1000 242" fill="none" stroke="#66809a" stroke-opacity=".32" stroke-width="2"/>
         <g id="opponentBow" class="battle-bow enemy-bow">
-          <path d="M230 38 C318 58 352 108 352 150 C352 192 318 242 230 262" fill="none" stroke="#060d1b" stroke-width="30" stroke-linecap="round" opacity=".78"/>
-          <path class="bow-limb" d="M230 38 C318 58 352 108 352 150 C352 192 318 242 230 262" fill="none" stroke="url(#enemyMetal)" stroke-width="19" stroke-linecap="round"/>
-          <path d="M235 44 C312 66 342 111 342 150 C342 189 312 234 235 256" fill="none" stroke="#ffc7aa" stroke-width="4" stroke-linecap="round" opacity=".9"/>
-          <path class="bow-string bow-string-rest" d="M230 38 L230 262" stroke="#fff0dc" stroke-width="2.2" stroke-linecap="round"/>
-          <path class="bow-string bow-string-drawn" d="M230 38 Q204 150 230 262" stroke="#fff0dc" stroke-width="2.8" stroke-linecap="round"/>
-          <path d="M225 42 L238 31 M225 258 L238 269" stroke="#ffdfa5" stroke-width="7" stroke-linecap="round"/>
-          <path d="M218 136 Q199 150 218 164 L237 164 L237 136Z" fill="#803347" stroke="#ffd09a" stroke-width="3"/>
-          <path d="M214 143 L230 143 M214 157 L230 157" stroke="#ffdfac" stroke-width="2"/>
-          <path d="M265 70 L278 77 M286 102 L299 107 M296 190 L309 185 M266 229 L278 222" stroke="#ff9b88" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="230" cy="38" r="7" fill="#ffe2b2" stroke="#963d50" stroke-width="3"/>
-          <circle cx="230" cy="262" r="7" fill="#ffe2b2" stroke="#963d50" stroke-width="3"/>
-          <path d="M292 119 Q320 150 292 181" fill="none" stroke="#ffb29d" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/>
+          <path d="M150 38 C238 58 312 108 312 150 C312 192 238 242 150 262" fill="none" stroke="#060d1b" stroke-width="30" stroke-linecap="round" opacity=".78"/>
+          <path class="bow-limb" d="M150 38 C238 58 312 108 312 150 C312 192 238 242 150 262" fill="none" stroke="url(#enemyMetal)" stroke-width="19" stroke-linecap="round"/>
+          <path d="M155 44 C232 66 302 111 302 150 C302 189 232 234 155 256" fill="none" stroke="#ffc7aa" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+          <path class="bow-string bow-string-rest" d="M150 38 L150 262" stroke="#fff0dc" stroke-width="2.2" stroke-linecap="round"/>
+          <path class="bow-string bow-string-drawn" d="M150 38 Q124 150 150 262" stroke="#fff0dc" stroke-width="2.8" stroke-linecap="round"/>
+          <path d="M145 42 L158 31 M145 258 L158 269" stroke="#ffdfa5" stroke-width="7" stroke-linecap="round"/>
+          <path d="M138 136 Q119 150 138 164 L157 164 L157 136Z" fill="#803347" stroke="#ffd09a" stroke-width="3"/>
+          <path d="M134 143 L150 143 M134 157 L150 157" stroke="#ffdfac" stroke-width="2"/>
+          <path d="M205 70 L218 77 M246 102 L259 107 M270 190 L283 185 M206 229 L218 222" stroke="#ff9b88" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="150" cy="38" r="7" fill="#ffe2b2" stroke="#963d50" stroke-width="3"/>
+          <circle cx="150" cy="262" r="7" fill="#ffe2b2" stroke="#963d50" stroke-width="3"/>
+          <path d="M260 119 Q288 150 260 181" fill="none" stroke="#ffb29d" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/>
         </g>
         <g id="playerBow" class="battle-bow player-bow">
-          <path d="M770 38 C682 58 648 108 648 150 C648 192 682 242 770 262" fill="none" stroke="#060d1b" stroke-width="30" stroke-linecap="round" opacity=".78"/>
-          <path class="bow-limb" d="M770 38 C682 58 648 108 648 150 C648 192 682 242 770 262" fill="none" stroke="url(#playerMetal)" stroke-width="19" stroke-linecap="round"/>
-          <path d="M765 44 C688 66 658 111 658 150 C658 189 688 234 765 256" fill="none" stroke="#fff1b7" stroke-width="4" stroke-linecap="round" opacity=".95"/>
-          <path class="bow-string bow-string-rest" d="M770 38 L770 262" stroke="#fff4c3" stroke-width="2.2" stroke-linecap="round"/>
-          <path class="bow-string bow-string-drawn" d="M770 38 Q796 150 770 262" stroke="#fff4c3" stroke-width="2.8" stroke-linecap="round"/>
-          <path d="M775 42 L762 31 M775 258 L762 269" stroke="#fff0a8" stroke-width="7" stroke-linecap="round"/>
-          <path d="M782 136 Q801 150 782 164 L763 164 L763 136Z" fill="#a87832" stroke="#fff0a8" stroke-width="3"/>
-          <path d="M786 143 L770 143 M786 157 L770 157" stroke="#fff2bc" stroke-width="2"/>
-          <path d="M735 70 L722 77 M714 102 L701 107 M704 190 L691 185 M734 229 L722 222" stroke="#ffdf8c" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="770" cy="38" r="7" fill="#fff1b5" stroke="#9a672b" stroke-width="3"/>
-          <circle cx="770" cy="262" r="7" fill="#fff1b5" stroke="#9a672b" stroke-width="3"/>
-          <path d="M708 119 Q680 150 708 181" fill="none" stroke="#ffe6a0" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/>
+          <path d="M850 38 C762 58 688 108 688 150 C688 192 762 242 850 262" fill="none" stroke="#060d1b" stroke-width="30" stroke-linecap="round" opacity=".78"/>
+          <path class="bow-limb" d="M850 38 C762 58 688 108 688 150 C688 192 762 242 850 262" fill="none" stroke="url(#playerMetal)" stroke-width="19" stroke-linecap="round"/>
+          <path d="M845 44 C768 66 698 111 698 150 C698 189 768 234 845 256" fill="none" stroke="#fff1b7" stroke-width="4" stroke-linecap="round" opacity=".95"/>
+          <path class="bow-string bow-string-rest" d="M850 38 L850 262" stroke="#fff4c3" stroke-width="2.2" stroke-linecap="round"/>
+          <path class="bow-string bow-string-drawn" d="M850 38 Q876 150 850 262" stroke="#fff4c3" stroke-width="2.8" stroke-linecap="round"/>
+          <path d="M855 42 L842 31 M855 258 L842 269" stroke="#fff0a8" stroke-width="7" stroke-linecap="round"/>
+          <path d="M862 136 Q881 150 862 164 L843 164 L843 136Z" fill="#a87832" stroke="#fff0a8" stroke-width="3"/>
+          <path d="M866 143 L850 143 M866 157 L850 157" stroke="#fff2bc" stroke-width="2"/>
+          <path d="M795 70 L782 77 M754 102 L741 107 M730 190 L717 185 M794 229 L782 222" stroke="#ffdf8c" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="850" cy="38" r="7" fill="#fff1b5" stroke="#9a672b" stroke-width="3"/>
+          <circle cx="850" cy="262" r="7" fill="#fff1b5" stroke="#9a672b" stroke-width="3"/>
+          <path d="M740 119 Q712 150 740 181" fill="none" stroke="#ffe6a0" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/>
         </g>
         <g class="clash-sigil" fill="none" stroke="#a9c9e8" opacity=".36">
           <circle cx="500" cy="148" r="90" stroke-width="1.2" stroke-dasharray="2 10"/>
@@ -329,18 +342,38 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
           <path d="M500 44 L500 62 M500 234 L500 252 M396 148 L414 148 M586 148 L604 148 M426 74 L439 87 M561 209 L574 222 M574 74 L561 87 M439 209 L426 222" stroke-width="2"/>
         </g>
         <g id="enemyArrow" class="enemy-arrow" filter="url(#arrowGlow)">
-          <path d="M205 150 L365 150" stroke="#ff6870" stroke-width="6" stroke-linecap="round"/>
-          <path d="M205 150 L222 137 L218 150 L222 163Z" fill="#ff8c87"/>
+          <path d="M125 150 L365 150" stroke="#ff6870" stroke-width="6" stroke-linecap="round"/>
+          <path d="M125 150 L142 137 L138 150 L142 163Z" fill="#ff8c87"/>
           <path d="M365 150 L345 137 L350 150 L345 163Z" fill="#ffcbc2"/>
-          <path d="M229 150 L216 134 M229 150 L216 166" stroke="#fff0da" stroke-width="3"/>
-          <path d="M248 150 L360 150" stroke="#ffe3c8" stroke-width="1.5" opacity=".7"/>
+          <path d="M149 150 L136 134 M149 150 L136 166" stroke="#fff0da" stroke-width="3"/>
+          <path d="M170 150 L360 150" stroke="#ffe3c8" stroke-width="1.5" opacity=".7"/>
         </g>
         <g id="playerArrow" class="player-arrow" filter="url(#arrowGlow)">
-          <path d="M795 150 L635 150" stroke="#ffd16f" stroke-width="6" stroke-linecap="round"/>
-          <path d="M795 150 L778 137 L782 150 L778 163Z" fill="#fff0a8"/>
+          <path d="M875 150 L635 150" stroke="#ffd16f" stroke-width="6" stroke-linecap="round"/>
+          <path d="M875 150 L858 137 L862 150 L858 163Z" fill="#fff0a8"/>
           <path d="M635 150 L655 137 L650 150 L655 163Z" fill="#ffe5a0"/>
-          <path d="M771 150 L784 134 M771 150 L784 166" stroke="#fff" stroke-width="3"/>
-          <path d="M652 150 L640 150" stroke="#fff8d8" stroke-width="1.5" opacity=".7"/>
+          <path d="M851 150 L864 134 M851 150 L864 166" stroke="#fff" stroke-width="3"/>
+          <path d="M830 150 L640 150" stroke="#fff8d8" stroke-width="1.5" opacity=".7"/>
+        </g>
+        <g class="arrow-coins" fill="none" stroke-linecap="round">
+          <g class="arrow-coin coin-a" transform="translate(500 128)">
+            <circle r="16" fill="#eab94f" stroke="#fff0a6" stroke-width="3"/>
+            <circle r="10" stroke="#9c6925" stroke-width="1.5"/>
+            <path d="M-4 -6 L4 -6 M-5 0 L5 0 M-4 6 L4 6" stroke="#87551e" stroke-width="2"/>
+          </g>
+          <g class="arrow-coin coin-b" transform="translate(500 128)">
+            <circle r="12" fill="#f7d774" stroke="#fff6c7" stroke-width="2.5"/>
+            <circle r="7" stroke="#a16a20" stroke-width="1"/>
+            <path d="M-3 -4 L3 -4 M-3 0 L3 0 M-3 4 L3 4" stroke="#87551e" stroke-width="1.5"/>
+          </g>
+          <g class="arrow-coin coin-c" transform="translate(500 128)">
+            <circle r="10" fill="#d99b35" stroke="#ffed9c" stroke-width="2"/>
+            <circle r="6" stroke="#88551e" stroke-width="1"/>
+          </g>
+          <g class="arrow-coin coin-d" transform="translate(500 128)">
+            <circle r="8" fill="#ffdf7b" stroke="#fff2b9" stroke-width="2"/>
+          </g>
+          <path class="coin-conversion-rays" d="M500 92 L500 62 M500 164 L500 194 M464 128 L434 128 M536 128 L566 128 M475 103 L454 82 M525 153 L546 174 M525 103 L546 82 M475 153 L454 174" stroke="#ffe6a0" stroke-width="4"/>
         </g>
         <g class="impact impact-player" fill="none" stroke-linecap="round">
           <circle cx="500" cy="128" r="92" fill="url(#blastGlow)" stroke="none"/>
@@ -607,7 +640,7 @@ function animateCoinReward(points){
   target.classList.remove("score-pop");
   void target.offsetWidth;
   target.classList.add("score-pop");
-  window.setTimeout(()=>{layer.innerHTML="";target.classList.remove("score-pop")},1500);
+  window.setTimeout(()=>{layer.innerHTML="";target.classList.remove("score-pop")},1150);
 }
 function resetScene(){
   const scene=$("battleScene");
@@ -749,7 +782,7 @@ async function resolveAnswer(answer,timedOut=false){
   }
   paintStats();
   updateGameHud();
-  if(correct)animateCoinReward(Number(result.points_awarded||10));
+  if(correct)window.setTimeout(()=>animateCoinReward(Number(result.points_awarded||10)),700);
   const finalRound=(G.limit>0&&G.round>=G.limit)||G.lives<=0;
   $("nextRoundBtn").textContent=finalRound?"See results now":"Next arrow now →";
   $("nextRoundBtn").classList.remove("hidden");
@@ -759,7 +792,7 @@ async function resolveAnswer(answer,timedOut=false){
   G.advanceTimer=setTimeout(()=>{
     G.advanceTimer=null;
     nextRound();
-  },1600);
+  },1800);
 }
 function finishGame(message){
   clearTimer();
