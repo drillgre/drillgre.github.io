@@ -41,9 +41,6 @@ declare
   v_target text;
   v_synonym text;
   v_correct boolean := false;
-  v_overlap integer;
-  v_target_count integer;
-  v_answer_count integer;
   v_streak_before integer := 0;
   v_streak_after integer := 0;
   v_points integer := 0;
@@ -73,11 +70,7 @@ begin
   end if;
 
   v_answer := trim(regexp_replace(lower(p_answer), '[^a-z0-9]+', ' ', 'g'));
-  if v_answer = '' then
-    raise exception 'Please enter a readable English answer.';
-  end if;
-
-  if p_answer_mode = 'synonym' then
+  if v_answer <> '' and p_answer_mode = 'synonym' then
     for v_synonym in
       select trim(value)
       from regexp_split_to_table(coalesce(v_word.synonyms,''), '[,;|]') as s(value)
@@ -88,7 +81,9 @@ begin
         exit;
       end if;
     end loop;
-  else
+  elsif v_answer <> '' then
+    -- Meaning Shot uses choices taken from the vocabulary database.
+    -- Exact normalized comparison prevents a distractor from passing.
     foreach v_meaning in array array[
       coalesce(v_word.meaning1,''),
       coalesce(v_word.meaning2,''),
@@ -96,66 +91,7 @@ begin
     ]
     loop
       v_target := trim(regexp_replace(lower(v_meaning), '[^a-z0-9]+', ' ', 'g'));
-      if v_target = '' then
-        continue;
-      end if;
-      if v_target = v_answer then
-        v_correct := true;
-        exit;
-      end if;
-
-      -- Flexible short-meaning matching: require at least half of the
-      -- definition's meaningful words, excluding common grammatical words.
-      select count(distinct a.token)::integer
-      into v_overlap
-      from unnest(regexp_split_to_array(v_answer, '[[:space:]]+')) as a(token)
-      join unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
-        on a.token = t.token
-      where length(a.token) > 2
-        and a.token not in (
-          'the','and','for','with','from','into','onto','that','this','these',
-          'those','their','there','then','than','which','what','when','where',
-          'while','whose','your','you','are','was','were','been','being',
-          'have','has','had','does','did','doing','not','but','can','could',
-          'would','should','will','may','might','must','about','over','under',
-          'between','through','such','some','more','most','very','often',
-          'also','only','each','any','all','one','two','three','its','our',
-          'out','per','who','whom','how','why'
-        );
-
-      select count(distinct a.token)::integer
-      into v_answer_count
-      from unnest(regexp_split_to_array(v_answer, '[[:space:]]+')) as a(token)
-      where length(a.token) > 2
-        and a.token not in (
-          'the','and','for','with','from','into','onto','that','this','these',
-          'those','their','there','then','than','which','what','when','where',
-          'while','whose','your','you','are','was','were','been','being',
-          'have','has','had','does','did','doing','not','but','can','could',
-          'would','should','will','may','might','must','about','over','under',
-          'between','through','such','some','more','most','very','often',
-          'also','only','each','any','all','one','two','three','its','our',
-          'out','per','who','whom','how','why'
-        );
-
-      select count(distinct t.token)::integer
-      into v_target_count
-      from unnest(regexp_split_to_array(v_target, '[[:space:]]+')) as t(token)
-      where length(t.token) > 2
-        and t.token not in (
-          'the','and','for','with','from','into','onto','that','this','these',
-          'those','their','there','then','than','which','what','when','where',
-          'while','whose','your','you','are','was','were','been','being',
-          'have','has','had','does','did','doing','not','but','can','could',
-          'would','should','will','may','might','must','about','over','under',
-          'between','through','such','some','more','most','very','often',
-          'also','only','each','any','all','one','two','three','its','our',
-          'out','per','who','whom','how','why'
-        );
-
-      if coalesce(v_target_count,0) > 0
-        and coalesce(v_overlap,0) >= greatest(1,ceil(v_target_count * 0.5)::integer)
-        and coalesce(v_answer_count,0) <= v_target_count + 3 then
+      if v_target <> '' and v_target = v_answer then
         v_correct := true;
         exit;
       end if;
