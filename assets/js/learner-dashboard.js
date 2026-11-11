@@ -94,6 +94,56 @@
     }).join("");
   }
 
+  async function loadVocabularyAndArchery() {
+    const [nailedResult, vocabularyResult, archeryResult] = await Promise.all([
+      db.from("vocab_word_progress")
+        .select("vocab_word_id", { count: "exact", head: true })
+        .eq("status", "know"),
+      db.from("vocab_words")
+        .select("id", { count: "exact", head: true })
+        .eq("is_published", true),
+      db.rpc("get_word_archery_stats")
+    ]);
+
+    const nailedCount = Number(nailedResult.count || 0);
+    $("wordsNailed").textContent = nailedResult.error ? "—" : nailedCount.toLocaleString();
+    if (vocabularyResult.error || vocabularyResult.count == null) {
+      $("wordsNailed").title = "Words classified as Nailed It in Vocab Mountain";
+    } else {
+      $("wordsNailed").title = nailedCount.toLocaleString() + " of " + Number(vocabularyResult.count).toLocaleString() + " published words";
+    }
+
+    if (archeryResult.error || !archeryResult.data) {
+      $("archeryAttempts").textContent = "—";
+      $("archeryCorrect").textContent = "—";
+      $("archeryPoints").textContent = "—";
+      $("archeryStreak").textContent = "—";
+      $("archeryAccuracy").textContent = "—";
+      $("archeryAccuracyText").textContent = "Unavailable";
+      $("archeryAccuracyBar").style.width = "0%";
+      $("archeryProgressNote").textContent = "Word Archery statistics could not be loaded. Check that the Word Archery database setup has been applied.";
+      return;
+    }
+
+    const stats = archeryResult.data;
+    const attempts = Number(stats.total_attempts || 0);
+    const correct = Number(stats.correct_attempts || 0);
+    const points = Number(stats.total_points || 0);
+    const streak = Number(stats.streak || 0);
+    const accuracy = Math.max(0, Math.min(100, Number(stats.success_rate || 0)));
+
+    $("archeryAttempts").textContent = attempts.toLocaleString();
+    $("archeryCorrect").textContent = correct.toLocaleString();
+    $("archeryPoints").textContent = points.toLocaleString();
+    $("archeryStreak").textContent = streak.toLocaleString();
+    $("archeryAccuracy").textContent = accuracy.toFixed(1) + "%";
+    $("archeryAccuracyText").textContent = accuracy.toFixed(1) + "%";
+    $("archeryAccuracyBar").style.width = accuracy + "%";
+    $("archeryProgressNote").textContent = attempts
+      ? "You have answered " + attempts.toLocaleString() + " questions, with " + correct.toLocaleString() + " correct answers."
+      : "Play your first round to start building your Word Archery record.";
+  }
+
   async function loadDashboard() {
     const { data:sessionData, error:sessionError } = await db.auth.getSession();
     const session = sessionData?.session;
@@ -160,6 +210,7 @@
     renderLessonProgress(data.lesson_progress || []);
     renderQuizHistory(data.topic_quiz_attempts || []);
     renderAttempts(data.recent_attempts || []);
+    await loadVocabularyAndArchery();
 
     $("dashboardContent").hidden = false;
     setStatus("");
