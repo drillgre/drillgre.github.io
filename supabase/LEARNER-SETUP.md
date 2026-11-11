@@ -16,6 +16,7 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 10. `security-hardening.sql`
 11. `question-bank-public-count.sql`
 12. `question-bank-bookmarks-superquiz.sql`
+13. `word-archery.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
