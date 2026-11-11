@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Word Archery | DrillGRE Verbal</title>
+<meta name="description" content="Aim for meaning. Play Word Archery, the vocabulary challenge from DrillGRE.">
+<link rel="stylesheet" href="/assets/css/site-nav.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="/assets/js/site-nav.js"></script>
+<style>
+:root{--wa-ink:#f5f7ff;--wa-muted:#a9b5cc;--wa-gold:#f5c76b;--wa-red:#ff5b66;--wa-blue:#6ca5ff;--wa-panel:#15213b;--wa-line:#2e3d5c;--wa-bg:#091224}
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fb;color:#17233d;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{width:min(1160px,calc(100% - 36px));margin:0 auto;padding:30px 0 58px}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:10px 0 24px}
+.eyebrow{font-size:.73rem;letter-spacing:.16em;text-transform:uppercase;font-weight:900;color:#b57a20}
+h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:-.06em;line-height:1}
+.hero p{margin:10px 0 0;color:#63708a;max-width:620px;line-height:1.6}
+.hero-mark{font-size:2.6rem;filter:drop-shadow(0 8px 12px #e8b74c55)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid #e3e8f1;border-radius:16px;padding:14px 16px;box-shadow:0 6px 18px #14244908}
+.stat span{display:block;color:#71809a;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.stat strong{display:block;color:#142449;font-size:1.7rem;line-height:1.2;margin-top:4px;font-weight:900}
+.stat small{display:block;margin-top:3px;color:#8b96a9;font-size:.69rem}
+.panel{background:#fff;border:1px solid #e4e9f2;border-radius:22px;padding:clamp(18px,3vw,30px);box-shadow:0 14px 34px #1424490c}
+.setup-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:start}
+.panel h2{margin:0 0 8px;color:#152342;font-size:1.4rem;letter-spacing:-.03em}
+.sub{color:#697791;font-size:.9rem;line-height:1.6;margin:0 0 18px}
+.mode-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mode-option{display:block;position:relative}
+.mode-option input{position:absolute;opacity:0;pointer-events:none}
+.mode-card{height:100%;border:1px solid #dfe5ef;border-radius:15px;padding:16px;background:#fbfcff;cursor:pointer;transition:.16s}
+.mode-card:hover{border-color:#afc4f3;transform:translateY(-1px)}
+.mode-option input:checked + .mode-card{border:2px solid #325fcb;background:#f0f5ff;box-shadow:0 5px 16px #356df31c;padding:15px}
+.mode-icon{font-size:1.45rem;display:block;margin-bottom:8px}
+.mode-card b{display:block;color:#203050;font-size:.93rem}
+.mode-card small{display:block;margin-top:5px;color:#75819a;line-height:1.5;font-size:.74rem}
+.field{display:grid;gap:7px;margin:15px 0}
+.field label{font-size:.76rem;font-weight:850;color:#53617a}
+.field select,.answer-input{width:100%;min-height:46px;border:1px solid #d8e0ed;border-radius:12px;padding:10px 13px;background:#fff;color:#182744;font:inherit;outline:none}
+.field select:focus,.answer-input:focus{border-color:#356df3;box-shadow:0 0 0 3px #356df31c}
+.setup-side{background:#f7f9fd;border:1px solid #e5eaf3;border-radius:17px;padding:18px}
+.setup-side ul{margin:10px 0 0;padding-left:20px;color:#68758d;font-size:.82rem;line-height:1.8}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #d8e0eb;background:white;color:#283653;border-radius:12px;padding:11px 17px;font:inherit;font-size:.86rem;font-weight:850;cursor:pointer;transition:.16s}
+.btn:hover{transform:translateY(-1px);border-color:#9fb4de}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-primary{background:#162a50;color:#fff;border-color:#162a50;box-shadow:0 8px 18px #162a5024}
+.btn-primary:hover{background:#244677;border-color:#244677}
+.btn-gold{background:#f2c66d;border-color:#f2c66d;color:#35250a}
+.btn-gold:hover{background:#ffda88;border-color:#ffda88}
+.setup-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.login-note{font-size:.75rem;color:#7a879c;margin-top:14px;line-height:1.55}
+.hidden{display:none!important}
+.game-shell{overflow:hidden;padding:0;background:#0b1428;border:1px solid #202f4c;border-radius:24px;color:var(--wa-ink);box-shadow:0 18px 50px #101e3b30}
+.game-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:15px 18px;background:#111d35;border-bottom:1px solid #263653}
+.game-stat{padding:7px 10px;border-right:1px solid #2a3957}
+.game-stat:last-child{border:0}
+.game-stat span{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:#9ba9c2;font-weight:800}
+.game-stat strong{display:block;margin-top:3px;color:#fff;font-size:1.2rem;font-weight:900}
+.game-stat strong.gold{color:#ffd57c}
+.arena{position:relative;background:radial-gradient(ellipse at 50% 72%,#263858 0,#142440 40%,#0b1428 78%);padding:8px 18px 4px;min-height:230px}
+.arena:before{content:"";position:absolute;left:0;right:0;bottom:24px;height:1px;background:linear-gradient(90deg,transparent,#7285a7aa,transparent)}
+.arena:after{content:"";position:absolute;left:0;right:0;bottom:0;height:35px;background:linear-gradient(0deg,#060d1caa,transparent);pointer-events:none}
+.arena svg{display:block;width:100%;height:auto;max-height:285px;position:relative;z-index:1}
+.arena-caption{position:absolute;left:18px;right:18px;bottom:9px;z-index:2;display:flex;justify-content:space-between;color:#8394b2;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-weight:900}
+.challenge{display:grid;grid-template-columns:1fr minmax(220px,.8fr);gap:16px;align-items:center;padding:22px clamp(16px,3vw,30px) 25px;background:linear-gradient(110deg,#121f39,#172744)}
+.word-prompt-label{color:#8fa1bf;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:900}
+.word-prompt{color:#fff;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.05em;font-weight:950;margin:5px 0 0;overflow-wrap:anywhere}
+.word-category{color:#9fb0ca;font-size:.73rem;margin-top:5px}
+.answer-area{display:grid;gap:9px}
+.answer-mode-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.11em;color:#b6c3d8;font-weight:850}
+.answer-row{display:flex;gap:8px}
+.answer-input{min-width:0;background:#f8faff;border-color:#526582;min-height:48px}
+.answer-input:disabled{opacity:.7}
+.answer-input::placeholder{color:#8895a9}
+.feedback{min-height:23px;color:#b7c4d9;font-size:.78rem;line-height:1.45}
+.feedback.good{color:#8ee0ac;font-weight:800}
+.feedback.bad{color:#ff9fa5;font-weight:800}
+.game-bottom{padding:15px clamp(16px,3vw,30px) 20px;background:#101c33;border-top:1px solid #263653;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.game-message{color:#a8b7ce;font-size:.78rem}
+.game-actions{display:flex;gap:9px;flex-wrap:wrap}
+.life{color:#ff8790;letter-spacing:2px}
+.fullscreen-btn{position:absolute;top:12px;right:12px;z-index:4;background:#1b2a45dd;border:1px solid #51617c;color:#dce7fb;padding:8px 10px;border-radius:10px;font-size:.72rem;font-weight:850;cursor:pointer}
+#gameShell:fullscreen{width:100vw;height:100vh;border-radius:0;overflow:auto;display:flex;flex-direction:column;background:#0b1428}
+#gameShell:fullscreen .arena{flex:1;display:flex;align-items:center;justify-content:center;min-height:260px}
+#gameShell:fullscreen .arena svg{max-height:40vh}
+#gameShell:fullscreen .challenge{flex:0 0 auto}
+#gameShell:fullscreen .game-bottom{flex:0 0 auto}
+.end-panel{padding:25px;text-align:center;background:#fff;border:1px solid #e4e9f2;border-radius:20px;margin-top:16px}
+.end-panel h2{font-size:1.65rem;margin:0 0 7px;color:#142449}
+.end-panel p{color:#68758d;line-height:1.6}
+.end-summary{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin:15px}
+.end-summary strong{display:block;font-size:1.5rem;color:#162a50}
+.end-summary span{font-size:.7rem;color:#77849a;text-transform:uppercase;letter-spacing:.1em;font-weight:850}
+@keyframes enemy-launch{0%{opacity:0;transform:translateX(0)}12%{opacity:1}90%{opacity:1}100%{opacity:1;transform:translateX(320px)}}
+@keyframes enemy-impact{0%{opacity:1;transform:translateX(320px)}100%{opacity:0;transform:translateX(455px)}}
+@keyframes enemy-fade{to{opacity:0;filter:blur(8px);transform:scale(.72)}}
+@keyframes player-shot{0%{opacity:1;transform:translateX(0)}14%{opacity:1}100%{opacity:0;transform:translateX(-490px)}}
+@keyframes player-fade{to{opacity:0;filter:blur(8px);transform:scale(.7)}}
+.enemy-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
+.player-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
+.scene.enemy-fired .enemy-arrow{animation:enemy-launch .82s cubic-bezier(.18,.68,.28,1) forwards}
+.scene.correct .enemy-arrow{animation:enemy-fade .42s ease-out forwards}
+.scene.correct .player-arrow{opacity:1;animation:player-shot .72s cubic-bezier(.2,.68,.25,1) forwards}
+.scene.wrong .player-arrow{opacity:1;animation:player-fade .48s ease-out forwards}
+.scene.wrong .enemy-arrow{animation:enemy-impact .62s ease-in forwards}
+.impact{opacity:0;transform-origin:center}
+.scene.correct .impact-player{animation:impact-pop .42s ease-out .62s forwards}
+.scene.wrong .impact-target{animation:impact-pop .42s ease-out .5s forwards}
+@keyframes impact-pop{0%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1.8)}}
+@media(max-width:780px){
+ main{width:min(100% - 24px,680px);padding:22px 0 40px}
+ .hero{align-items:flex-start}.hero-mark{display:none}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .setup-grid{grid-template-columns:1fr}
+ .game-top{grid-template-columns:repeat(4,minmax(0,1fr));padding:10px}
+ .game-stat{padding:5px 7px}
+ .game-stat strong{font-size:1rem}
+ .arena{min-height:160px;padding:8px 8px 3px}
+ .arena svg{min-height:150px}
+ .challenge{grid-template-columns:1fr;padding:16px}
+ .answer-row{flex-direction:column}
+ .game-bottom{align-items:flex-start}
+}
+@media(max-width:430px){
+ .mode-options{grid-template-columns:1fr}
+ .game-stat span{font-size:.54rem}
+ .game-stat strong{font-size:.9rem}
+ .arena-caption{font-size:.5rem}
+ .game-actions{width:100%}.game-actions .btn{flex:1}
+ .stat{padding:11px}
+ .stat strong{font-size:1.45rem}
+}
+</style>
+</head>
+<body>
+<header class="drillgre-site-header">
+  <div class="drillgre-nav-shell">
+    <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+      <span class="drillgre-brand-mark">D</span><span class="drillgre-brand-name">Drill<span>GRE</span></span><span class="drillgre-free-tag">FREE</span>
+    </a>
+    <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+      <details class="drillgre-nav-dropdown"><summary>Quant</summary><div class="drillgre-nav-submenu"><a href="/quant/index.html">Lessons</a><a href="/quant/question-bank.html">Question Bank</a><a href="/quant/quiz.html">Quiz</a></div></details>
+      <a href="/vocab.html">Vocab Mountain</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/quant/mock.html">Mock Tests</a>
+      <a href="/#how">How it works</a>
+    </nav>
+    <div class="drillgre-nav-actions"><a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a><a class="drillgre-start-link" href="/#practice">Start drilling <span aria-hidden="true">→</span></a></div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div><div class="eyebrow">Verbal · Aim for meaning</div><h1>Word Archery</h1><p>An opponent fires a word challenge. Shoot back with a synonym or a short meaning. Each accurate answer earns points, builds your streak, and sharpens your GRE vocabulary.</p></div>
+    <div class="hero-mark" aria-hidden="true">🏹</div>
+  </section>
+
+  <section class="stats" aria-label="Word Archery statistics">
+    <div class="stat"><span>Total points</span><strong id="statPoints">0</strong><small id="statsSource">Your game score</small></div>
+    <div class="stat"><span>Success rate</span><strong id="statRate">0%</strong><small id="statAccuracy">0 correct / 0 attempts</small></div>
+    <div class="stat"><span>Current streak</span><strong id="statStreak">0</strong><small>Consecutive bullseyes</small></div>
+    <div class="stat"><span>Arrows answered</span><strong id="statAttempts">0</strong><small>Every answer counts</small></div>
+  </section>
+
+  <section id="setupPanel" class="panel">
+    <div class="setup-grid">
+      <div>
+        <h2>Choose your weapon</h2>
+        <p class="sub">Pick the kind of answer you want to practise. You can change it before every new duel.</p>
+        <div class="mode-options">
+          <label class="mode-option">
+            <input type="radio" name="answerMode" value="synonym" checked>
+            <span class="mode-card"><span class="mode-icon">🎯</span><b>Synonym Shot</b><small>Type a synonym that matches the word. Any listed synonym is accepted.</small></span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="answerMode" value="meaning">
+            <span class="mode-card"><span class="mode-icon">📜</span><b>Meaning Shot</b><small>Write a short meaning in your own words. The game checks the key meaning words.</small></span>
+          </label>
+        </div>
+        <div class="field"><label for="roundChoice">Duel length</label><select id="roundChoice"><option value="5">Quick duel · 5 arrows</option><option value="10" selected>Target practice · 10 arrows</option><option value="20">Tournament · 20 arrows</option><option value="0">Endless challenge · 3 lives</option></select></div>
+        <div class="setup-actions"><button id="startGame" class="btn btn-primary" type="button">🏹 Begin the duel</button><span id="loadStatus" class="game-message" role="status">Loading the vocabulary range…</span></div>
+        <p class="login-note" id="loginNote">Your score will be saved on this device. Sign in to save Word Archery statistics to your learner account.</p>
+      </div>
+      <aside class="setup-side">
+        <h2>How to win</h2>
+        <ul>
+          <li>Your opponent fires a word challenge.</li>
+          <li>Type a synonym or a short meaning before you fire back.</li>
+          <li>A correct answer dissolves the opponent's arrow and sends your arrow flying.</li>
+          <li>A wrong answer lets the opponent's arrow reach your shield. You lose one life.</li>
+          <li>Earn <b>10 points</b> per bullseye and <b>5 bonus points</b> for every third consecutive hit.</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section id="gamePanel" class="game-shell hidden" aria-label="Word Archery game">
+    <div class="game-top">
+      <div class="game-stat"><span>Round</span><strong id="roundValue">1 / 10</strong></div>
+      <div class="game-stat"><span>Points</span><strong id="scoreValue" class="gold">0</strong></div>
+      <div class="game-stat"><span>Lives</span><strong id="livesValue" class="life">♥ ♥ ♥</strong></div>
+      <div class="game-stat"><span>Streak</span><strong id="streakValue">0 🔥</strong></div>
+    </div>
+    <div class="arena" id="arena">
+      <button class="fullscreen-btn" id="fullscreenBtn" type="button">⛶ Full screen</button>
+      <svg class="scene" id="battleScene" viewBox="0 0 1000 300" role="img" aria-label="Two archers face each other across a moonlit training field">
+        <defs>
+          <linearGradient id="enemyMetal" x1="0" x2="1"><stop stop-color="#ffb1a0"/><stop offset="1" stop-color="#b92f4b"/></linearGradient>
+          <linearGradient id="playerMetal" x1="0" x2="1"><stop stop-color="#fff0a8"/><stop offset="1" stop-color="#c28a2d"/></linearGradient>
+          <linearGradient id="bowWood" x1="0" x2="1"><stop stop-color="#edc77e"/><stop offset="1" stop-color="#80512c"/></linearGradient>
+          <radialGradient id="moonGlow"><stop stop-color="#fff6d8" stop-opacity=".9"/><stop offset="1" stop-color="#b9d8ff" stop-opacity="0"/></radialGradient>
+          <filter id="arrowGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="500" cy="92" r="105" fill="url(#moonGlow)" opacity=".36"/>
+        <circle cx="500" cy="55" r="22" fill="#fff4d7" opacity=".82"/>
+        <g fill="#d6e3ff" opacity=".6"><circle cx="375" cy="42" r="2"/><circle cx="426" cy="88" r="1.5"/><circle cx="600" cy="33" r="2"/><circle cx="668" cy="82" r="1.5"/><circle cx="520" cy="18" r="1.5"/></g>
+        <path d="M0 236 Q130 190 250 232 T500 225 T750 228 T1000 214 V300 H0Z" fill="#152b40" opacity=".78"/>
+        <path d="M0 260 Q180 230 350 258 T680 256 T1000 242" fill="none" stroke="#66809a" stroke-opacity=".32" stroke-width="2"/>
+        <g id="opponentArcher" transform="translate(100 60)">
+          <path d="M93 82 Q68 95 76 145 L83 197 L127 197 L132 146 Q140 107 115 83Z" fill="#7a3045" stroke="#df7c76" stroke-width="3"/>
+          <circle cx="105" cy="49" r="26" fill="#d99a78" stroke="#6a3345" stroke-width="4"/>
+          <path d="M79 43 Q81 15 109 18 Q137 18 132 48 Q122 35 107 35 Q91 40 79 43Z" fill="#2b2637"/>
+          <path d="M85 72 L63 95 L78 108 L100 88Z M123 73 L151 96 L138 111 L113 90Z" fill="#d99a78" stroke="#6a3345" stroke-width="3"/>
+          <path d="M87 194 L78 237 L58 253 L68 262 L105 246 L113 203Z M123 194 L135 237 L155 251 L146 263 L107 246 L101 202Z" fill="#293c59" stroke="#d99a78" stroke-width="3"/>
+          <path d="M151 92 Q196 144 151 202" fill="none" stroke="url(#bowWood)" stroke-width="8" stroke-linecap="round"/>
+          <path d="M151 92 L151 202" stroke="#f0d9a1" stroke-width="2"/>
+          <path d="M144 121 L174 121" stroke="#f4c76b" stroke-width="3"/>
+          <path d="M166 114 L179 121 L166 128" fill="none" stroke="#f4c76b" stroke-width="3"/>
+          <path d="M52 84 L33 113 L42 119 L64 95" fill="#a64d5b"/>
+          <circle cx="105" cy="49" r="5" fill="#2a2330"/>
+        </g>
+        <g id="learnerArcher" transform="translate(900 60) scale(-1 1)">
+          <path d="M93 82 Q68 95 76 145 L83 197 L127 197 L132 146 Q140 107 115 83Z" fill="#234b78" stroke="#7baeea" stroke-width="3"/>
+          <circle cx="105" cy="49" r="26" fill="#d8ad8a" stroke="#284e77" stroke-width="4"/>
+          <path d="M79 43 Q81 15 109 18 Q137 18 132 48 Q122 35 107 35 Q91 40 79 43Z" fill="#202b42"/>
+          <path d="M85 72 L63 95 L78 108 L100 88Z M123 73 L151 96 L138 111 L113 90Z" fill="#d8ad8a" stroke="#284e77" stroke-width="3"/>
+          <path d="M87 194 L78 237 L58 253 L68 262 L105 246 L113 203Z M123 194 L135 237 L155 251 L146 263 L107 246 L101 202Z" fill="#293c59" stroke="#d8ad8a" stroke-width="3"/>
+          <path d="M151 92 Q196 144 151 202" fill="none" stroke="url(#bowWood)" stroke-width="8" stroke-linecap="round"/>
+          <path d="M151 92 L151 202" stroke="#f0d9a1" stroke-width="2"/>
+          <path d="M144 121 L174 121" stroke="#f4c76b" stroke-width="3"/>
+          <path d="M166 114 L179 121 L166 128" fill="none" stroke="#f4c76b" stroke-width="3"/>
+          <path d="M52 84 L33 113 L42 119 L64 95" fill="#35669a"/>
+          <circle cx="105" cy="49" r="5" fill="#252d3a"/>
+        </g>
+        <g id="enemyArrow" class="enemy-arrow" filter="url(#arrowGlow)">
+          <path d="M275 180 L365 180" stroke="#ff6870" stroke-width="6" stroke-linecap="round"/>
+          <path d="M275 180 L291 168 L288 180 L291 192Z" fill="#ff8c87"/>
+          <path d="M365 180 L347 169 L351 180 L347 191Z" fill="#ffcbc2"/>
+          <path d="M303 180 L292 165 M303 180 L292 195" stroke="#fff0da" stroke-width="3"/>
+        </g>
+        <g id="playerArrow" class="player-arrow" filter="url(#arrowGlow)">
+          <path d="M725 180 L815 180" stroke="#ffd16f" stroke-width="6" stroke-linecap="round"/>
+          <path d="M815 180 L797 169 L801 180 L797 191Z" fill="#fff0a8"/>
+          <path d="M725 180 L741 168 L738 180 L741 192Z" fill="#ffe5a0"/>
+          <path d="M787 180 L800 165 M787 180 L800 195" stroke="#fff" stroke-width="3"/>
+        </g>
+        <g class="impact impact-player" fill="none" stroke="#ffe38c" stroke-width="5">
+          <path d="M240 145 L240 115 M225 130 L195 130 M255 130 L285 130 M218 108 L198 88 M262 108 L282 88"/>
+        </g>
+        <g class="impact impact-target" fill="none" stroke="#ff7580" stroke-width="5">
+          <path d="M760 145 L760 115 M745 130 L715 130 M775 130 L805 130 M738 108 L718 88 M782 108 L802 88"/>
+        </g>
+        <g transform="translate(490 222)" opacity=".78">
+          <path d="M0 0 Q18 -28 36 0 Q18 18 0 0Z" fill="#b7c8e6" opacity=".28"/>
+          <path d="M18 -22 L18 18" stroke="#d6e5ff" stroke-opacity=".35"/>
+        </g>
+      </svg>
+      <div class="arena-caption"><span>Opponent · The Red Fletch</span><span>You · The Golden Arrow</span></div>
+    </div>
+    <div class="challenge">
+      <div>
+        <div class="word-prompt-label" id="promptLabel">Incoming word</div>
+        <div class="word-prompt" id="challengeWord">Ready your bow</div>
+        <div class="word-category" id="challengeCategory">A word will appear here</div>
+      </div>
+      <form class="answer-area" id="answerForm">
+        <label class="answer-mode-label" id="answerModeLabel" for="answerInput">Your synonym</label>
+        <div class="answer-row"><input id="answerInput" class="answer-input" type="text" maxlength="250" autocomplete="off" autocapitalize="off" placeholder="Type your answer…" disabled><button id="fireBtn" class="btn btn-gold" type="submit" disabled>Fire</button></div>
+        <div id="feedback" class="feedback" role="status" aria-live="polite">The opponent is preparing a word challenge.</div>
+      </form>
+    </div>
+    <div class="game-bottom">
+      <div class="game-message" id="gameMessage">Aim carefully. Every answer counts.</div>
+      <div class="game-actions"><button id="nextRoundBtn" class="btn btn-gold hidden" type="button">Next arrow →</button><button id="quitBtn" class="btn" type="button">End duel</button></div>
+    </div>
+  </section>
+
+  <section id="endPanel" class="end-panel hidden">
+    <div class="eyebrow">The duel is complete</div><h2 id="endTitle">Well shot!</h2><p id="endText">Your results are ready.</p>
+    <div class="end-summary">
+      <div><strong id="endPoints">0</strong><span>Points earned</span></div>
+      <div><strong id="endAccuracy">0%</strong><span>Session accuracy</span></div>
+      <div><strong id="endCorrect">0 / 0</strong><span>Bullseyes</span></div>
+    </div>
+    <button id="playAgain" class="btn btn-primary" type="button">🏹 Play again</button>
+    <button id="backSetup" class="btn" type="button">Change game settings</button>
+  </section>
+</main>
+
+<script>
+const ARCHERY_SUPABASE_URL="https://aayzpcfryixauwsytphd.supabase.co";
+const ARCHERY_SUPABASE_KEY="sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
+const db=window.supabase.createClient(ARCHERY_SUPABASE_URL,ARCHERY_SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const LOCAL_KEY="drillgre_word_archery_guest_v1";
+const G={
+  user:null,words:[],pool:[],used:new Set(),mode:"synonym",limit:10,round:0,score:0,
+  correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,timer:null,seconds:20,
+  stats:{total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}
+};
+const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function normalise(value){
+  return String(value||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
+}
+function stopWords(){
+  return new Set("the and for with from into onto that this these those their there then than which what when where while whose your you are was were been being have has had does did doing not but can could would should will may might must about over under between through such some more most very often also only each any all one two three its our out per who whom how why to of in on at a an or be as is".split(" "));
+}
+function meaningMatches(answer,meanings){
+  const typed=normalise(answer);
+  if(!typed)return false;
+  const ignored=stopWords();
+  const answerWords=[...new Set(typed.split(" ").filter(word=>word.length>2&&!ignored.has(word)))];
+  for(const meaning of meanings){
+    const target=normalise(meaning);
+    if(!target)continue;
+    if(typed===target)return true;
+    const targetWords=[...new Set(target.split(" ").filter(word=>word.length>2&&!ignored.has(word)))];
+    if(!targetWords.length)continue;
+    const overlap=answerWords.filter(word=>targetWords.includes(word)).length;
+    const required=Math.max(1,Math.ceil(targetWords.length*.5));
+    if(overlap>=required && answerWords.length<=targetWords.length+3)return true;
+  }
+  return false;
+}
+function localIsCorrect(word,mode,answer){
+  if(mode==="synonym"){
+    const accepted=String(word.synonyms||"").split(/[,;|]/).map(normalise).filter(Boolean);
+    return accepted.includes(normalise(answer));
+  }
+  return meaningMatches(answer,word.meanings||[]);
+}
+function readGuestStats(){
+  try{
+    return Object.assign({total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0},JSON.parse(localStorage.getItem(LOCAL_KEY)||"{}"));
+  }catch{return {total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}}
+}
+function saveGuestStats(){
+  try{localStorage.setItem(LOCAL_KEY,JSON.stringify(G.stats))}catch{}
+}
+function paintStats(){
+  $("statPoints").textContent=Number(G.stats.total_points||0).toLocaleString();
+  $("statRate").textContent=Number(G.stats.success_rate||0).toFixed(1)+"%";
+  $("statAccuracy").textContent=Number(G.stats.correct_attempts||0)+" correct / "+Number(G.stats.total_attempts||0)+" attempts";
+  $("statStreak").textContent=Number(G.stats.streak||0);
+  $("statAttempts").textContent=Number(G.stats.total_attempts||0).toLocaleString();
+}
+async function loadStats(){
+  if(!G.user){
+    G.stats=readGuestStats();
+    $("statsSource").textContent="Saved on this device";
+    $("loginNote").textContent="You are playing as a guest. Your score is saved on this device only. Sign in to sync statistics across devices.";
+    paintStats();
+    return;
+  }
+  $("statsSource").textContent="Synced to your account";
+  $("loginNote").textContent="Signed in. Your points, attempts and success rate are saved to your learner account.";
+  const {data,error}=await db.rpc("get_word_archery_stats");
+  if(error){
+    $("statsSource").textContent="Account stats unavailable";
+    $("loginNote").textContent="Run supabase/word-archery.sql to enable saved scores. You can still play this game.";
+    G.stats=readGuestStats();
+  }else{
+    G.stats=Object.assign({},G.stats,data||{});
+  }
+  paintStats();
+}
+function updateGameHud(){
+  $("roundValue").textContent=G.limit===0?"Round "+G.round:""+G.round+" / "+G.limit;
+  $("scoreValue").textContent=G.score.toLocaleString();
+  $("livesValue").textContent="♥ ".repeat(Math.max(0,G.lives)).trim()||"0";
+  $("streakValue").textContent=G.streak+" 🔥";
+}
+function resetScene(){
+  const scene=$("battleScene");
+  scene.classList.remove("enemy-fired","correct","wrong");
+  void scene.getBoundingClientRect();
+}
+function fireOpponentArrow(){
+  resetScene();
+  requestAnimationFrame(()=> $("battleScene").classList.add("enemy-fired"));
+}
+function setFeedback(text,type){
+  const f=$("feedback");
+  f.textContent=text;
+  f.className="feedback"+(type?" "+type:"");
+}
+function clearTimer(){
+  if(G.timer){clearInterval(G.timer);G.timer=null;}
+}
+function startTimer(){
+  clearTimer();
+  G.seconds=20;
+  $("gameMessage").textContent="Incoming arrow · You have 20 seconds";
+  const tick=()=>{
+    $("gameMessage").textContent="Incoming arrow · "+G.seconds+" seconds";
+    if(G.seconds<=0){clearTimer();resolveAnswer("",true);return}
+    G.seconds--;
+  };
+  tick();
+  G.timer=setInterval(tick,1000);
+}
+function chooseWord(){
+  if(!G.pool.length)return null;
+  let available=G.pool.filter(word=>!G.used.has(word.id));
+  if(!available.length){G.used.clear();available=G.pool.slice()}
+  const word=available[Math.floor(Math.random()*available.length)];
+  G.used.add(word.id);
+  return word;
+}
+function nextRound(){
+  clearTimer();
+  if((G.limit>0&&G.round>=G.limit)||G.lives<=0){finishGame();return}
+  G.round++;
+  G.current=chooseWord();
+  if(!G.current){finishGame("There are no words with answers for this mode. Try the other answer mode.");return}
+  G.locked=false;
+  $("promptLabel").textContent="Incoming word · "+(G.mode==="synonym"?"Synonym Shot":"Meaning Shot");
+  $("challengeWord").textContent=G.current.word;
+  $("challengeCategory").textContent=G.current.category||"GRE vocabulary";
+  $("answerModeLabel").textContent=G.mode==="synonym"?"Your synonym":"Your short meaning";
+  $("answerInput").placeholder=G.mode==="synonym"?"Type one synonym…":"Write a short meaning…";
+  $("answerInput").disabled=false;
+  $("answerInput").value="";
+  $("fireBtn").disabled=false;
+  $("nextRoundBtn").classList.add("hidden");
+  setFeedback("The Red Fletch has sent a word challenge. Shoot back with your answer.");
+  updateGameHud();
+  fireOpponentArrow();
+  startTimer();
+  setTimeout(()=>$("answerInput").focus({preventScroll:true}),180);
+}
+async function resolveAnswer(answer,timedOut=false){
+  if(G.locked||!G.current)return;
+  if(!timedOut&&!String(answer||"").trim()){
+    setFeedback("Enter a synonym or short meaning before firing.","bad");
+    $("answerInput").focus();
+    return;
+  }
+  G.locked=true;
+  clearTimer();
+  $("answerInput").disabled=true;
+  $("fireBtn").disabled=true;
+  let result;
+  try{
+    if(G.user){
+      const {data,error}=await db.rpc("submit_word_archery_attempt",{
+        p_vocab_word_id:G.current.id,p_answer_mode:G.mode,p_answer:timedOut?"":answer
+      });
+      if(error)throw error;
+      result=data||{};
+    }else{
+      const correct=timedOut?false:localIsCorrect(G.current,G.mode,answer);
+      const nextStreak=correct?G.stats.streak+1:0;
+      const points=correct?10+(nextStreak>0&&nextStreak%3===0?5:0):0;
+      G.stats.total_attempts++;
+      if(correct)G.stats.correct_attempts++;
+      G.stats.total_points+=points;
+      G.stats.streak=nextStreak;
+      G.stats.success_rate=100*G.stats.correct_attempts/Math.max(1,G.stats.total_attempts);
+      saveGuestStats();
+      result={is_correct:correct,points_awarded:points,streak:nextStreak,
+        total_attempts:G.stats.total_attempts,correct_attempts:G.stats.correct_attempts,
+        total_points:G.stats.total_points,success_rate:G.stats.success_rate};
+    }
+  }catch(error){
+    G.locked=false;
+    $("answerInput").disabled=false;
+    $("fireBtn").disabled=false;
+    setFeedback("Could not record this attempt. "+(error.message||"Please try again."),"bad");
+    return;
+  }
+  const correct=!!result.is_correct;
+  G.attempts++;
+  if(correct){
+    G.correct++;
+    G.score+=Number(result.points_awarded||10);
+    G.streak++;
+    $("battleScene").classList.remove("enemy-fired","wrong");
+    $("battleScene").classList.add("correct");
+    setFeedback("Bullseye! "+(G.mode==="synonym"?"Synonym":"Meaning")+" accepted. +"+Number(result.points_awarded||10)+" points.","good");
+    $("gameMessage").textContent=G.streak%3===0?"Three in a row! Streak bonus unlocked.":"Your arrow found its mark.";
+  }else{
+    G.lives=Math.max(0,G.lives-1);
+    G.streak=0;
+    $("battleScene").classList.remove("enemy-fired","correct");
+    $("battleScene").classList.add("wrong");
+    const accepted=G.mode==="synonym"
+      ? String(G.current.synonyms||"No synonyms recorded").split(/[,;|]/).map(x=>x.trim()).filter(Boolean).join(", ")
+      : (G.current.meanings||[]).join(" · ");
+    setFeedback((timedOut?"Time is up. ":"Not quite. ")+"A good answer: "+accepted,"bad");
+    $("gameMessage").textContent="The Red Fletch hit your shield. "+G.lives+" lives remaining.";
+  }
+  if(G.user){
+    G.stats={
+      total_attempts:Number(result.total_attempts||0),
+      correct_attempts:Number(result.correct_attempts||0),
+      total_points:Number(result.total_points||0),
+      success_rate:Number(result.success_rate||0),
+      streak:Number(result.streak||0)
+    };
+  }
+  paintStats();
+  updateGameHud();
+  $("nextRoundBtn").textContent=(G.limit>0&&G.round>=G.limit)||G.lives<=0?"See results":"Next arrow →";
+  $("nextRoundBtn").classList.remove("hidden");
+  $("gameMessage").textContent += " · "+G.correct+"/"+G.attempts+" correct this duel";
+}
+function finishGame(message){
+  clearTimer();
+  $("gamePanel").classList.add("hidden");
+  $("endPanel").classList.remove("hidden");
+  const rate=G.attempts?100*G.correct/G.attempts:0;
+  $("endTitle").textContent=G.lives<=0?"Your shield is down!":"Well shot, archer!";
+  $("endText").textContent=message||(G.lives<=0?"The duel ended after three hits. Keep practising to sharpen your aim.":"You completed the duel. Every round makes your vocabulary aim stronger.");
+  $("endPoints").textContent=G.score.toLocaleString();
+  $("endAccuracy").textContent=rate.toFixed(1)+"%";
+  $("endCorrect").textContent=G.correct+" / "+G.attempts;
+}
+async function startGame(){
+  if(!G.words.length){
+    $("loadStatus").textContent="Vocabulary is still loading. Please wait.";
+    return;
+  }
+  G.mode=document.querySelector('input[name="answerMode"]:checked').value;
+  G.limit=Number($("roundChoice").value);
+  G.pool=G.words.filter(word=>G.mode==="synonym"?word.synonyms.trim().length>0:word.meanings.length>0);
+  if(!G.pool.length){
+    $("loadStatus").textContent="No words are available for this answer mode yet. Try the other mode.";
+    return;
+  }
+  G.used=new Set();G.round=0;G.score=0;G.correct=0;G.attempts=0;G.streak=0;G.lives=3;
+  $("setupPanel").classList.add("hidden");
+  $("endPanel").classList.add("hidden");
+  $("gamePanel").classList.remove("hidden");
+  updateGameHud();
+  nextRound();
+}
+async function init(){
+  $("loadStatus").textContent="Loading vocabulary range…";
+  try{
+    const {data:sessionData}=await db.auth.getSession();
+    G.user=sessionData?.session?.user||null;
+    const all=[];
+    const size=1000;
+    for(let offset=0;;offset+=size){
+      const {data,error}=await db.from("vocab_words")
+        .select("id,word,category,meaning1,meaning2,meaning3,synonyms")
+        .eq("is_published",true)
+        .order("word",{ascending:true})
+        .range(offset,offset+size-1);
+      if(error)throw error;
+      all.push(...(data||[]));
+      if(!data||data.length<size)break;
+    }
+    G.words=all.map(row=>({
+      id:String(row.id),word:String(row.word||"").trim(),category:String(row.category||"").trim(),
+      meanings:[row.meaning1,row.meaning2,row.meaning3].map(x=>String(x||"").trim()).filter(Boolean),
+      synonyms:String(row.synonyms||"").trim()
+    })).filter(word=>word.word);
+    $("loadStatus").textContent=G.words.length+" words loaded · ready to play";
+    await loadStats();
+    $("startGame").disabled=false;
+  }catch(error){
+    $("loadStatus").textContent="Could not load Word Archery. "+(error.message||"Please refresh.");
+    $("startGame").disabled=true;
+  }
+}
+$("startGame").addEventListener("click",startGame);
+$("answerForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  resolveAnswer($("answerInput").value,false);
+});
+$("nextRoundBtn").addEventListener("click",nextRound);
+$("quitBtn").addEventListener("click",()=>finishGame("You ended this duel. Your completed attempts and points have been retained."));
+$("playAgain").addEventListener("click",()=>{ $("endPanel").classList.add("hidden"); $("setupPanel").classList.remove("hidden"); });
+$("backSetup").addEventListener("click",()=>{ $("endPanel").classList.add("hidden"); $("setupPanel").classList.remove("hidden"); });
+$("fullscreenBtn").addEventListener("click",async()=>{
+  try{
+    if(!document.fullscreenElement){
+      await $("gamePanel").requestFullscreen();
+      $("fullscreenBtn").textContent="⛶ Exit full screen";
+    }else{
+      await document.exitFullscreen();
+      $("fullscreenBtn").textContent="⛶ Full screen";
+    }
+  }catch(error){$("gameMessage").textContent="Full-screen mode is not available in this browser."}
+});
+document.addEventListener("fullscreenchange",()=>{
+  $("fullscreenBtn").textContent=document.fullscreenElement?"⛶ Exit full screen":"⛶ Full screen";
+});
+$("startGame").disabled=true;
+init();
+</script>
+</body>
+</html>
