@@ -578,9 +578,12 @@ async function startGame(){
   }
   G.mode=document.querySelector('input[name="answerMode"]:checked').value;
   G.limit=Number($("roundChoice").value);
-  G.pool=G.words.filter(word=>G.mode==="synonym"?word.synonyms.trim().length>0:word.meanings.length>0);
+  G.pool=G.words.filter(word=>
+    (G.mode==="synonym"?word.synonyms.trim().length>0:word.meanings.length>0) &&
+    buildAnswerOptions(word,G.mode).length===4
+  );
   if(!G.pool.length){
-    $("loadStatus").textContent="No words are available for this answer mode yet. Try the other mode.";
+    $("loadStatus").textContent="No words have four distinct answer choices in this mode yet. Try the other mode.";
     return;
   }
   G.used=new Set();G.round=0;G.score=0;G.correct=0;G.attempts=0;G.streak=0;G.lives=3;
