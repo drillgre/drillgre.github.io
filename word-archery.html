@@ -88,11 +88,18 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .game-actions{display:flex;gap:9px;flex-wrap:wrap}
 .life{color:#ff8790;letter-spacing:2px}
 .fullscreen-btn{position:absolute;top:12px;right:12px;z-index:4;background:#1b2a45dd;border:1px solid #51617c;color:#dce7fb;padding:8px 10px;border-radius:10px;font-size:.72rem;font-weight:850;cursor:pointer}
-#gamePanel:fullscreen{width:100vw;height:100vh;max-height:100vh;margin:0;border-radius:0;overflow:auto;display:flex;flex-direction:column;background:#0b1428}
-#gamePanel:fullscreen .arena{flex:1;display:flex;align-items:center;justify-content:center;min-height:260px}
-#gamePanel:fullscreen .arena svg{max-height:40vh}
+#gamePanel:fullscreen{width:100vw;height:100vh;height:100dvh;max-height:none;margin:0;border-radius:0;overflow:auto;display:flex;flex-direction:column;background:#0b1428}
+#gamePanel:fullscreen .arena{flex:1;display:flex;align-items:center;justify-content:center;min-height:220px}
+#gamePanel:fullscreen .arena svg{max-height:42vh;max-height:42dvh}
 #gamePanel:fullscreen .challenge{flex:0 0 auto}
 #gamePanel:fullscreen .game-bottom{flex:0 0 auto}
+html.wa-pseudo-fullscreen,html.wa-pseudo-fullscreen body{width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none}
+html.wa-pseudo-fullscreen #gamePanel{display:flex!important;position:fixed!important;inset:0!important;z-index:2147483647!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain;flex-direction:column;background:#0b1428;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+html.wa-pseudo-fullscreen #gamePanel .arena{flex:1 0 190px;display:flex;align-items:center;justify-content:center;min-height:190px}
+html.wa-pseudo-fullscreen #gamePanel .arena svg{width:100%;max-height:42vh;max-height:42dvh}
+html.wa-pseudo-fullscreen #gamePanel .challenge{flex:0 0 auto}
+html.wa-pseudo-fullscreen #gamePanel .game-bottom{flex:0 0 auto}
+html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:sticky;top:8px;align-self:flex-end;margin-bottom:-42px}
 .end-panel{padding:25px;text-align:center;background:#fff;border:1px solid #e4e9f2;border-radius:20px;margin-top:16px}
 .end-panel h2{font-size:1.65rem;margin:0 0 7px;color:#142449}
 .end-panel p{color:#68758d;line-height:1.6}
@@ -102,7 +109,7 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 @keyframes enemy-launch{0%{opacity:0;transform:translateX(0)}12%{opacity:1}100%{opacity:1;transform:translateX(135px)}}
 @keyframes enemy-meet-fade{0%{opacity:1;filter:blur(0);transform:translateX(135px)}70%{opacity:1;filter:blur(0);transform:translateX(135px)}100%{opacity:0;filter:blur(7px);transform:translateX(135px) scale(.88)}}
 @keyframes player-meet-fade{0%{opacity:0;filter:blur(0);transform:translateX(0)}12%{opacity:1}70%{opacity:1;filter:blur(0);transform:translateX(-225px)}100%{opacity:0;filter:blur(7px);transform:translateX(-225px) scale(.88)}}
-@keyframes enemy-impact{0%{opacity:1;transform:translateX(135px)}70%{opacity:1;transform:translateX(330px)}100%{opacity:0;filter:blur(5px);transform:translateX(410px)}}
+@keyframes enemy-impact{0%{opacity:1;filter:blur(0);transform:translateX(0)}72%{opacity:1;filter:blur(0);transform:translateX(330px)}100%{opacity:0;filter:blur(5px);transform:translateX(410px)}}
 @keyframes player-fade{0%{opacity:1;filter:blur(0);transform:translateX(0)}100%{opacity:0;filter:blur(8px);transform:translateX(-12px) scale(.7)}}
 .enemy-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
 .player-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
@@ -110,10 +117,19 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .scene.correct .enemy-arrow{animation:enemy-meet-fade .78s ease-in-out forwards}
 .scene.correct .player-arrow{opacity:1;animation:player-meet-fade .78s ease-in-out forwards}
 .scene.wrong .player-arrow{opacity:1;animation:player-fade .38s ease-out forwards}
-.scene.wrong .enemy-arrow{animation:enemy-impact .65s cubic-bezier(.18,.68,.28,1) forwards}
-.impact{opacity:0;transform-origin:center}
-.scene.correct .impact-player{animation:impact-pop .52s ease-out .52s forwards}
-.scene.wrong .impact-target{animation:impact-pop .42s ease-out .42s forwards}
+.scene.wrong .enemy-arrow{animation:enemy-impact .92s cubic-bezier(.18,.68,.28,1) forwards}
+.impact{opacity:0;transform-origin:center;transform-box:fill-box}
+.scene.correct .impact-player{animation:blast-burst .92s cubic-bezier(.16,.75,.24,1) .48s both}
+.scene.correct .blast-ring-one{animation:blast-ring .64s ease-out .48s both}
+.scene.correct .blast-ring-two{animation:blast-ring .72s ease-out .52s both}
+.scene.correct .blast-ring-three{animation:blast-ring .8s ease-out .56s both}
+.scene.correct .blast-rays{animation:blast-rays .68s ease-out .48s both}
+.scene.correct .blast-core{animation:blast-core .48s ease-out .48s both}
+.scene.wrong .impact-target{animation:impact-pop .42s ease-out .62s forwards}
+@keyframes blast-burst{0%{opacity:0;filter:blur(5px);transform:scale(.2)}28%{opacity:1;filter:blur(0);transform:scale(1.15)}58%{opacity:.96;transform:scale(1)}100%{opacity:0;filter:blur(4px);transform:scale(1.75)}}
+@keyframes blast-ring{0%{opacity:0;transform:scale(.25)}35%{opacity:1}100%{opacity:0;transform:scale(1.8)}}
+@keyframes blast-rays{0%{opacity:0;transform:scale(.35) rotate(0)}35%{opacity:1}100%{opacity:0;transform:scale(1.35) rotate(18deg)}}
+@keyframes blast-core{0%{opacity:0;transform:scale(.1)}40%{opacity:1;transform:scale(1.6)}100%{opacity:0;transform:scale(.2)}}
 @keyframes impact-pop{0%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1.8)}}
 @media(max-width:780px){
  main{width:min(100% - 24px,680px);padding:22px 0 40px}
@@ -183,11 +199,11 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
         <div class="mode-options">
           <label class="mode-option">
             <input type="radio" name="answerMode" value="synonym" checked>
-            <span class="mode-card"><span class="mode-icon">🎯</span><b>Synonym Shot</b><small>Type a synonym that matches the word. Any listed synonym is accepted.</small></span>
+            <span class="mode-card"><span class="mode-icon">🎯</span><b>Synonym Shot</b><small>Choose the synonym that best matches the word.</small></span>
           </label>
           <label class="mode-option">
             <input type="radio" name="answerMode" value="meaning">
-            <span class="mode-card"><span class="mode-icon">📜</span><b>Meaning Shot</b><small>Write a short meaning in your own words. The game checks the key meaning words.</small></span>
+            <span class="mode-card"><span class="mode-icon">📜</span><b>Meaning Shot</b><small>Choose the short meaning that best explains the word.</small></span>
           </label>
         </div>
         <div class="field"><label for="roundChoice">Duel length</label><select id="roundChoice"><option value="5">Quick duel · 5 arrows</option><option value="10" selected>Target practice · 10 arrows</option><option value="20">Tournament · 20 arrows</option><option value="0">Endless challenge · 3 lives</option></select></div>
@@ -197,10 +213,10 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
       <aside class="setup-side">
         <h2>How to win</h2>
         <ul>
-          <li>Your opponent fires a word challenge.</li>
-          <li>Type a synonym or a short meaning before you fire back.</li>
-          <li>A correct answer dissolves the opponent's arrow and sends your arrow flying.</li>
-          <li>A wrong answer lets the opponent's arrow reach your shield. You lose one life.</li>
+          <li>A word challenge appears and the 20-second clock starts.</li>
+          <li>Choose one of the four options. Your selection triggers the opponent's arrow.</li>
+          <li>Fire your answer. A correct shot meets the opponent's arrow in a blazing collision.</li>
+          <li>A wrong answer, or a timeout, lets the opponent's arrow hit your shield. You lose one life.</li>
           <li>Earn <b>10 points</b> per bullseye and <b>5 bonus points</b> for every third consecutive hit.</li>
         </ul>
       </aside>
@@ -222,6 +238,7 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
           <linearGradient id="playerMetal" x1="0" x2="1"><stop stop-color="#fff0a8"/><stop offset="1" stop-color="#c28a2d"/></linearGradient>
           <linearGradient id="bowWood" x1="0" x2="1"><stop stop-color="#edc77e"/><stop offset="1" stop-color="#80512c"/></linearGradient>
           <radialGradient id="moonGlow"><stop stop-color="#fff6d8" stop-opacity=".9"/><stop offset="1" stop-color="#b9d8ff" stop-opacity="0"/></radialGradient>
+          <radialGradient id="blastGlow"><stop stop-color="#ffffff" stop-opacity="1"/><stop offset=".22" stop-color="#fff4b0" stop-opacity=".98"/><stop offset=".58" stop-color="#ffb84d" stop-opacity=".62"/><stop offset="1" stop-color="#ff6b45" stop-opacity="0"/></radialGradient>
           <filter id="arrowGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
         <circle cx="500" cy="92" r="105" fill="url(#moonGlow)" opacity=".36"/>
@@ -267,9 +284,14 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
           <path d="M815 180 L799 168 L802 180 L799 192Z" fill="#ffe5a0"/>
           <path d="M803 180 L815 165 M803 180 L815 195" stroke="#fff" stroke-width="3"/>
         </g>
-        <g class="impact impact-player" fill="none" stroke="#ffe38c" stroke-width="5">
-          <path d="M500 145 L500 112 M483 128 L450 128 M517 128 L550 128 M486 101 L465 80 M514 101 L535 80"/>
-          <circle cx="500" cy="128" r="12" fill="#ffe38c" fill-opacity=".24" stroke="#fff0bd"/>
+        <g class="impact impact-player" fill="none" stroke-linecap="round">
+          <circle cx="500" cy="128" r="92" fill="url(#blastGlow)" stroke="none"/>
+          <circle class="blast-ring blast-ring-one" cx="500" cy="128" r="22" stroke="#fff8c8" stroke-width="8"/>
+          <circle class="blast-ring blast-ring-two" cx="500" cy="128" r="48" stroke="#ffbd55" stroke-width="5"/>
+          <circle class="blast-ring blast-ring-three" cx="500" cy="128" r="72" stroke="#ff7957" stroke-width="3"/>
+          <path class="blast-rays" d="M500 14 L500 65 M500 191 L500 242 M386 128 L438 128 M562 128 L614 128 M419 47 L455 83 M545 173 L581 209 M581 47 L545 83 M455 173 L419 209 M447 25 L466 75 M534 181 L553 231 M393 75 L443 94 M557 162 L607 181 M553 25 L534 75 M466 181 L447 231 M607 75 L557 94 M443 162 L393 181" stroke="#fff0a3" stroke-width="7"/>
+          <path class="blast-shards" d="M472 75 L458 43 L484 65 M528 75 L542 43 L516 65 M472 181 L458 213 L484 191 M528 181 L542 213 L516 191 M448 104 L418 88 L442 119 M552 104 L582 88 L558 119 M448 152 L418 168 L442 137 M552 152 L582 168 L558 137" fill="#fff0a3" stroke="#ffdc77" stroke-width="3"/>
+          <circle class="blast-core" cx="500" cy="128" r="17" fill="#fff" stroke="#fff8ce" stroke-width="5"/>
         </g>
         <g class="impact impact-target" fill="none" stroke="#ff7580" stroke-width="5">
           <path d="M760 145 L760 115 M745 130 L715 130 M775 130 L805 130 M738 108 L718 88 M782 108 L802 88"/>
@@ -320,7 +342,7 @@ const $=id=>document.getElementById(id);
 const LOCAL_KEY="drillgre_word_archery_guest_v1";
 const G={
   user:null,localOnly:false,words:[],pool:[],used:new Set(),mode:"synonym",options:[],selectedAnswer:"",limit:10,round:0,score:0,
-  correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,timer:null,seconds:20,
+  correct:0,attempts:0,streak:0,lives:3,current:null,locked:true,opponentLaunched:false,timer:null,seconds:20,
   stats:{total_attempts:0,correct_attempts:0,total_points:0,success_rate:0,streak:0}
 };
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -371,7 +393,8 @@ function renderAnswerOptions(){
       G.selectedAnswer=G.options[Number(button.dataset.answerOption)]||"";
       host.querySelectorAll("[data-answer-option]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
       $("fireBtn").disabled=!G.selectedAnswer;
-      setFeedback("Answer selected. Fire when you are ready.");
+      fireOpponentArrow();
+      setFeedback("The Red Fletch has fired! Lock in your answer.");
     });
   });
 }
@@ -427,7 +450,8 @@ function resetScene(){
   void scene.getBoundingClientRect();
 }
 function fireOpponentArrow(){
-  resetScene();
+  if(G.opponentLaunched)return;
+  G.opponentLaunched=true;
   requestAnimationFrame(()=> $("battleScene").classList.add("enemy-fired"));
 }
 function setFeedback(text,type){
@@ -441,9 +465,9 @@ function clearTimer(){
 function startTimer(){
   clearTimer();
   G.seconds=20;
-  $("gameMessage").textContent="Incoming arrow · You have 20 seconds";
+  $("gameMessage").textContent="Choose your answer · 20 seconds";
   const tick=()=>{
-    $("gameMessage").textContent="Incoming arrow · "+G.seconds+" seconds";
+    $("gameMessage").textContent="Choose your answer · "+G.seconds+" seconds";
     if(G.seconds<=0){clearTimer();resolveAnswer("",true);return}
     G.seconds--;
   };
@@ -478,9 +502,10 @@ function nextRound(){
     setFeedback("No answer options are available for this word and mode. Try the other answer mode.","bad");
     return;
   }
-  setFeedback("Choose one of the options, then fire your arrow.");
+  G.opponentLaunched=false;
+  resetScene();
+  setFeedback("Choose an option. The opponent fires when you make your selection.");
   updateGameHud();
-  fireOpponentArrow();
   startTimer();
 }
 async function resolveAnswer(answer,timedOut=false){
@@ -528,7 +553,7 @@ async function resolveAnswer(answer,timedOut=false){
     G.correct++;
     G.score+=Number(result.points_awarded||10);
     G.streak=Number(result.streak??(G.streak+1));
-    $("battleScene").classList.remove("wrong");
+    $("battleScene").classList.remove("wrong","enemy-fired");
     $("battleScene").classList.add("correct");
     setFeedback("Bullseye! "+(G.mode==="synonym"?"Synonym":"Meaning")+" accepted. +"+Number(result.points_awarded||10)+" points.","good");
     $("gameMessage").textContent=Number(result.points_awarded||0)>10
@@ -632,19 +657,43 @@ $("nextRoundBtn").addEventListener("click",nextRound);
 $("quitBtn").addEventListener("click",()=>finishGame("You ended this duel. Your completed attempts and points have been retained."));
 $("playAgain").addEventListener("click",()=>{ $("endPanel").classList.add("hidden"); $("setupPanel").classList.remove("hidden"); });
 $("backSetup").addEventListener("click",()=>{ $("endPanel").classList.add("hidden"); $("setupPanel").classList.remove("hidden"); });
+function isGameFullscreen(){
+  return document.fullscreenElement===$("gamePanel")||document.documentElement.classList.contains("wa-pseudo-fullscreen");
+}
+function syncFullscreenButton(){
+  const active=isGameFullscreen();
+  $("fullscreenBtn").textContent=active?"⛶ Exit full screen":"⛶ Full screen";
+  $("fullscreenBtn").setAttribute("aria-pressed",String(active));
+}
+function exitPseudoFullscreen(){
+  document.documentElement.classList.remove("wa-pseudo-fullscreen");
+  syncFullscreenButton();
+}
 $("fullscreenBtn").addEventListener("click",async()=>{
-  try{
-    if(!document.fullscreenElement){
-      await $("gamePanel").requestFullscreen();
-      $("fullscreenBtn").textContent="⛶ Exit full screen";
-    }else{
-      await document.exitFullscreen();
-      $("fullscreenBtn").textContent="⛶ Full screen";
-    }
-  }catch(error){$("gameMessage").textContent="Full-screen mode is not available in this browser."}
+  if(document.documentElement.classList.contains("wa-pseudo-fullscreen")){
+    exitPseudoFullscreen();
+    return;
+  }
+  if(document.fullscreenElement){
+    try{await document.exitFullscreen()}catch(error){document.documentElement.classList.add("wa-pseudo-fullscreen")}
+    syncFullscreenButton();
+    return;
+  }
+  const panel=$("gamePanel");
+  if(typeof panel.requestFullscreen==="function"){
+    try{
+      await panel.requestFullscreen({navigationUI:"hide"});
+      syncFullscreenButton();
+      return;
+    }catch(error){/* Fall back to an immersive fixed-position view on mobile browsers. */}
+  }
+  document.documentElement.classList.add("wa-pseudo-fullscreen");
+  syncFullscreenButton();
+  $("gameMessage").textContent="Full-screen view enabled. Tap Exit full screen to return.";
 });
-document.addEventListener("fullscreenchange",()=>{
-  $("fullscreenBtn").textContent=document.fullscreenElement?"⛶ Exit full screen":"⛶ Full screen";
+document.addEventListener("fullscreenchange",syncFullscreenButton);
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&document.documentElement.classList.contains("wa-pseudo-fullscreen"))exitPseudoFullscreen();
 });
 $("startGame").disabled=true;
 init();
