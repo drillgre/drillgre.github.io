@@ -25,6 +25,34 @@
     return url.toString();
   }
 
+  function oauthCallbackUrl() {
+    const url = new URL(accountPageUrl());
+    url.searchParams.set("oauth_callback", "1");
+    return url.toString();
+  }
+
+  async function signInWithProvider(provider) {
+    const buttons = [$("googleOAuth"), $("appleOAuth")];
+    const activeButton = provider === "google" ? $("googleOAuth") : $("appleOAuth");
+    const originalText = activeButton.querySelector("span").textContent;
+
+    buttons.forEach(button => { button.disabled = true; });
+    activeButton.querySelector("span").textContent = "Connecting…";
+    showMessage("Connecting to " + (provider === "google" ? "Google" : "Apple") + "…");
+
+    try {
+      const options = { redirectTo: oauthCallbackUrl() };
+      if (provider === "google") options.queryParams = { prompt: "select_account" };
+
+      const { error } = await db.auth.signInWithOAuth({ provider, options });
+      if (error) throw error;
+    } catch (error) {
+      buttons.forEach(button => { button.disabled = false; });
+      activeButton.querySelector("span").textContent = originalText;
+      showMessage(error.message || "Social sign-in could not be started. Please try again.", true);
+    }
+  }
+
   function showMessage(message, error = false) {
     const box = $("accountMessage");
     box.hidden = !message;
@@ -128,6 +156,9 @@
     showMessage(isQuestionBank ? "Your account is ready. Opening the Question Bank…" : "Your account is ready. Opening your learner dashboard…");
     window.location.replace(destination);
   }
+
+  $("googleOAuth").addEventListener("click", () => signInWithProvider("google"));
+  $("appleOAuth").addEventListener("click", () => signInWithProvider("apple"));
 
   $("loginTab").addEventListener("click", () => setMode("login"));
   $("registerTab").addEventListener("click", () => setMode("register"));
@@ -282,9 +313,10 @@
   document.addEventListener("DOMContentLoaded", async () => {
     const queryParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const isOAuthCallback = queryParams.get("oauth_callback") === "1";
     const isRecovery = queryParams.get("type") === "recovery"
       || hashParams.get("type") === "recovery"
-      || queryParams.has("code");
+      || (queryParams.has("code") && !isOAuthCallback);
     const authError = hashParams.get("error_description") || queryParams.get("error_description");
 
     if (authError) {
@@ -293,7 +325,7 @@
     }
 
     const { data } = await db.auth.getSession();
-    if (data.session && !isRecovery) {
+    if (data.session && (!isRecovery || isOAuthCallback)) {
       await claimGuestAttemptsAndContinue();
     }
   });
