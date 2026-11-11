@@ -330,8 +330,10 @@ async function setWordStatus(word,status){
 function setCardStage(el,stage){
   el.dataset.stage=String(stage);
   el.classList.toggle("meaning",stage===1);
-  el.classList.toggle("examples",stage===2);
-  el.querySelector(".hint").textContent=stage===0?"Tap to reveal meanings":stage===1?"Tap to reveal examples":"Tap to return to word";
+  el.classList.toggle("examples",stage===1);
+  el.querySelector(".hint").textContent=stage===0
+    ?"Tap to reveal meanings and examples"
+    :"Tap to return to the word";
 }
 function card(word,number){
   const status=wordStatus(word);
@@ -348,7 +350,7 @@ function card(word,number){
       (canSpeak?'<button type="button" class="speak-word" aria-label="Hear pronunciation of '+esc(word.word)+'" title="Hear pronunciation">🔊</button>':'')+
     '</div>'+
     '<div class="word-category"'+(word.category?'':' hidden')+'>'+esc(word.category)+'</div>'+
-    '<p class="hint">Think of a meaning, then tap to reveal</p>'+
+    '<p class="hint">Tap to reveal meanings and examples</p>'+
     '<div class="details"><div class="meaningText"><b>Meanings · '+word.meanings.length+'</b>'+
     (word.meanings.length?'<ol>'+word.meanings.map((m,index)=>'<li><span class="meaning-index">'+(index+1)+'</span><span>'+esc(m)+'</span></li>').join("")+'</ol>':"<p>No meanings entered.</p>")+
     (synonymList.length?'<div class="syn"><b>Synonyms:</b> '+synonymList.map(item=>'<span class="syn-chip">'+esc(item)+'</span>').join("")+'</div>':"")+
@@ -361,7 +363,7 @@ function card(word,number){
       '<button type="button" class="state-action '+(status==="unknown"?"active":"")+'" data-word-status="unknown" aria-pressed="'+(status==="unknown")+'">New to Me</button>'+
     '</div>':"");
   let stage=0;
-  function flip(){stage=(stage+1)%3;setCardStage(el,stage)}
+  function flip(){stage=stage===0?1:0;setCardStage(el,stage)}
   const speakButton=el.querySelector(".speak-word");
   if(speakButton){
     speakButton.addEventListener("click",event=>{
