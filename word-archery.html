@@ -96,7 +96,7 @@ h1{margin:4px 0;color:#111e38;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:
 .end-summary span{font-size:.7rem;color:#77849a;text-transform:uppercase;letter-spacing:.1em;font-weight:850}
 @keyframes enemy-launch{0%{opacity:0;transform:translateX(0)}12%{opacity:1}90%{opacity:1}100%{opacity:1;transform:translateX(320px)}}
 @keyframes enemy-impact{0%{opacity:1;transform:translateX(320px)}100%{opacity:0;transform:translateX(455px)}}
-@keyframes enemy-fade{to{opacity:0;filter:blur(8px);transform:scale(.72)}}
+@keyframes enemy-fade{from{opacity:1;filter:blur(0);transform:translateX(320px) scale(1)}to{opacity:0;filter:blur(8px);transform:translateX(320px) scale(.72)}}
 @keyframes player-shot{0%{opacity:1;transform:translateX(0)}14%{opacity:1}100%{opacity:0;transform:translateX(-490px)}}
 @keyframes player-fade{to{opacity:0;filter:blur(8px);transform:scale(.7)}}
 .enemy-arrow{opacity:0;transform-box:fill-box;transform-origin:center}
