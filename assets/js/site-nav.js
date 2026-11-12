@@ -42,6 +42,29 @@
   // Close both Quant and Verbal menus on page entry and after navigation.
   const navDropdowns = [...document.querySelectorAll(".drillgre-nav-dropdown")];
   const closeDropdowns = () => navDropdowns.forEach(dropdown => { dropdown.open = false; });
+  const hoverCapable = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+  // Desktop: open on hover and close as soon as the pointer leaves the
+  // complete dropdown area. Keyboard focus receives the same treatment.
+  navDropdowns.forEach(dropdown => {
+    dropdown.addEventListener("pointerenter", () => {
+      if (hoverCapable.matches) dropdown.open = true;
+    });
+    dropdown.addEventListener("pointerleave", () => {
+      if (hoverCapable.matches && !dropdown.matches(":focus-within")) {
+        dropdown.open = false;
+      }
+    });
+    dropdown.addEventListener("focusin", () => {
+      if (hoverCapable.matches) dropdown.open = true;
+    });
+    dropdown.addEventListener("focusout", event => {
+      if (hoverCapable.matches && !dropdown.contains(event.relatedTarget)) {
+        dropdown.open = false;
+      }
+    });
+  });
+
   closeDropdowns();
   window.addEventListener("pageshow", closeDropdowns);
   document.addEventListener("keydown", event => {
