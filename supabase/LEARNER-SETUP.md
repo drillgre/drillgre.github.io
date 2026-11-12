@@ -85,9 +85,9 @@ CSV columns are \`day\`, \`sn\`, \`word\`, \`category\`, \`meaning1\`, \`meaning
 Vocab Mountain reads published words directly from Supabase and displays each word's category. Guests can browse, search, and study vocabulary, but their progress is not saved and the learning tracker is unavailable until they sign in. Signed-in learners can classify words as **Nailed It** (green), **Revisit** (orange), or **New to Me** (red). These classifications are saved to Supabase and synced across devices. Unclassified cards remain white in the **All** view.
 
 
-## Google and Apple sign-in
+## Google sign-in
 
-The learner account page includes **Continue with Google** and **Continue with Apple**. Both use Supabase Auth OAuth and return learners to the requested page after authentication. A first-time social sign-in automatically creates a learner profile through the existing `on_auth_user_created_drillgre` trigger.
+The learner account page offers **Continue with Google** alongside the existing email/password sign-in and registration forms. Google sign-in uses Supabase Auth OAuth and returns learners to the requested page after authentication. A first-time Google sign-in automatically creates a learner profile through the existing `on_auth_user_created_drillgre` trigger.
 
 ### Supabase redirect settings
 
@@ -102,7 +102,7 @@ The provider callback URL for this Supabase project is:
 
 `https://aayzpcfryixauwsytphd.supabase.co/auth/v1/callback`
 
-### Google
+### Google provider
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create or select a project and open **Google Auth Platform → Clients**.
 2. Create an OAuth client with application type **Web application**.
@@ -111,18 +111,7 @@ The provider callback URL for this Supabase project is:
 5. In Supabase, open **Authentication → Sign In / Providers → Google**, enable Google, and enter the Google Client ID and Client Secret.
 6. Configure the Google consent screen and add the `openid`, `.../auth/userinfo.email`, and `.../auth/userinfo.profile` scopes.
 
-### Apple
-
-1. In the [Apple Developer Console](https://developer.apple.com/account/), create an App ID and enable **Sign in with Apple**.
-2. Create a **Services ID** associated with that App ID.
-3. Configure the Services ID's website domain as `aayzpcfryixauwsytphd.supabase.co` and its return URL as `https://aayzpcfryixauwsytphd.supabase.co/auth/v1/callback`.
-4. Create a Sign in with Apple key and record its Key ID and your Team ID. Keep the downloaded `.p8` private.
-5. Generate the Apple client secret using the Services ID, Team ID, Key ID, and private key.
-6. In Supabase, open **Authentication → Sign In / Providers → Apple**, enable Apple, and enter the Services ID as the Client ID and the generated client secret.
-
-Apple requires OAuth client secrets to be rotated every six months. Keep the `.p8` key secure so you can generate replacement secrets. Apple's web OAuth flow does not return a user's full name, so a name may need to be collected separately for the learner profile.
-
-**Security:** Enter provider secrets only in the Supabase Dashboard. Never add Google Client Secrets, Apple client secrets, Apple private keys, or Supabase secret/service-role keys to GitHub or browser JavaScript.
+**Security:** Enter the Google Client Secret only in the Supabase Dashboard. Never add it or any Supabase secret/service-role key to GitHub or browser JavaScript.
 
 ## Email and password authentication
 
