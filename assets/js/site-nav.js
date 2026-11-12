@@ -5,53 +5,6 @@
   const SUPABASE_URL = "https://aayzpcfryixauwsytphd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
 
-  function initializePageLoader() {
-    if (!document.body || document.querySelector(".drillgre-page-loader")) return;
-
-    const loader = document.createElement("div");
-    loader.className = "drillgre-page-loader";
-    loader.setAttribute("role", "status");
-    loader.setAttribute("aria-live", "polite");
-    loader.setAttribute("aria-label", "Loading DrillGRE");
-    loader.innerHTML = `
-      <div class="drillgre-loader-content">
-        <div class="drillgre-loader-mark" aria-hidden="true">
-          <div class="drillgre-loader-ring"></div>
-          <div class="drillgre-loader-orbit"></div>
-          <div class="drillgre-loader-core">D</div>
-        </div>
-        <div class="drillgre-loader-brand">Drill<span>GRE</span></div>
-        <div class="drillgre-loader-note">Loading your learning space</div>
-      </div>`;
-    document.body.prepend(loader);
-
-    const startedAt = Date.now();
-    let dismissed = false;
-    const dismiss = () => {
-      if (dismissed) return;
-      dismissed = true;
-      const minimumDisplay = 420;
-      const delay = Math.max(0, minimumDisplay - (Date.now() - startedAt));
-      window.setTimeout(() => {
-        loader.classList.add("is-hidden");
-        loader.setAttribute("aria-hidden", "true");
-        window.setTimeout(() => loader.remove(), 320);
-      }, delay);
-    };
-
-    if (document.readyState === "complete") dismiss();
-    else window.addEventListener("load", dismiss, { once: true });
-
-    // Do not let a slow third-party asset keep the page covered indefinitely.
-    window.setTimeout(dismiss, 10000);
-    window.addEventListener("pageshow", event => {
-      if (event.persisted) dismiss();
-    }, { once: true });
-  }
-
-  // Start the global loading indicator before navigation work begins.
-  initializePageLoader();
-
   // Keep the canonical homepage clean: / rather than /index.html.
   if (window.location.pathname === "/index.html") {
     window.location.replace("/" + window.location.search + window.location.hash);
