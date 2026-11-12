@@ -31,25 +31,28 @@
     return url.toString();
   }
 
-  async function signInWithProvider(provider) {
-    const buttons = [$("googleOAuth"), $("appleOAuth")];
-    const activeButton = provider === "google" ? $("googleOAuth") : $("appleOAuth");
-    const originalText = activeButton.querySelector("span").textContent;
+  async function signInWithGoogle() {
+    const button = $("googleOAuth");
+    const label = button.querySelector("span");
+    const originalText = label.textContent;
 
-    buttons.forEach(button => { button.disabled = true; });
-    activeButton.querySelector("span").textContent = "Connecting…";
-    showMessage("Connecting to " + (provider === "google" ? "Google" : "Apple") + "…");
+    button.disabled = true;
+    label.textContent = "Connecting…";
+    showMessage("Connecting to Google…");
 
     try {
-      const options = { redirectTo: oauthCallbackUrl() };
-      if (provider === "google") options.queryParams = { prompt: "select_account" };
-
-      const { error } = await db.auth.signInWithOAuth({ provider, options });
+      const { error } = await db.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: oauthCallbackUrl(),
+          queryParams: { prompt: "select_account" }
+        }
+      });
       if (error) throw error;
     } catch (error) {
-      buttons.forEach(button => { button.disabled = false; });
-      activeButton.querySelector("span").textContent = originalText;
-      showMessage(error.message || "Social sign-in could not be started. Please try again.", true);
+      button.disabled = false;
+      label.textContent = originalText;
+      showMessage(error.message || "Google sign-in could not be started. Please try again.", true);
     }
   }
 
@@ -157,8 +160,7 @@
     window.location.replace(destination);
   }
 
-  $("googleOAuth").addEventListener("click", () => signInWithProvider("google"));
-  $("appleOAuth").addEventListener("click", () => signInWithProvider("apple"));
+  $("googleOAuth").addEventListener("click", signInWithGoogle);
 
   $("loginTab").addEventListener("click", () => setMode("login"));
   $("registerTab").addEventListener("click", () => setMode("register"));
