@@ -209,7 +209,7 @@
   .drillgre-nav-submenu a{padding:9px 10px!important}
 }
 
-/* Full-page DrillGRE loading indicator */
+/* DrillGRE database-request loading indicator */
 .drillgre-page-loader{
   position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;
   padding:24px;background:radial-gradient(circle at 50% 43%,#ffffff 0%,#f7f9ff 54%,#eef3ff 100%);
