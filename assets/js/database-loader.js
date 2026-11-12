@@ -20,7 +20,9 @@
   function isDatabaseRequest(input) {
     const rawUrl = typeof input === "string"
       ? input
-      : (input && typeof input.url === "string" ? input.url : "");
+      : (input instanceof URL
+        ? input.href
+        : (input && typeof input.url === "string" ? input.url : ""));
     if (!rawUrl) return false;
 
     try {
