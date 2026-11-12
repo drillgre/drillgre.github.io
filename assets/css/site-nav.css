@@ -186,13 +186,19 @@
   .drillgre-start-link { min-height: 40px; padding: 0 12px; font-size: 13px; }
 }
 
+/* Desktop dropdowns open on hover/focus; JavaScript closes them on pointer leave. */
+@media (min-width:821px) and (hover:hover) and (pointer:fine) {
+  .drillgre-nav-dropdown summary { padding:10px 0; }
+  .drillgre-nav-dropdown:hover summary,
+  .drillgre-nav-dropdown:focus-within summary { color:#356df3; }
+}
 /* Quant dropdown: Lessons and Quiz */
 .drillgre-nav-dropdown{position:relative;display:inline-flex;align-items:center}
 .drillgre-nav-dropdown summary{list-style:none;display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:#4e5870;text-decoration:none;font-size:14px;font-weight:650;white-space:nowrap;padding:10px 0}
 .drillgre-nav-dropdown summary::-webkit-details-marker{display:none}
 .drillgre-nav-dropdown summary::after{content:"▾";font-size:11px;color:#7b879a}
 .drillgre-nav-dropdown[open] summary,.drillgre-nav-dropdown summary:hover{color:#356df3}
-.drillgre-nav-submenu{position:absolute;top:calc(100% + 8px);left:-14px;min-width:150px;padding:7px;background:#fff;border:1px solid #e3e8f1;border-radius:11px;box-shadow:0 12px 28px rgba(25,42,75,.13);display:grid;gap:2px;z-index:1100}
+.drillgre-nav-submenu{position:absolute;top:100%;left:-14px;min-width:150px;padding:7px;background:#fff;border:1px solid #e3e8f1;border-radius:11px;box-shadow:0 12px 28px rgba(25,42,75,.13);display:grid;gap:2px;z-index:1100}
 .drillgre-nav-submenu a{display:block;padding:9px 11px;border-radius:7px;font-size:13px!important;color:#354158!important}
 .drillgre-nav-submenu a:hover{background:#f0f4ff;color:#2454d7!important}
 .drillgre-nav-submenu a[aria-current="page"]{background:#f0f4ff;color:#2454d7!important;font-weight:800}
