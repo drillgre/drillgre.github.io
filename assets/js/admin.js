@@ -2011,7 +2011,7 @@ function downloadQuestionCsvExample() {
       "","A prime number has exactly two positive factors. Therefore, 2, 11 and 17 are prime.","text","","both","FALSE","",""],
     // Quantitative Comparison
     ["Linear expressions","algebra","algebraic_expressions","quantitative_comparison","2",
-      "Compare Quantity A and Quantity B.","","","","","","","2x + 1","7","A","","",
+      "Compare Quantity A and Quantity B.","","","","","","","2x + 1","7","D","","",
       "","Since x is not specified, the relationship cannot be determined. Check the assumptions in the question before finalising this illustrative answer.","text","","both","FALSE","",""],
     // Numeric Entry
     ["Linear equations","algebra","linear_equations","numeric_entry","2",
@@ -2019,7 +2019,7 @@ function downloadQuestionCsvExample() {
       "","Subtract 5 from both sides and divide by 3. Therefore, x = 5.","text","","both","FALSE","",""],
     // Data Interpretation (uses the same option columns and may link to a shared stimulus_id)
     ["Data interpretation","data_analysis","data_interpretation","data_interpretation","2",
-      "A table shows sales of 20, 25 and 30 units in three successive months. What were total sales?","65","70","75","80","","","","","C","","",
+      "Monthly sales were 20, 25 and 30 units in three successive months. What were total sales?","65","70","75","80","","","","","C","","",
       "","Add the three monthly figures: 20 + 25 + 30 = 75 units. For linked questions, supply the shared stimulus_id.","text","","practice","FALSE","",""]
   ];
   downloadCsvFile("drillgre-question-import-example.csv", [questionCsvHeaders, ...examples]);
