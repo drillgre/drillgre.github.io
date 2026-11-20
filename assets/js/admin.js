@@ -1260,7 +1260,7 @@ function updateQuestionBulkControls() {
   $("questionSelectionCount").textContent = selected + " selected";
   $("deleteSelectedQuestions").disabled = selected === 0;
   $("publishSelectedQuestions").disabled = selected === 0;
-  $("publishSelectedQuestions").textContent = "Toggle selected publish status";
+  $("publishSelectedQuestions").textContent = "[Un]Publish selected";
   $("selectAllQuestions").checked = false;
   const visible = [...$("questionList").querySelectorAll("[data-qselect]")];
   $("selectAllQuestions").checked = visible.length > 0 && visible.every(input => input.checked);
@@ -1271,7 +1271,7 @@ function updateQuestionBulkControls() {
     ? "Delete all in category"
     : "Delete category";
   $("publishCategoryQuestions").disabled = !category;
-  $("publishCategoryQuestions").textContent = "Toggle category publish status";
+  $("publishCategoryQuestions").textContent = "[Un]Publish category";
 }
 
 async function loadQuestions() {
