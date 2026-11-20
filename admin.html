@@ -158,6 +158,14 @@
             id="search"
             placeholder="Search topic or question">
 
+          <select id="categoryFilter">
+            <option value="">All categories</option>
+            <option value="arithmetic">Arithmetic</option>
+            <option value="data_analysis">Data Analysis</option>
+            <option value="algebra">Algebra</option>
+            <option value="geometry">Geometry</option>
+          </select>
+
           <select id="typeFilter">
             <option value="">All types</option>
 
@@ -193,6 +201,14 @@
 
         </div>
 
+        <div class="question-bulkbar">
+          <label class="bulk-select"><input type="checkbox" id="selectAllQuestions"> Select all visible</label>
+          <span id="questionSelectionCount" class="meta" aria-live="polite">0 selected</span>
+          <div class="actions">
+            <button type="button" class="secondary" id="deleteSelectedQuestions" disabled>Delete selected</button>
+            <button type="button" class="del-button" id="deleteCategoryQuestions" disabled>Delete category</button>
+          </div>
+        </div>
         <div id="questionList"></div>
 
       </section>
