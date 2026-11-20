@@ -664,13 +664,14 @@
 
     <div class="panel" style="padding:14px;margin:12px 0">
       <div class="actions" style="justify-content:flex-start;margin-top:0">
-        <button type="button" class="secondary" id="downloadQuestionTemplate">Download CSV template</button>
+        <button type="button" class="secondary" id="downloadQuestionTemplate">Download blank CSV template</button>
+        <button type="button" class="secondary" id="downloadQuestionExample">Download example CSV</button>
       </div>
       <label style="display:block;margin-top:12px">
         Question file
         <input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.json" style="display:block;margin-top:6px">
       </label>
-      <p class="field-note">Spreadsheet columns use option_a to option_f, or quantity_a and quantity_b for Quantitative Comparison. Use correct_answer for option labels (for example A or A,C) or a numeric answer. See the setup guide for the full column list.</p>
+      <p class="field-note">Use the canonical category and subtopic IDs shown in the example CSV. For multiple-choice questions, use option_a to option_f and put the correct option label(s) in correct_answer. For Quantitative Comparison, use quantity_a and quantity_b. For Numeric Entry, use numeric_answer and optional numeric_tolerance. Leave unused cells blank.</p>
       <button type="button" id="validateQuestionImport">Preview and validate</button>
       <p id="questionImportStatus" class="msg" aria-live="polite"></p>
     </div>
