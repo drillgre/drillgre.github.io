@@ -1260,6 +1260,7 @@ function updateQuestionBulkControls() {
   $("questionSelectionCount").textContent = selected + " selected";
   $("deleteSelectedQuestions").disabled = selected === 0;
   $("publishSelectedQuestions").disabled = selected === 0;
+  $("publishSelectedQuestions").textContent = "Toggle selected publish status";
   $("selectAllQuestions").checked = false;
   const visible = [...$("questionList").querySelectorAll("[data-qselect]")];
   $("selectAllQuestions").checked = visible.length > 0 && visible.every(input => input.checked);
@@ -1270,9 +1271,7 @@ function updateQuestionBulkControls() {
     ? "Delete all in category"
     : "Delete category";
   $("publishCategoryQuestions").disabled = !category;
-  $("publishCategoryQuestions").textContent = category
-    ? "Publish category"
-    : "Publish category";
+  $("publishCategoryQuestions").textContent = "Toggle category publish status";
 }
 
 async function loadQuestions() {
@@ -1373,28 +1372,22 @@ $("selectAllQuestions").addEventListener("change", event => {
 $("publishSelectedQuestions").addEventListener("click", async () => {
   const ids = [...selectedQuestionIds];
   if (!ids.length) return;
-  if (!confirm("Publish " + ids.length + " selected question(s)? Already published questions will remain published.")) return;
-
+  if (!confirm("Toggle the published/draft status of " + ids.length + " selected question(s)?")) return;
   const button = $("publishSelectedQuestions");
   button.disabled = true;
-  button.textContent = "Publishing…";
-  const result = await db
-    .from("questions")
-    .update({ published: true, updated_at: new Date().toISOString() })
-    .in("id", ids)
-    .eq("published", false)
-    .select("id");
-  button.textContent = "Publish selected";
-
-  if (result.error) {
-    alert("Could not publish selected questions: " + result.error.message);
-    updateQuestionBulkControls();
-    return;
-  }
-
-  const publishedCount = (result.data || []).length;
+  button.textContent = "Updating…";
+  const current = await db.from("questions").select("id,published").in("id", ids);
+  if (current.error) { alert("Could not read selected question statuses: " + current.error.message); updateQuestionBulkControls(); return; }
+  const publishIds = (current.data || []).filter(row => !row.published).map(row => row.id);
+  const unpublishIds = (current.data || []).filter(row => row.published).map(row => row.id);
+  const timestamp = new Date().toISOString();
+  const results = await Promise.all([
+    publishIds.length ? db.from("questions").update({ published: true, updated_at: timestamp }).in("id", publishIds) : Promise.resolve({ error: null }),
+    unpublishIds.length ? db.from("questions").update({ published: false, updated_at: timestamp }).in("id", unpublishIds) : Promise.resolve({ error: null })
+  ]);
+  if (results.some(result => result.error)) { alert("Could not update all selected questions: " + results.filter(result => result.error).map(result => result.error.message).join("; ")); updateQuestionBulkControls(); return; }
   selectedQuestionIds.clear();
-  alert(publishedCount + " question(s) published.");
+  alert((current.data || []).length + " question(s) had their publication status toggled.");
   await loadQuestions();
 });
 
@@ -1402,31 +1395,24 @@ $("publishCategoryQuestions").addEventListener("click", async () => {
   const category = $("categoryFilter").value;
   if (!category) return;
   const label = categoryLabels[category] || category.replaceAll("_", " ");
-  if (!confirm("Publish all draft questions in " + label + "? Already published questions will remain unchanged.")) return;
-
+  if (!confirm("Toggle the published/draft status of every question in " + label + "?")) return;
   const button = $("publishCategoryQuestions");
   button.disabled = true;
-  button.textContent = "Publishing…";
-  const result = await db
-    .from("questions")
-    .update({ published: true, updated_at: new Date().toISOString() })
-    .eq("topic_category", category)
-    .eq("published", false)
-    .select("id");
-  button.textContent = "Publish category";
-
-  if (result.error) {
-    alert("Could not publish category questions: " + result.error.message);
-    updateQuestionBulkControls();
-    return;
-  }
-
-  const publishedCount = (result.data || []).length;
+  button.textContent = "Updating…";
+  const current = await db.from("questions").select("id,published").eq("topic_category", category);
+  if (current.error) { alert("Could not read category question statuses: " + current.error.message); updateQuestionBulkControls(); return; }
+  const publishIds = (current.data || []).filter(row => !row.published).map(row => row.id);
+  const unpublishIds = (current.data || []).filter(row => row.published).map(row => row.id);
+  const timestamp = new Date().toISOString();
+  const results = await Promise.all([
+    publishIds.length ? db.from("questions").update({ published: true, updated_at: timestamp }).in("id", publishIds) : Promise.resolve({ error: null }),
+    unpublishIds.length ? db.from("questions").update({ published: false, updated_at: timestamp }).in("id", unpublishIds) : Promise.resolve({ error: null })
+  ]);
+  if (results.some(result => result.error)) { alert("Could not update all category questions: " + results.filter(result => result.error).map(result => result.error.message).join("; ")); updateQuestionBulkControls(); return; }
   selectedQuestionIds.clear();
-  alert(publishedCount + " draft question(s) in " + label + " published.");
+  alert((current.data || []).length + " question(s) in " + label + " had their publication status toggled.");
   await loadQuestions();
 });
-
 $("deleteSelectedQuestions").addEventListener("click", async () => {
   const ids = [...selectedQuestionIds];
   if (!ids.length) return;
