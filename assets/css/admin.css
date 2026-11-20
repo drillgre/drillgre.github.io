@@ -11,3 +11,15 @@
 .choice{display:flex!important;flex-direction:row!important;align-items:flex-start!important;gap:9px!important;border:1px solid #e2e8f0;border-radius:8px;padding:10px;background:white;font-weight:500!important}
 .choice input{width:auto;margin-top:4px}
 @media(max-width:650px){.option-row{grid-template-columns:25px minmax(0,1fr)}.option-row button{grid-column:2;justify-self:start}}
+
+
+/* Question-bank selection and bulk deletion */
+.question-bulkbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 0;margin:8px 0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0}
+.question-bulkbar .bulk-select,.question-select{display:flex;flex-direction:row;align-items:center;gap:8px;margin:0;font-size:13px;font-weight:600}
+.question-bulkbar input[type=checkbox],.question-select input[type=checkbox]{width:17px;height:17px;margin:0;accent-color:#2356d8}
+.question-bulkbar .actions{margin-left:auto}
+.question-bulkbar button:disabled{opacity:.45;cursor:not-allowed}
+.question-bulkbar .del-button{background:#fff;color:#b42318;border:1px solid #f0c7c7}
+.question-entry{align-items:center}
+.question-entry-content{flex:1;min-width:0}
+@media(max-width:650px){.question-bulkbar{align-items:flex-start}.question-bulkbar .actions{margin-left:0;width:100%}.question-bulkbar .actions button{flex:1}.question-entry{display:grid;grid-template-columns:24px minmax(0,1fr)}.question-entry .buttons{grid-column:2;justify-content:flex-start}}
