@@ -1227,6 +1227,23 @@ $("figure").onchange = async () => {
 // Load questions
 // ============================================================
 
+let selectedQuestionIds = new Set();
+
+function updateQuestionBulkControls() {
+  const selected = selectedQuestionIds.size;
+  $("questionSelectionCount").textContent = selected + " selected";
+  $("deleteSelectedQuestions").disabled = selected === 0;
+  $("selectAllQuestions").checked = false;
+  const visible = [...$("questionList").querySelectorAll("[data-qselect]")];
+  $("selectAllQuestions").checked = visible.length > 0 && visible.every(input => input.checked);
+  $("selectAllQuestions").indeterminate = visible.some(input => input.checked) && !visible.every(input => input.checked);
+  const category = $("categoryFilter").value;
+  $("deleteCategoryQuestions").disabled = !category;
+  $("deleteCategoryQuestions").textContent = category
+    ? "Delete all in category"
+    : "Delete category";
+}
+
 async function loadQuestions() {
   const { data, error } = await db
     .from("questions")
@@ -1239,10 +1256,12 @@ async function loadQuestions() {
   }
 
   const search = $("search").value.toLowerCase();
+  const category = $("categoryFilter").value;
   const type = $("typeFilter").value;
   const level = $("levelFilter").value;
 
   const rows = (data || []).filter(x =>
+    (!category || x.topic_category === category) &&
     (!search ||
       (x.topic + " " + x.question_text)
         .toLowerCase()
@@ -1251,14 +1270,19 @@ async function loadQuestions() {
     (!level || String(x.difficulty) === level)
   );
 
+  const visibleIds = new Set(rows.map(x => String(x.id)));
+  selectedQuestionIds = new Set([...selectedQuestionIds].filter(id => visibleIds.has(id)));
+
   $("questionList").innerHTML = rows.length
     ? rows.map(x => `
-      <div class="entry">
-        <div>
+      <div class="entry question-entry">
+        <label class="question-select">
+          <input type="checkbox" data-qselect="${esc(x.id)}" ${selectedQuestionIds.has(String(x.id)) ? "checked" : ""} aria-label="Select question">
+        </label>
+        <div class="question-entry-content">
           <strong>
             ${esc(categoryLabels[x.topic_category] || x.topic_category || "Unclassified")} · ${esc((x.subtopic || "").replaceAll("_"," "))} · Level ${x.difficulty}
           </strong>
-
           <div class="meta">
             ${esc(typeNames[x.question_type] || x.question_type)}
             · ${x.stimulus_id ? "Shared stimulus group" : "Standalone"}
@@ -1267,23 +1291,25 @@ async function loadQuestions() {
             · ${esc(x.question_text.slice(0, 130))}
           </div>
         </div>
-
         <div class="buttons">
-          <button data-qedit="${x.id}">Edit</button>
-
-          <button
-            data-qpub="${x.id}"
-            data-published="${x.published}">
+          <button data-qedit="${esc(x.id)}">Edit</button>
+          <button data-qpub="${esc(x.id)}" data-published="${x.published}">
             ${x.published ? "Unpublish" : "Publish"}
           </button>
-
-          <button class="del" data-qdel="${x.id}">
-            Delete
-          </button>
+          <button class="del" data-qdel="${esc(x.id)}">Delete</button>
         </div>
       </div>
     `).join("")
     : "<p>No matching questions.</p>";
+
+  $("questionList").querySelectorAll("[data-qselect]").forEach(input => {
+    input.addEventListener("change", () => {
+      const id = String(input.dataset.qselect);
+      if (input.checked) selectedQuestionIds.add(id);
+      else selectedQuestionIds.delete(id);
+      updateQuestionBulkControls();
+    });
+  });
 
   $("questionList").querySelectorAll("[data-qedit]").forEach(b => {
     b.onclick = () => editQuestion(b.dataset.qedit);
@@ -1299,15 +1325,69 @@ async function loadQuestions() {
   $("questionList").querySelectorAll("[data-qdel]").forEach(b => {
     b.onclick = () => deleteQuestion(b.dataset.qdel);
   });
+
+  updateQuestionBulkControls();
 }
 
-["search", "typeFilter", "levelFilter"].forEach(id => {
+$("selectAllQuestions").addEventListener("change", event => {
+  $("questionList").querySelectorAll("[data-qselect]").forEach(input => {
+    input.checked = event.target.checked;
+    const id = String(input.dataset.qselect);
+    if (input.checked) selectedQuestionIds.add(id);
+    else selectedQuestionIds.delete(id);
+  });
+  updateQuestionBulkControls();
+});
+
+$("deleteSelectedQuestions").addEventListener("click", async () => {
+  const ids = [...selectedQuestionIds];
+  if (!ids.length) return;
+  if (!confirm("Permanently delete " + ids.length + " selected question(s)? This cannot be undone.")) return;
+
+  const button = $("deleteSelectedQuestions");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  const result = await db.from("questions").delete().in("id", ids);
+  button.textContent = "Delete selected";
+
+  if (result.error) {
+    alert("Could not delete selected questions: " + result.error.message);
+    updateQuestionBulkControls();
+    return;
+  }
+
+  selectedQuestionIds.clear();
+  await Promise.all([loadQuestions(), loadStimulusGroups()]);
+});
+
+$("deleteCategoryQuestions").addEventListener("click", async () => {
+  const category = $("categoryFilter").value;
+  if (!category) return;
+  const label = categoryLabels[category] || category.replaceAll("_", " ");
+  if (!confirm("Permanently delete EVERY question in " + label + "? This includes published and draft questions and cannot be undone.")) return;
+
+  const button = $("deleteCategoryQuestions");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  const result = await db.from("questions").delete().eq("topic_category", category);
+  button.textContent = "Delete all in category";
+
+  if (result.error) {
+    alert("Could not delete category questions: " + result.error.message);
+    updateQuestionBulkControls();
+    return;
+  }
+
+  selectedQuestionIds.clear();
+  await Promise.all([loadQuestions(), loadStimulusGroups()]);
+});
+
+["search", "categoryFilter", "typeFilter", "levelFilter"].forEach(id => {
   $(id).addEventListener(
     id === "search" ? "input" : "change",
     loadQuestions
   );
 });
-
 
 // ============================================================
 // Edit question
