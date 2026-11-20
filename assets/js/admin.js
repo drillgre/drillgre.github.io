@@ -33,32 +33,64 @@ const typeNames = {
   data_interpretation: "Data Interpretation"
 };
 
+// Standard GRE Quant taxonomy. Use these exact IDs in CSV imports.
 const categorySubtopics = {
   arithmetic: [
     ["number_properties", "Number properties"],
+    ["divisibility_factors_multiples", "Divisibility, factors and multiples"],
     ["fractions_decimals", "Fractions and decimals"],
-    ["percentages", "Percentages"],
     ["ratios_proportions", "Ratios and proportions"],
+    ["percentages", "Percentages"],
     ["exponents_roots", "Exponents and roots"],
-    ["absolute_values", "Absolute values"],
-    ["arithmetic_other", "Other arithmetic"]
+    ["absolute_value", "Absolute value"]
+  ],
+  algebra: [
+    ["algebraic_expressions", "Algebraic expressions"],
+    ["linear_equations", "Linear equations"],
+    ["systems_of_equations", "Systems of equations"],
+    ["quadratic_equations", "Quadratic equations"],
+    ["inequalities", "Inequalities"],
+    ["functions", "Functions"],
+    ["sequences_series", "Sequences and series"],
+    ["word_problems", "Algebraic word problems"]
+  ],
+  geometry: [
+    ["lines_angles", "Lines and angles"],
+    ["triangles", "Triangles"],
+    ["quadrilaterals_polygons", "Quadrilaterals and polygons"],
+    ["circles", "Circles"],
+    ["coordinate_geometry", "Coordinate geometry"],
+    ["area_perimeter", "Area and perimeter"],
+    ["solid_geometry", "Three-dimensional geometry"]
   ],
   data_analysis: [
     ["data_interpretation", "Data interpretation"],
+    ["descriptive_statistics", "Descriptive statistics"],
     ["probability", "Probability"],
-    ["counting", "Counting, permutations and combinations"],
-    ["statistics", "Statistics"]
-  ],
-  algebra: [
-    ["algebra_core", "Equations and functions"],
-    ["inequalities", "Inequalities"],
-    ["word_problems", "Word problems"]
-  ],
-  geometry: [
-    ["geometry", "Geometry"],
-    ["coordinate_geometry", "Coordinate geometry"]
+    ["combinatorics", "Combinatorics"],
+    ["sets_venn_diagrams", "Sets and Venn diagrams"],
+    ["statistical_distributions", "Statistical distributions"]
   ]
 };
+const categoryLabels = {
+  arithmetic: "Arithmetic",
+  algebra: "Algebra",
+  geometry: "Geometry",
+  data_analysis: "Data Analysis"
+};
+
+// Accept either canonical subtopic IDs or their display labels in CSV files.
+// The legacy "counting" value is mapped to the standard "combinatorics" ID.
+function normalizeImportSubtopic(category, value) {
+  const raw = importText(value).toLowerCase();
+  const options = categorySubtopics[category] || [];
+  const match = options.find(([id, label]) =>
+    id === raw || label.toLowerCase() === raw
+  );
+  if (match) return match[0];
+  if (category === "data_analysis" && raw === "counting") return "combinatorics";
+  return raw.replace(/[\\s-]+/g, "_");
+}
 const categoryLabels = {
   arithmetic: "Arithmetic",
   data_analysis: "Data Analysis",
@@ -1748,7 +1780,7 @@ function importQuestionRecord(rawRow, rowNumber) {
   const errors = [];
 
   const category = importText(row.topic_category).toLowerCase();
-  const subtopic = importText(row.subtopic).toLowerCase();
+  const subtopic = normalizeImportSubtopic(category, row.subtopic);
   const type = importText(row.question_type).toLowerCase();
   const difficulty = Number(row.difficulty);
   const questionText = importText(row.question_text);
@@ -1942,24 +1974,51 @@ function renderQuestionImportPreview() {
   $("runQuestionImport").textContent = valid ? "Import " + valid + " valid questions" : "No valid questions to import";
 }
 
-function downloadQuestionCsvTemplate() {
-  const headers = [
-    "topic","topic_category","subtopic","question_type","difficulty","question_text",
-    "option_a","option_b","option_c","option_d","option_e","option_f",
-    "quantity_a","quantity_b","correct_answer","numeric_answer","numeric_tolerance",
-    "figure_url","explanation","explanation_type","explanation_video_url",
-    "question_usage","published","lesson_id","stimulus_id"
-  ];
-  const csv = headers.join(",") + "\r\n";
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+const questionCsvHeaders = [
+  "topic","topic_category","subtopic","question_type","difficulty","question_text",
+  "option_a","option_b","option_c","option_d","option_e","option_f",
+  "quantity_a","quantity_b","correct_answer","numeric_answer","numeric_tolerance",
+  "figure_url","explanation","explanation_type","explanation_video_url",
+  "question_usage","published","lesson_id","stimulus_id"
+];
+
+function downloadCsvFile(filename, rows) {
+  const escapeCell = value => {
+    const text = String(value ?? "");
+    return /[",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+  };
+  const csv = rows.map(row => row.map(escapeCell).join(",")).join("\r\n") + "\r\n";
+  const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "drillgre-question-import-template.csv";
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadQuestionCsvTemplate() {
+  downloadCsvFile("drillgre-question-import-template.csv", [questionCsvHeaders]);
+}
+
+function downloadQuestionCsvExample() {
+  const examples = [
+    ["GCD and divisibility","arithmetic","divisibility_factors_multiples","multiple_choice_single","2",
+      "What is the greatest common divisor of 24 and 36?","6","8","12","18","","","","","C","","",
+      "","The greatest common divisor is the largest positive integer that divides both numbers. The answer is 12.","text","","both","FALSE","",""],
+    ["Linear equations","algebra","linear_equations","multiple_choice_single","2",
+      "If 3x + 5 = 20, what is the value of x?","3","4","5","6","","","","","C","","",
+      "","Subtract 5 from both sides and divide by 3. Therefore, x = 5.","text","","both","FALSE","",""],
+    ["Triangle angles","geometry","triangles","multiple_choice_single","2",
+      "Two angles of a triangle measure 50 degrees and 60 degrees. What is the third angle?","60 degrees","70 degrees","80 degrees","90 degrees","","","","","B","","",
+      "","The interior angles of a triangle sum to 180 degrees. The third angle is 180 - 50 - 60 = 70 degrees.","text","","both","FALSE","",""],
+    ["Combinatorics","data_analysis","combinatorics","multiple_choice_single","3",
+      "How many different two-person committees can be formed from five people?","5","8","10","20","","","","","C","","",
+      "","Choose 2 people from 5 without regard to order: 5 choose 2 = 10.","text","","both","FALSE","",""]
+  ];
+  downloadCsvFile("drillgre-question-import-example.csv", [questionCsvHeaders, ...examples]);
 }
 
 async function readQuestionImportFile(file) {
@@ -2089,6 +2148,7 @@ $("importQuestions").addEventListener("click", () => {
   $("importQuestionsDialog").showModal();
 });
 $("downloadQuestionTemplate").addEventListener("click", downloadQuestionCsvTemplate);
+$("downloadQuestionExample").addEventListener("click", downloadQuestionCsvExample);
 $("validateQuestionImport").addEventListener("click", validateQuestionImport);
 $("runQuestionImport").addEventListener("click", runQuestionImport);
 
