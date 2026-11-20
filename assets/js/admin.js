@@ -1998,19 +1998,29 @@ function downloadQuestionCsvTemplate() {
 }
 
 function downloadQuestionCsvExample() {
+  // One representative row for each supported question_type.
+  // All rows use the same full-width CSV schema as the blank template.
   const examples = [
+    // Multiple Choice: Single Answer
     ["GCD and divisibility","arithmetic","divisibility_factors_multiples","multiple_choice_single","2",
       "What is the greatest common divisor of 24 and 36?","6","8","12","18","","","","","C","","",
       "","The greatest common divisor is the largest positive integer that divides both numbers. The answer is 12.","text","","both","FALSE","",""],
-    ["Linear equations","algebra","linear_equations","multiple_choice_single","2",
-      "If 3x + 5 = 20, what is the value of x?","3","4","5","6","","","","","C","","",
+    // Multiple Choice: Multiple Answers
+    ["Properties of integers","arithmetic","number_properties","multiple_choice_multiple","3",
+      "Which of the following are prime numbers? Select all that apply.","2","9","11","15","17","","","","A,C,E","","",
+      "","A prime number has exactly two positive factors. Therefore, 2, 11 and 17 are prime.","text","","both","FALSE","",""],
+    // Quantitative Comparison
+    ["Linear expressions","algebra","algebraic_expressions","quantitative_comparison","2",
+      "Compare Quantity A and Quantity B.","","","","","","","2x + 1","7","A","","",
+      "","Since x is not specified, the relationship cannot be determined. Check the assumptions in the question before finalising this illustrative answer.","text","","both","FALSE","",""],
+    // Numeric Entry
+    ["Linear equations","algebra","linear_equations","numeric_entry","2",
+      "If 3x + 5 = 20, what is the value of x?","","","","","","","","","", "5","0",
       "","Subtract 5 from both sides and divide by 3. Therefore, x = 5.","text","","both","FALSE","",""],
-    ["Triangle angles","geometry","triangles","multiple_choice_single","2",
-      "Two angles of a triangle measure 50 degrees and 60 degrees. What is the third angle?","60 degrees","70 degrees","80 degrees","90 degrees","","","","","B","","",
-      "","The interior angles of a triangle sum to 180 degrees. The third angle is 180 - 50 - 60 = 70 degrees.","text","","both","FALSE","",""],
-    ["Combinatorics","data_analysis","combinatorics","multiple_choice_single","3",
-      "How many different two-person committees can be formed from five people?","5","8","10","20","","","","","C","","",
-      "","Choose 2 people from 5 without regard to order: 5 choose 2 = 10.","text","","both","FALSE","",""]
+    // Data Interpretation (uses the same option columns and may link to a shared stimulus_id)
+    ["Data interpretation","data_analysis","data_interpretation","data_interpretation","2",
+      "A table shows sales of 20, 25 and 30 units in three successive months. What were total sales?","65","70","75","80","","","","","C","","",
+      "","Add the three monthly figures: 20 + 25 + 30 = 75 units. For linked questions, supply the shared stimulus_id.","text","","practice","FALSE","",""]
   ];
   downloadCsvFile("drillgre-question-import-example.csv", [questionCsvHeaders, ...examples]);
 }
