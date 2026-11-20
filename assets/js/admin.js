@@ -89,7 +89,7 @@ function normalizeImportSubtopic(category, value) {
   );
   if (match) return match[0];
   if (category === "data_analysis" && raw === "counting") return "combinatorics";
-  return raw.replace(/[\\s-]+/g, "_");
+  return raw.replace(/[\s-]+/g, "_");
 }
 
 const slug = s =>
