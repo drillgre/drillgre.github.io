@@ -91,12 +91,6 @@ function normalizeImportSubtopic(category, value) {
   if (category === "data_analysis" && raw === "counting") return "combinatorics";
   return raw.replace(/[\\s-]+/g, "_");
 }
-const categoryLabels = {
-  arithmetic: "Arithmetic",
-  data_analysis: "Data Analysis",
-  algebra: "Algebra",
-  geometry: "Geometry"
-};
 
 const slug = s =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
