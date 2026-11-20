@@ -1998,30 +1998,92 @@ function downloadQuestionCsvTemplate() {
 }
 
 function downloadQuestionCsvExample() {
-  // One representative row for each supported question_type.
-  // All rows use the same full-width CSV schema as the blank template.
+  // Build rows by column name rather than positional arrays. This prevents
+  // column shifts that can turn difficulty into NaN or misplace answer fields.
+  const example = fields => questionCsvHeaders.map(header =>
+    fields[header] === undefined || fields[header] === null ? "" : fields[header]
+  );
+
   const examples = [
     // Multiple Choice: Single Answer
-    ["GCD and divisibility","arithmetic","divisibility_factors_multiples","multiple_choice_single","2",
-      "What is the greatest common divisor of 24 and 36?","6","8","12","18","","","","","C","","",
-      "","The greatest common divisor is the largest positive integer that divides both numbers. The answer is 12.","text","","both","FALSE","",""],
+    example({
+      topic: "GCD and divisibility",
+      topic_category: "arithmetic",
+      subtopic: "divisibility_factors_multiples",
+      question_type: "multiple_choice_single",
+      difficulty: 2,
+      question_text: "What is the greatest common divisor of 24 and 36?",
+      option_a: "6", option_b: "8", option_c: "12", option_d: "18",
+      correct_answer: "C",
+      explanation: "The greatest common divisor is the largest positive integer that divides both numbers. The answer is 12.",
+      explanation_type: "text",
+      question_usage: "both",
+      published: "FALSE"
+    }),
     // Multiple Choice: Multiple Answers
-    ["Properties of integers","arithmetic","number_properties","multiple_choice_multiple","3",
-      "Which of the following are prime numbers? Select all that apply.","2","9","11","15","17","","","","A,C,E","","",
-      "","A prime number has exactly two positive factors. Therefore, 2, 11 and 17 are prime.","text","","both","FALSE","",""],
+    example({
+      topic: "Properties of integers",
+      topic_category: "arithmetic",
+      subtopic: "number_properties",
+      question_type: "multiple_choice_multiple",
+      difficulty: 3,
+      question_text: "Which of the following are prime numbers? Select all that apply.",
+      option_a: "2", option_b: "9", option_c: "11", option_d: "15", option_e: "17",
+      correct_answer: "A,C,E",
+      explanation: "A prime number has exactly two positive factors. Therefore, 2, 11 and 17 are prime.",
+      explanation_type: "text",
+      question_usage: "both",
+      published: "FALSE"
+    }),
     // Quantitative Comparison
-    ["Linear expressions","algebra","algebraic_expressions","quantitative_comparison","2",
-      "Compare Quantity A and Quantity B.","","","","","","","2x + 1","7","D","","",
-      "","Since x is not specified, the relationship cannot be determined. Check the assumptions in the question before finalising this illustrative answer.","text","","both","FALSE","",""],
+    example({
+      topic: "Linear expressions",
+      topic_category: "algebra",
+      subtopic: "algebraic_expressions",
+      question_type: "quantitative_comparison",
+      difficulty: 2,
+      question_text: "Compare Quantity A and Quantity B. Assume x can be any real number.",
+      quantity_a: "2x + 1",
+      quantity_b: "7",
+      correct_answer: "D",
+      explanation: "The value of x is not specified. Quantity A can be less than, equal to, or greater than Quantity B, so the relationship cannot be determined.",
+      explanation_type: "text",
+      question_usage: "both",
+      published: "FALSE"
+    }),
     // Numeric Entry
-    ["Linear equations","algebra","linear_equations","numeric_entry","2",
-      "If 3x + 5 = 20, what is the value of x?","","","","","","","","","", "5","0",
-      "","Subtract 5 from both sides and divide by 3. Therefore, x = 5.","text","","both","FALSE","",""],
-    // Data Interpretation (uses the same option columns and may link to a shared stimulus_id)
-    ["Data interpretation","data_analysis","data_interpretation","data_interpretation","2",
-      "Monthly sales were 20, 25 and 30 units in three successive months. What were total sales?","65","70","75","80","","","","","C","","",
-      "","Add the three monthly figures: 20 + 25 + 30 = 75 units. For linked questions, supply the shared stimulus_id.","text","","practice","FALSE","",""]
+    example({
+      topic: "Linear equations",
+      topic_category: "algebra",
+      subtopic: "linear_equations",
+      question_type: "numeric_entry",
+      difficulty: 2,
+      question_text: "If 3x + 5 = 20, what is the value of x?",
+      numeric_answer: "5",
+      numeric_tolerance: "0",
+      correct_answer: "5",
+      explanation: "Subtract 5 from both sides and divide by 3. Therefore, x = 5.",
+      explanation_type: "text",
+      question_usage: "both",
+      published: "FALSE"
+    }),
+    // Data Interpretation
+    example({
+      topic: "Data interpretation",
+      topic_category: "data_analysis",
+      subtopic: "data_interpretation",
+      question_type: "data_interpretation",
+      difficulty: 2,
+      question_text: "Monthly sales were 20, 25 and 30 units in three successive months. What were total sales?",
+      option_a: "65", option_b: "70", option_c: "75", option_d: "80",
+      correct_answer: "C",
+      explanation: "Add the three monthly figures: 20 + 25 + 30 = 75 units. For linked questions, supply the shared stimulus_id.",
+      explanation_type: "text",
+      question_usage: "practice",
+      published: "FALSE"
+    })
   ];
+
   downloadCsvFile("drillgre-question-import-example.csv", [questionCsvHeaders, ...examples]);
 }
 
