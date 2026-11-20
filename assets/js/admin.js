@@ -1259,6 +1259,7 @@ function updateQuestionBulkControls() {
   const selected = selectedQuestionIds.size;
   $("questionSelectionCount").textContent = selected + " selected";
   $("deleteSelectedQuestions").disabled = selected === 0;
+  $("publishSelectedQuestions").disabled = selected === 0;
   $("selectAllQuestions").checked = false;
   const visible = [...$("questionList").querySelectorAll("[data-qselect]")];
   $("selectAllQuestions").checked = visible.length > 0 && visible.every(input => input.checked);
@@ -1268,6 +1269,10 @@ function updateQuestionBulkControls() {
   $("deleteCategoryQuestions").textContent = category
     ? "Delete all in category"
     : "Delete category";
+  $("publishCategoryQuestions").disabled = !category;
+  $("publishCategoryQuestions").textContent = category
+    ? "Publish category"
+    : "Publish category";
 }
 
 async function loadQuestions() {
@@ -1363,6 +1368,63 @@ $("selectAllQuestions").addEventListener("change", event => {
     else selectedQuestionIds.delete(id);
   });
   updateQuestionBulkControls();
+});
+
+$("publishSelectedQuestions").addEventListener("click", async () => {
+  const ids = [...selectedQuestionIds];
+  if (!ids.length) return;
+  if (!confirm("Publish " + ids.length + " selected question(s)? Already published questions will remain published.")) return;
+
+  const button = $("publishSelectedQuestions");
+  button.disabled = true;
+  button.textContent = "Publishing…";
+  const result = await db
+    .from("questions")
+    .update({ published: true, updated_at: new Date().toISOString() })
+    .in("id", ids)
+    .eq("published", false)
+    .select("id");
+  button.textContent = "Publish selected";
+
+  if (result.error) {
+    alert("Could not publish selected questions: " + result.error.message);
+    updateQuestionBulkControls();
+    return;
+  }
+
+  const publishedCount = (result.data || []).length;
+  selectedQuestionIds.clear();
+  alert(publishedCount + " question(s) published.");
+  await loadQuestions();
+});
+
+$("publishCategoryQuestions").addEventListener("click", async () => {
+  const category = $("categoryFilter").value;
+  if (!category) return;
+  const label = categoryLabels[category] || category.replaceAll("_", " ");
+  if (!confirm("Publish all draft questions in " + label + "? Already published questions will remain unchanged.")) return;
+
+  const button = $("publishCategoryQuestions");
+  button.disabled = true;
+  button.textContent = "Publishing…";
+  const result = await db
+    .from("questions")
+    .update({ published: true, updated_at: new Date().toISOString() })
+    .eq("topic_category", category)
+    .eq("published", false)
+    .select("id");
+  button.textContent = "Publish category";
+
+  if (result.error) {
+    alert("Could not publish category questions: " + result.error.message);
+    updateQuestionBulkControls();
+    return;
+  }
+
+  const publishedCount = (result.data || []).length;
+  selectedQuestionIds.clear();
+  alert(publishedCount + " draft question(s) in " + label + " published.");
+  await loadQuestions();
 });
 
 $("deleteSelectedQuestions").addEventListener("click", async () => {
