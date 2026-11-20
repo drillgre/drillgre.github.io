@@ -2144,10 +2144,16 @@ async function readQuestionImportFile(file) {
   }
 
   if (!window.XLSX) throw new Error("The spreadsheet reader could not load. Refresh the admin page and try again.");
-  const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const workbook = window.XLSX.read(await file.arrayBuffer(), {
+    type: "array",
+    raw: true,
+    cellDates: false
+  });
   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
   if (!firstSheet) throw new Error("The workbook does not contain a worksheet.");
-  return window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: false });
+  // Preserve values such as "1/6" as text. Date auto-detection corrupts
+  // fraction answer choices when importing CSV files.
+  return window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: true });
 }
 
 async function validateQuestionImport() {
