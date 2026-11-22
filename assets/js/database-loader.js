@@ -44,14 +44,12 @@
     loader.setAttribute("data-database-loader", "");
     loader.setAttribute("role", "status");
     loader.setAttribute("aria-live", "polite");
-    loader.setAttribute("aria-label", "Loading data from DrillGRE");
+    loader.setAttribute("aria-label", "Loading");
 
     loader.innerHTML = `
       <div class="drillgre-loader-content">
         <div class="drillgre-loader-mark" aria-hidden="true">
           <div class="drillgre-loader-ring"></div>
-          <div class="drillgre-loader-orbit"></div>
-          <div class="drillgre-loader-core">D</div>
         </div>
 
       </div>`;
