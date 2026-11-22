@@ -14,20 +14,8 @@
   <style>
     #lessonDialog { width: min(1000px, calc(100% - 24px)); }
     .lesson-content-field { min-width: 0; }
-    .lesson-toolbar { display:flex; flex-wrap:wrap; gap:6px; padding:9px; border:1px solid #cbd5e1; border-bottom:0; border-radius:9px 9px 0 0; background:#f8fafc; }
-    .lesson-toolbar button { padding:7px 10px; font-size:12px; background:#fff; color:#172033; border:1px solid #dbe2ea; }
-    .lesson-toolbar button.active { background:#eaf0ff; color:#2356d8; border-color:#9db5ff; }
     .lesson-editor { min-height:390px; max-height:65vh; overflow:auto; border:1px solid #cbd5e1; border-radius:0 0 9px 9px; padding:18px; background:#fff; }
     .lesson-source { width:100%; min-height:390px; max-height:65vh; resize:vertical; border:1px solid #cbd5e1; border-radius:0 0 9px 9px; padding:16px; background:#fff; color:#172033; font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace; tab-size:2; }
-    .lesson-modebar { display:flex; align-items:center; gap:6px; margin-left:auto; }
-    .lesson-modebar button.selected { background:#eaf0ff; color:#2356d8; border-color:#9db5ff; }
-    .lesson-editor .tiptap { min-height:350px; outline:none; line-height:1.7; }
-    .lesson-editor h1,.lesson-editor h2,.lesson-editor h3 { color:#172033; margin:1.2em 0 .5em; }
-    .lesson-editor p,.lesson-editor li { color:#334155; }
-    .lesson-editor ul,.lesson-editor ol { padding-left:25px; }
-    .lesson-editor blockquote { border-left:3px solid #2356d8; margin:14px 0; padding:8px 14px; background:#f4f7ff; }
-    .lesson-editor pre { background:#172033; color:#fff; border-radius:8px; padding:12px; overflow:auto; }
-    .lesson-editor code { background:#eef2f7; padding:2px 4px; border-radius:4px; }
     .field-note { font-size:12px; color:#64748b; margin:6px 0 0; }
     .lesson-video-preview { width:100%; max-width:560px; aspect-ratio:16/9; border:0; border-radius:9px; background:#e2e8f0; }
     .lesson-video-preview-wrap { padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; }
@@ -43,7 +31,7 @@
     #stimulusPanel { padding:14px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; }
     #stimulusPanel h3 { margin:0 0 6px; }
     #stimulusEditor { margin-top:12px; }
-    @media(max-width:650px) { .lesson-toolbar button { padding:7px 8px; } .lesson-editor { min-height:300px; } }
+
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -318,28 +306,9 @@
         <div class="full lesson-content-field">
           <label>Lesson content</label>
 
-          <div class="lesson-toolbar" id="lessonToolbar">
-            <button type="button" data-editor-command="bold"><b>B</b></button>
-            <button type="button" data-editor-command="italic"><i>I</i></button>
-            <button type="button" data-editor-command="heading" data-level="1">H1</button>
-            <button type="button" data-editor-command="heading" data-level="2">H2</button>
-            <button type="button" data-editor-command="heading" data-level="3">H3</button>
-            <button type="button" data-editor-command="bulletList">Bullets</button>
-            <button type="button" data-editor-command="orderedList">Numbered</button>
-            <button type="button" data-editor-command="blockquote">Quote</button>
-            <button type="button" data-editor-command="codeBlock">Code</button>
-            <button type="button" data-editor-command="undo">Undo</button>
-            <button type="button" data-editor-command="redo">Redo</button>
-            <div class="lesson-modebar">
-              <button type="button" id="visualLessonMode" class="selected">Visual</button>
-              <button type="button" id="htmlLessonMode">HTML</button>
-            </div>
-          </div>
-
-          <div id="lessonEditor" class="lesson-editor"></div>
-          <textarea id="lessonSource" class="lesson-source" spellcheck="false" aria-label="Lesson HTML source" hidden></textarea>
+          <textarea id="lessonSource" class="lesson-source" spellcheck="false" aria-label="Lesson HTML source" placeholder="Write your lesson in HTML here..."></textarea>
           <p class="field-note">
-            Use Visual mode for rich-text editing or HTML mode to write HTML directly.
+            Write lesson content directly in HTML. Use $...$ for inline equations and &#36;&#36;...&#36;&#36; for block equations.
             In HTML mode, write inline LaTeX as <code>$x^2 + y^2 = z^2$</code> and display equations as <code>&#36;&#36;x^2 + y^2 = z^2&#36;&#36;</code>. Standard HTML elements such as headings, paragraphs, lists, tables, links, and images are supported.
           </p>
         </div>
@@ -778,7 +747,7 @@
 
   <!-- Admin JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script type="module" src="assets/js/admin.js?v=20261122-editor-no-math-input"></script>
+  <script type="module" src="assets/js/admin.js?v=20261122-html-only"></script>
 
 </body>
 </html>
