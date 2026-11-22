@@ -1,5 +1,3 @@
-import { Editor } from "https://cdn.jsdelivr.net/npm/@tiptap/core@3.31.3/+esm";
-import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@3.31.3/+esm";
 
 // ============================================================
 // DrillGRE Admin
@@ -17,8 +15,6 @@ let user = null;
 let lessonsCache = [];
 let figureUrl = null;
 let figurePath = null;
-let lessonEditor = null;
-let lessonSourceMode = false;
 let stimulusFigureUrl = null;
 let stimulusGroupsCache = [];
 let vocabCache = [];
@@ -350,88 +346,8 @@ function legacyMarkdownToHtml(markdown) {
   return out.join("") || "<p></p>";
 }
 
-function initLessonEditor() {
-  if (lessonEditor) return;
-
-  lessonEditor = new Editor({
-    element: $("lessonEditor"),
-    extensions: [
-      StarterKit
-    ],
-    content: "<p></p>",
-    onSelectionUpdate: updateLessonToolbar,
-    onTransaction: updateLessonToolbar
-  });
-
-  $("lessonToolbar").querySelectorAll("[data-editor-command]").forEach(button => {
-    button.addEventListener("click", () => {
-      if (!lessonEditor) return;
-
-      const command = button.dataset.editorCommand;
-      let chain = lessonEditor.chain().focus();
-
-      if (command === "heading") {
-        chain.toggleHeading({ level: Number(button.dataset.level) }).run();
-      } else if (command === "undo" || command === "redo") {
-        chain[command]().run();
-      } else {
-        const method = "toggle" + command.charAt(0).toUpperCase() + command.slice(1);
-        if (typeof chain[method] === "function") chain[method]().run();
-      }
-
-      updateLessonToolbar();
-    });
-  });
-
-}
-
-function setLessonEditorMode(useSource) {
-  initLessonEditor();
-  lessonSourceMode = !!useSource;
-  if (lessonSourceMode) {
-    $("lessonSource").value = lessonEditor.getHTML();
-    $("lessonEditor").hidden = true;
-    $("lessonSource").hidden = false;
-  } else {
-    lessonEditor.commands.setContent($("lessonSource").value || "<p></p>");
-    $("lessonSource").hidden = true;
-    $("lessonEditor").hidden = false;
-    updateLessonToolbar();
-  }
-  $("htmlLessonMode").classList.toggle("selected", lessonSourceMode);
-  $("visualLessonMode").classList.toggle("selected", !lessonSourceMode);
-}
-$("htmlLessonMode").addEventListener("click", () => setLessonEditorMode(true));
-$("visualLessonMode").addEventListener("click", () => setLessonEditorMode(false));
-
-function updateLessonToolbar() {
-  if (!lessonEditor) return;
-
-  $("lessonToolbar").querySelectorAll("[data-editor-command]").forEach(button => {
-    const command = button.dataset.editorCommand;
-    let active = false;
-
-    if (command === "bold" || command === "italic" || command === "blockquote" ||
-        command === "bulletList" || command === "orderedList" || command === "codeBlock") {
-      const name = command === "bold" ? "bold"
-        : command === "italic" ? "italic"
-        : command === "blockquote" ? "blockquote"
-        : command === "bulletList" ? "bulletList"
-        : command === "orderedList" ? "orderedList"
-        : "codeBlock";
-      active = lessonEditor.isActive(name);
-    } else if (command === "heading") {
-      active = lessonEditor.isActive("heading", { level: Number(button.dataset.level) });
-    }
-
-    button.classList.toggle("active", active);
-  });
-}
-
 function setLessonEditorContent(content) {
-  initLessonEditor();
-
-  let html = "<p></p>";
+  let html = "";
   if (content && typeof content === "object" && typeof content.html === "string") {
     html = content.html;
   } else if (content && typeof content === "object" && typeof content.markdown === "string") {
@@ -439,15 +355,7 @@ function setLessonEditorContent(content) {
   } else if (typeof content === "string") {
     html = legacyMarkdownToHtml(content);
   }
-
-  lessonEditor.commands.setContent(html);
   $("lessonSource").value = html;
-  lessonSourceMode = false;
-  $("lessonEditor").hidden = false;
-  $("lessonSource").hidden = true;
-  $("htmlLessonMode").classList.remove("selected");
-  $("visualLessonMode").classList.add("selected");
-  updateLessonToolbar();
 }
 
 function updateLessonVideoPreview() {
@@ -601,11 +509,6 @@ $("lessonForm").onsubmit = async e => {
   e.preventDefault();
   message("lessonMsg", "Saving…");
 
-  if (!lessonEditor) {
-    message("lessonMsg", "The lesson editor has not loaded. Refresh and try again.");
-    return;
-  }
-
   const moduleTitle = $("moduleTitle").value.trim();
   const moduleSlug = slug($("moduleSlug").value);
   const lessonTitle = $("title").value.trim();
@@ -622,7 +525,7 @@ $("lessonForm").onsubmit = async e => {
     return;
   }
 
-  const html = lessonSourceMode ? $("lessonSource").value : lessonEditor.getHTML();
+  const html = $("lessonSource").value;
   const textContent = html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
   if (!textContent) {
     message("lessonMsg", "Please write some lesson content before saving.");
