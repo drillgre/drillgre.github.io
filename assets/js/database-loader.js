@@ -7,7 +7,7 @@
   window.__drillgreDatabaseLoaderInstalled = true;
 
   const SUPABASE_HOST = "aayzpcfryixauwsytphd.supabase.co";
-  const SHOW_DELAY_MS = 180;
+  const SHOW_DELAY_MS = 1000;
   const MIN_VISIBLE_MS = 360;
   const originalFetch = window.fetch;
 
@@ -53,8 +53,7 @@
           <div class="drillgre-loader-orbit"></div>
           <div class="drillgre-loader-core">D</div>
         </div>
-        <div class="drillgre-loader-brand">Drill<span>GRE</span></div>
-        <div class="drillgre-loader-note">Loading your data</div>
+
       </div>`;
 
     (document.body || document.documentElement).appendChild(loader);
