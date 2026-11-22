@@ -119,17 +119,35 @@
     /* Homepage motion system */
     /* Typewriter headline: types, pauses, erases, and repeats. */
     .hero h1.typing-headline {
-      min-height: 2.12em;
+      min-height: 3.12em;
       overflow: visible;
     }
-    .hero h1 .typing-text {
-      display: inline;
-      overflow-wrap: normal;
-      white-space: pre-wrap;
+    .hero h1 .typing-line {
+      display: block;
+      min-height: 1.04em;
+      white-space: nowrap;
     }
-    .hero h1 .typing-count {
+    .hero h1 .typing-line-accent {
       color: var(--blue);
-      font-style: normal;
+    }
+    .hero-buttons .btn-primary {
+      animation: practice-button-pulse 2.8s ease-in-out infinite;
+    }
+    .hero-buttons .btn-primary span {
+      display: inline-block;
+      animation: practice-arrow-nudge 1.5s ease-in-out infinite;
+    }
+    .hero-buttons .btn-primary:hover {
+      animation-play-state: paused;
+      box-shadow: 0 10px 24px rgba(53,109,243,.3);
+    }
+    @keyframes practice-button-pulse {
+      0%, 100% { box-shadow: 0 7px 16px rgba(53,109,243,.18); }
+      50% { box-shadow: 0 9px 23px rgba(53,109,243,.32); }
+    }
+    @keyframes practice-arrow-nudge {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(4px); }
     }
     .hero-visual { isolation: isolate; }
     .visual-orb { animation: orb-breathe 7s ease-in-out infinite; }
@@ -250,7 +268,7 @@
       <div class="container hero-grid">
         <div>
           <div class="eyebrow"><span class="dot"></span> Your FREE GRE practice space</div>
-          <h1 class="typing-headline" aria-label="Make every practice question count"><span id="heroTypingText" class="typing-text" aria-hidden="true"></span></h1>
+          <h1 class="typing-headline" aria-label="Make every practice question count"><span class="typing-line" id="heroTypingLine1" aria-hidden="true"></span><span class="typing-line" id="heroTypingLine2" aria-hidden="true"></span><span class="typing-line typing-line-accent" id="heroTypingLine3" aria-hidden="true"></span></h1>
           <p class="hero-copy">DrillGRE is a FREE GRE preparation initiative. Build confidence with focused practice, vocabulary review, and mock tests designed to help you improve one question at a time.</p>
           <div class="hero-buttons">
             <a class="btn btn-primary" href="#practice">Start practicing <span aria-hidden="true">→</span></a>
@@ -360,30 +378,35 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Typewriter headline: type the complete phrase, pause, erase, and repeat.
+    // Typewriter headline: fixed three-line layout, typing and erasing in place.
     (() => {
-      const target = document.getElementById('heroTypingText');
-      if (!target) return;
-      const prefix = 'Make every practice question ';
-      const finalWord = 'count.';
+      const lines = [
+        document.getElementById('heroTypingLine1'),
+        document.getElementById('heroTypingLine2'),
+        document.getElementById('heroTypingLine3')
+      ];
+      if (lines.some(line => !line)) return;
+      const words = ['Make every', 'practice question', 'count.'];
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const render = (position) => {
+        let remaining = position;
+        lines.forEach((line, index) => {
+          line.textContent = words[index].slice(0, Math.max(0, Math.min(words[index].length, remaining)));
+          remaining -= words[index].length;
+        });
+      };
+      const total = words.join('').length;
       if (reduceMotion) {
-        target.innerHTML = prefix + '<em class="typing-count">' + finalWord + '</em>';
+        lines.forEach((line, index) => { line.textContent = words[index]; });
         return;
       }
       let position = 0;
       let deleting = false;
-      const render = () => {
-        const typedPrefix = prefix.slice(0, Math.min(position, prefix.length));
-        const typedFinal = position > prefix.length ? finalWord.slice(0, position - prefix.length) : '';
-        target.innerHTML = typedPrefix + '<em class="typing-count">' + typedFinal + '</em>';
-      };
-      const total = prefix.length + finalWord.length;
       const type = () => {
-        render();
+        render(position);
         if (!deleting && position < total) {
           position += 1;
-          window.setTimeout(type, position <= prefix.length ? 78 : 105);
+          window.setTimeout(type, 78);
         } else if (!deleting) {
           deleting = true;
           window.setTimeout(type, 1750);
