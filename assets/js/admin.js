@@ -362,7 +362,7 @@ function initLessonEditor() {
         katexOptions: { throwOnError: false }
       })
     ],
-    content: "<h2>Lesson introduction</h2><p>Start writing your lesson here.</p>",
+    content: "<p></p>",
     onSelectionUpdate: updateLessonToolbar,
     onTransaction: updateLessonToolbar
   });
@@ -565,7 +565,7 @@ $("newLesson").onclick = () => {
   $("moduleSlug").dataset.manual = "";
   $("slug").dataset.manual = "";
   $("lessonVideoPreview").innerHTML = "";
-  setLessonEditorContent({ html: "<h2>Lesson introduction</h2><p></p>" });
+  setLessonEditorContent({ html: "<p></p>" });
   message("lessonMsg", "");
   $("lessonDialog").showModal();
 };
