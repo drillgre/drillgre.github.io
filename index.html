@@ -124,14 +124,12 @@
     }
     .hero h1 .typing-text {
       display: inline;
-      border-right: 4px solid var(--blue);
-      padding-right: 4px;
-      animation: typing-caret .78s steps(1,end) infinite;
-      overflow-wrap: anywhere;
+      overflow-wrap: normal;
+      white-space: pre-wrap;
     }
-    @keyframes typing-caret {
-      0%, 48% { border-color: var(--blue); }
-      49%, 100% { border-color: transparent; }
+    .hero h1 .typing-count {
+      color: var(--blue);
+      font-style: normal;
     }
     .hero-visual { isolation: isolate; }
     .visual-orb { animation: orb-breathe 7s ease-in-out infinite; }
@@ -366,20 +364,26 @@
     (() => {
       const target = document.getElementById('heroTypingText');
       if (!target) return;
-      const phrase = 'Make every practice question count.';
+      const prefix = 'Make every practice question ';
+      const finalWord = 'count.';
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduceMotion) {
-        target.textContent = phrase;
-        target.style.borderRight = '0';
+        target.innerHTML = prefix + '<em class="typing-count">' + finalWord + '</em>';
         return;
       }
       let position = 0;
       let deleting = false;
+      const render = () => {
+        const typedPrefix = prefix.slice(0, Math.min(position, prefix.length));
+        const typedFinal = position > prefix.length ? finalWord.slice(0, position - prefix.length) : '';
+        target.innerHTML = typedPrefix + '<em class="typing-count">' + typedFinal + '</em>';
+      };
+      const total = prefix.length + finalWord.length;
       const type = () => {
-        target.textContent = phrase.slice(0, position);
-        if (!deleting && position < phrase.length) {
+        render();
+        if (!deleting && position < total) {
           position += 1;
-          window.setTimeout(type, position < 5 ? 150 : 78);
+          window.setTimeout(type, position <= prefix.length ? 78 : 105);
         } else if (!deleting) {
           deleting = true;
           window.setTimeout(type, 1750);
