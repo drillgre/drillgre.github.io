@@ -117,60 +117,21 @@
     .notice { display: none; margin-top: 14px; color: #52617b; font-size: .85rem; }
 
     /* Homepage motion system */
-    /* Word-by-word headline reveal. The full phrase repeats in a calm loop. */
-    .hero h1.word-sequence {
-      perspective: 700px;
+    /* Typewriter headline: types, pauses, erases, and repeats. */
+    .hero h1.typing-headline {
+      min-height: 2.12em;
+      overflow: visible;
     }
-    .hero h1 .hero-word {
-      display: inline-block;
-      opacity: 0;
-      transform: translate3d(0, 22px, 0) rotateX(-28deg);
-      filter: blur(7px);
-      transform-origin: 50% 100%;
-      will-change: opacity, transform, filter;
+    .hero h1 .typing-text {
+      display: inline;
+      border-right: 4px solid var(--blue);
+      padding-right: 4px;
+      animation: typing-caret .78s steps(1,end) infinite;
+      overflow-wrap: anywhere;
     }
-    .hero h1 .word-make { animation: reveal-make 7.2s cubic-bezier(.2,.75,.25,1) infinite; }
-    .hero h1 .word-every { animation: reveal-every 7.2s cubic-bezier(.2,.75,.25,1) infinite; }
-    .hero h1 .word-practice { animation: reveal-practice 7.2s cubic-bezier(.2,.75,.25,1) infinite; }
-    .hero h1 .word-question { animation: reveal-question 7.2s cubic-bezier(.2,.75,.25,1) infinite; }
-    .hero h1 .word-count { animation: reveal-count 7.2s cubic-bezier(.2,.75,.25,1) infinite; }
-    .hero h1 .hero-word em {
-      font-style: normal;
-      color: transparent;
-      background: linear-gradient(105deg, #356df3 0%, #8a5cf6 35%, #16a6cf 65%, #356df3 100%);
-      background-size: 220% auto;
-      background-clip: text;
-      -webkit-background-clip: text;
-      animation: word-color-flow 3s linear infinite;
-    }
-    @keyframes reveal-make {
-      0%, 2% { opacity: 0; transform: translate3d(0,22px,0) rotateX(-28deg); filter: blur(7px); }
-      9%, 78% { opacity: 1; transform: translate3d(0,0,0) rotateX(0); filter: blur(0); }
-      88%, 100% { opacity: 0; transform: translate3d(0,-8px,0) rotateX(12deg); filter: blur(5px); }
-    }
-    @keyframes reveal-every {
-      0%, 9% { opacity: 0; transform: translate3d(0,22px,0) rotateX(-28deg); filter: blur(7px); }
-      16%, 78% { opacity: 1; transform: translate3d(0,0,0) rotateX(0); filter: blur(0); }
-      88%, 100% { opacity: 0; transform: translate3d(0,-8px,0) rotateX(12deg); filter: blur(5px); }
-    }
-    @keyframes reveal-practice {
-      0%, 16% { opacity: 0; transform: translate3d(0,22px,0) rotateX(-28deg); filter: blur(7px); }
-      23%, 78% { opacity: 1; transform: translate3d(0,0,0) rotateX(0); filter: blur(0); }
-      88%, 100% { opacity: 0; transform: translate3d(0,-8px,0) rotateX(12deg); filter: blur(5px); }
-    }
-    @keyframes reveal-question {
-      0%, 23% { opacity: 0; transform: translate3d(0,22px,0) rotateX(-28deg); filter: blur(7px); }
-      30%, 78% { opacity: 1; transform: translate3d(0,0,0) rotateX(0); filter: blur(0); }
-      88%, 100% { opacity: 0; transform: translate3d(0,-8px,0) rotateX(12deg); filter: blur(5px); }
-    }
-    @keyframes reveal-count {
-      0%, 30% { opacity: 0; transform: translate3d(0,22px,0) rotateX(-28deg); filter: blur(7px); }
-      37%, 78% { opacity: 1; transform: translate3d(0,0,0) rotateX(0); filter: blur(0); }
-      88%, 100% { opacity: 0; transform: translate3d(0,-8px,0) rotateX(12deg); filter: blur(5px); }
-    }
-    @keyframes word-color-flow {
-      from { background-position: 0% center; }
-      to { background-position: 220% center; }
+    @keyframes typing-caret {
+      0%, 48% { border-color: var(--blue); }
+      49%, 100% { border-color: transparent; }
     }
     .hero-visual { isolation: isolate; }
     .visual-orb { animation: orb-breathe 7s ease-in-out infinite; }
@@ -291,7 +252,7 @@
       <div class="container hero-grid">
         <div>
           <div class="eyebrow"><span class="dot"></span> Your FREE GRE practice space</div>
-          <h1 class="word-sequence" aria-label="Make every practice question count"><span class="hero-word word-make">Make</span> <span class="hero-word word-every">every</span> <span class="hero-word word-practice">practice</span> <span class="hero-word word-question"><em>question</em></span> <span class="hero-word word-count"><em>count.</em></span></h1>
+          <h1 class="typing-headline" aria-label="Make every practice question count"><span id="heroTypingText" class="typing-text" aria-hidden="true"></span></h1>
           <p class="hero-copy">DrillGRE is a FREE GRE preparation initiative. Build confidence with focused practice, vocabulary review, and mock tests designed to help you improve one question at a time.</p>
           <div class="hero-buttons">
             <a class="btn btn-primary" href="#practice">Start practicing <span aria-hidden="true">→</span></a>
@@ -400,6 +361,38 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Typewriter headline: type the complete phrase, pause, erase, and repeat.
+    (() => {
+      const target = document.getElementById('heroTypingText');
+      if (!target) return;
+      const phrase = 'Make every practice question count.';
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) {
+        target.textContent = phrase;
+        target.style.borderRight = '0';
+        return;
+      }
+      let position = 0;
+      let deleting = false;
+      const type = () => {
+        target.textContent = phrase.slice(0, position);
+        if (!deleting && position < phrase.length) {
+          position += 1;
+          window.setTimeout(type, position < 5 ? 150 : 78);
+        } else if (!deleting) {
+          deleting = true;
+          window.setTimeout(type, 1750);
+        } else if (position > 0) {
+          position -= 1;
+          window.setTimeout(type, 38);
+        } else {
+          deleting = false;
+          window.setTimeout(type, 520);
+        }
+      };
+      type();
+    })();
 
     // Reveal homepage sections as they enter the viewport.
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
