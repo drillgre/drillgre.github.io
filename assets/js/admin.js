@@ -19,6 +19,7 @@ let lessonsCache = [];
 let figureUrl = null;
 let figurePath = null;
 let lessonEditor = null;
+let lessonSourceMode = false;
 let stimulusFigureUrl = null;
 let stimulusGroupsCache = [];
 let vocabCache = [];
@@ -401,6 +402,25 @@ function initLessonEditor() {
   });
 }
 
+function setLessonEditorMode(useSource) {
+  initLessonEditor();
+  lessonSourceMode = !!useSource;
+  if (lessonSourceMode) {
+    $("lessonSource").value = lessonEditor.getHTML();
+    $("lessonEditor").hidden = true;
+    $("lessonSource").hidden = false;
+  } else {
+    lessonEditor.commands.setContent($("lessonSource").value || "<p></p>");
+    $("lessonSource").hidden = true;
+    $("lessonEditor").hidden = false;
+    updateLessonToolbar();
+  }
+  $("htmlLessonMode").classList.toggle("selected", lessonSourceMode);
+  $("visualLessonMode").classList.toggle("selected", !lessonSourceMode);
+}
+$("htmlLessonMode").addEventListener("click", () => setLessonEditorMode(true));
+$("visualLessonMode").addEventListener("click", () => setLessonEditorMode(false));
+
 function updateLessonToolbar() {
   if (!lessonEditor) return;
 
@@ -438,6 +458,12 @@ function setLessonEditorContent(content) {
   }
 
   lessonEditor.commands.setContent(html);
+  $("lessonSource").value = html;
+  lessonSourceMode = false;
+  $("lessonEditor").hidden = false;
+  $("lessonSource").hidden = true;
+  $("htmlLessonMode").classList.remove("selected");
+  $("visualLessonMode").classList.add("selected");
   updateLessonToolbar();
 }
 
@@ -613,9 +639,9 @@ $("lessonForm").onsubmit = async e => {
     return;
   }
 
-  const html = lessonEditor.getHTML();
-  const textContent = lessonEditor.getText().trim();
-  if (!textContent && !html.includes("data-type=\"block-math\"")) {
+  const html = lessonSourceMode ? $("lessonSource").value : lessonEditor.getHTML();
+  const textContent = html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
+  if (!textContent) {
     message("lessonMsg", "Please write some lesson content before saving.");
     return;
   }
