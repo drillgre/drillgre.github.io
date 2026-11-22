@@ -64,6 +64,7 @@
     if (window.renderMathInElement) {
       window.renderMathInElement($("lessonContent"), {
         delimiters: [
+          // Check display math first so $...$ is not mistaken for inline math.
           { left: "$", right: "$", display: true },
           { left: "$", right: "$", display: false },
           { left: "\\(", right: "\\)", display: false },
