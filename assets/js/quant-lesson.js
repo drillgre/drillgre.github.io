@@ -62,10 +62,11 @@
 
     renderMath();
     if (window.renderMathInElement) {
+      const displayMathDelimiter = String.fromCharCode(36, 36);
       window.renderMathInElement($("lessonContent"), {
         delimiters: [
-          // Check display math first so $...$ is not mistaken for inline math.
-          { left: "$", right: "$", display: true },
+          // Check display math before inline math.
+          { left: displayMathDelimiter, right: displayMathDelimiter, display: true },
           { left: "$", right: "$", display: false },
           { left: "\\(", right: "\\)", display: false },
           { left: "\\[", right: "\\]", display: true }
