@@ -18,6 +18,9 @@
     .lesson-toolbar button { padding:7px 10px; font-size:12px; background:#fff; color:#172033; border:1px solid #dbe2ea; }
     .lesson-toolbar button.active { background:#eaf0ff; color:#2356d8; border-color:#9db5ff; }
     .lesson-editor { min-height:390px; max-height:65vh; overflow:auto; border:1px solid #cbd5e1; border-radius:0 0 9px 9px; padding:18px; background:#fff; }
+    .lesson-source { width:100%; min-height:390px; max-height:65vh; resize:vertical; border:1px solid #cbd5e1; border-radius:0 0 9px 9px; padding:16px; background:#0f172a; color:#e2e8f0; font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace; tab-size:2; }
+    .lesson-modebar { display:flex; align-items:center; gap:6px; margin-left:auto; }
+    .lesson-modebar button.selected { background:#eaf0ff; color:#2356d8; border-color:#9db5ff; }
     .lesson-editor .tiptap { min-height:350px; outline:none; line-height:1.7; }
     .lesson-editor h1,.lesson-editor h2,.lesson-editor h3 { color:#172033; margin:1.2em 0 .5em; }
     .lesson-editor p,.lesson-editor li { color:#334155; }
@@ -329,12 +332,17 @@
             <button type="button" id="insertBlockMath">Block equation</button>
             <button type="button" data-editor-command="undo">Undo</button>
             <button type="button" data-editor-command="redo">Redo</button>
+            <div class="lesson-modebar">
+              <button type="button" id="visualLessonMode" class="selected">Visual</button>
+              <button type="button" id="htmlLessonMode">HTML</button>
+            </div>
           </div>
 
           <div id="lessonEditor" class="lesson-editor"></div>
+          <textarea id="lessonSource" class="lesson-source" spellcheck="false" aria-label="Lesson HTML source" hidden></textarea>
           <p class="field-note">
-            Write concepts, explanations, worked examples, and GRE strategies.
-            Use the equation buttons to insert LaTeX formulas.
+            Use Visual mode for rich-text editing or HTML mode to write lesson content directly.
+            In HTML mode, use <code>$...$</code> for inline equations and <code>$...$</code> for display equations.
           </p>
         </div>
 
