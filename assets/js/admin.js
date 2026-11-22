@@ -1,6 +1,5 @@
 import { Editor } from "https://cdn.jsdelivr.net/npm/@tiptap/core@3.31.3/+esm";
 import StarterKit from "https://cdn.jsdelivr.net/npm/@tiptap/starter-kit@3.31.3/+esm";
-import { Mathematics } from "https://cdn.jsdelivr.net/npm/@tiptap/extension-mathematics@3.31.3/+esm";
 
 // ============================================================
 // DrillGRE Admin
@@ -357,10 +356,7 @@ function initLessonEditor() {
   lessonEditor = new Editor({
     element: $("lessonEditor"),
     extensions: [
-      StarterKit,
-      Mathematics.configure({
-        katexOptions: { throwOnError: false }
-      })
+      StarterKit
     ],
     content: "<p></p>",
     onSelectionUpdate: updateLessonToolbar,
@@ -387,19 +383,6 @@ function initLessonEditor() {
     });
   });
 
-  $("insertInlineMath").addEventListener("click", () => {
-    const latex = window.prompt("Enter the LaTeX formula (without dollar signs):", "\\frac{a}{b}");
-    if (latex && latex.trim()) {
-      lessonEditor.chain().focus().insertInlineMath({ latex: latex.trim() }).run();
-    }
-  });
-
-  $("insertBlockMath").addEventListener("click", () => {
-    const latex = window.prompt("Enter the LaTeX equation (without dollar signs):", "\\frac{a}{b}");
-    if (latex && latex.trim()) {
-      lessonEditor.chain().focus().insertBlockMath({ latex: latex.trim() }).run();
-    }
-  });
 }
 
 function setLessonEditorMode(useSource) {
