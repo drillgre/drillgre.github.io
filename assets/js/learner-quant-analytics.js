@@ -121,6 +121,33 @@
     }).join("");
   }
 
+  function renderCompass(scores) {
+    const scoreEl = $("quantCompassScore");
+    const labelEl = $("quantCompassLabel");
+    const detailEl = $("quantCompassDetail");
+    const progress = $("compassProgress");
+    const needle = $("compassNeedle");
+    if (!scoreEl || !labelEl || !detailEl) return;
+    const latest = (scores || []).slice().sort((x,y) => new Date(y.date || 0) - new Date(x.date || 0))[0];
+    if (!latest || latest.score == null) {
+      scoreEl.textContent = "—";
+      labelEl.textContent = "Build your baseline";
+      detailEl.textContent = "Complete a mock to see your score indicator";
+      return;
+    }
+    const score = Math.max(130, Math.min(170, Number(latest.score)));
+    const ratio = (score - 130) / 40;
+    const circumference = 2 * Math.PI * 72;
+    progress.style.strokeDasharray = String(circumference);
+    progress.style.strokeDashoffset = String(circumference * (1 - ratio));
+    const angle = -135 + ratio * 270;
+    needle.setAttribute("transform", "rotate(" + angle + " 90 90)");
+    scoreEl.textContent = String(Math.round(Number(latest.score)));
+    labelEl.textContent = score >= 165 ? "Excellent momentum" : score >= 160 ? "Strong progress" : score >= 150 ? "Building proficiency" : "Keep strengthening the basics";
+    const date = latest.date ? new Date(latest.date).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "Latest mock";
+    detailEl.textContent = "Latest completed mock · " + date;
+  }
+
   async function load() {
     const status = $("analyticsStatus");
     if (!status) return;
@@ -143,6 +170,7 @@
     renderTrend(data.weekly || []);
     renderSources(data.sources || []);
     renderMockScores(data.mock_scores || []);
+    renderCompass(data.mock_scores || []);
     $("quantAnalytics").hidden = false;
     status.hidden = true;
   }
