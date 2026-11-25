@@ -179,10 +179,10 @@
       host.replaceChildren();
       window.google.accounts.id.renderButton(host, {
         type: "standard",
-        theme: "outline",
+        theme: "filled_blue",
         size: "large",
         text: "continue_with",
-        shape: "rect",
+        shape: "pill",
         logo_alignment: "left",
         width: Math.min(Math.max(host.clientWidth || 360, 200), 400)
       });
