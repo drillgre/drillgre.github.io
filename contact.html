@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Contact the DrillGRE team for questions, feedback, or support.">
+  <title>Contact Us | DrillGRE</title>
+  <link rel="canonical" href="https://drillgre.com/contact.html">
+  <link rel="stylesheet" href="/assets/css/site-nav.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/assets/js/site-nav.js"></script>
+  <style>
+    :root { --navy:#101b35; --blue:#356df3; --ink:#172033; --muted:#68748b; --line:#e7ebf3; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#fff; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.6; }
+    a { color:inherit; text-decoration:none; }
+    .container { width:min(1100px,calc(100% - 40px)); margin:0 auto; }
+    .contact-hero { padding:76px 0 36px; text-align:center; background:radial-gradient(ellipse at 50% 0%,#eaf0ff 0,transparent 60%),#fbfcff; }
+    .eyebrow { display:inline-block; padding:6px 12px; border:1px solid #dce6ff; border-radius:999px; color:#315ed5; background:#edf2ff; font-size:.8rem; font-weight:800; letter-spacing:.04em; }
+    h1 { margin:18px 0 12px; color:var(--navy); font-size:clamp(2.4rem,5vw,3.6rem); line-height:1.1; letter-spacing:-1.8px; }
+    .intro { max-width:620px; margin:0 auto; color:var(--muted); font-size:1.08rem; }
+    .contact-wrap { padding:30px 0 82px; }
+    .contact-card { max-width:760px; margin:0 auto; display:grid; grid-template-columns:1fr auto; align-items:center; gap:28px; padding:34px; border:1px solid var(--line); border-radius:22px; background:#fff; box-shadow:0 18px 50px rgba(28,49,96,.08); }
+    .contact-icon { width:52px; height:52px; display:grid; place-items:center; margin-bottom:18px; border-radius:15px; background:#edf2ff; color:var(--blue); font-size:1.45rem; }
+    h2 { margin:0 0 8px; color:var(--navy); font-size:1.35rem; }
+    .contact-card p { margin:0; color:var(--muted); }
+    .email-link { display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:13px 19px; border-radius:11px; background:var(--blue); color:white; font-weight:750; white-space:nowrap; box-shadow:0 7px 16px rgba(53,109,243,.18); transition:background .15s ease,transform .15s ease; }
+    .email-link:hover { background:#2454d7; transform:translateY(-1px); }
+    .email-address { display:block; margin-top:13px; color:var(--blue); font-weight:700; overflow-wrap:anywhere; }
+    .site-footer { padding:42px 0 20px; border-top:1px solid var(--line); background:#fbfcff; color:#68748b; font-size:.9rem; }
+    .footer-main { display:grid; grid-template-columns:1.7fr 1fr 1fr; gap:42px; padding-bottom:32px; }
+    .footer-brand p { max-width:280px; margin:14px 0 0; color:#7a8498; }
+    .brand { display:inline-flex; align-items:center; gap:10px; font-size:1.22rem; font-weight:850; letter-spacing:-.65px; }
+    .brand-mark { display:grid; place-items:center; width:40px; height:40px; border-radius:13px; color:white; background:linear-gradient(145deg,#4c83ff,#2454d7); font-weight:900; }
+    .brand-name { color:var(--navy); }
+    .brand-name span { color:var(--blue); }
+    .footer-column { display:grid; align-content:start; justify-items:start; gap:10px; }
+    .footer-column h3 { margin:2px 0 5px; color:var(--navy); font-size:.9rem; }
+    .footer-column a { color:#68748b; }
+    .footer-column a:hover { color:var(--blue); }
+    .footer-bottom { display:flex; justify-content:space-between; gap:18px; border-top:1px solid var(--line); padding-top:18px; color:#8992a4; font-size:.82rem; }
+    @media(max-width:650px) {
+      .container { width:calc(100% - 28px); }
+      .contact-hero { padding:58px 0 28px; }
+      .contact-card { grid-template-columns:1fr; padding:25px; }
+      .email-link { justify-self:start; }
+      .footer-main { grid-template-columns:1fr 1fr; gap:26px; }
+      .footer-brand { grid-column:1/-1; }
+      .footer-bottom { flex-direction:column; gap:7px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="drillgre-site-header">
+    <div class="drillgre-nav-shell">
+      <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
+        <span class="drillgre-brand-mark">D</span>
+        <span class="drillgre-brand-name">Drill<span>GRE</span></span>
+      </a>
+      <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+      <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
+        <details class="drillgre-nav-dropdown">
+          <summary>Quant</summary>
+          <div class="drillgre-nav-submenu">
+            <a href="/quant/index.html">Lessons</a>
+            <a href="/quant/question-bank.html">Question Bank</a>
+            <a href="/quant/quiz.html">Quiz</a>
+          </div>
+        </details>
+        <a href="/vocab.html">Vocab Mountain</a>
+        <a href="/leaderboard.html">Leaderboard</a>
+        <a href="/quant/mock.html">Mock Tests</a>
+        <a href="/#how">How it works</a>
+        <a href="/contact.html" aria-current="page">Contact Us</a>
+      </nav>
+      <div class="drillgre-nav-actions">
+        <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
+        <a class="drillgre-start-link" href="/#practice">Start drilling <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="contact-hero">
+      <div class="container">
+        <span class="eyebrow">WE'RE HERE TO HELP</span>
+        <h1>Contact Us</h1>
+        <p class="intro">Have a question, found something that could be better, or want to share feedback? We would be glad to hear from you.</p>
+      </div>
+    </section>
+    <section class="contact-wrap">
+      <div class="container">
+        <div class="contact-card">
+          <div>
+            <div class="contact-icon" aria-hidden="true">✉</div>
+            <h2>Send us an email</h2>
+            <p>For questions, suggestions, or support related to DrillGRE, reach out to us at the email address below.</p>
+            <a class="email-address" href="mailto:info@drillgre.com">info@drillgre.com</a>
+          </div>
+          <a class="email-link" href="mailto:info@drillgre.com?subject=Hello%20DrillGRE">Email us <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-main">
+      <div class="footer-brand">
+        <a class="brand" href="/"><span class="brand-mark">D</span><span class="brand-name">Drill<span>GRE</span></span></a>
+        <p>Focused practice for a more confident GRE journey.</p>
+      </div>
+      <div class="footer-column">
+        <h3>Explore</h3>
+        <a href="/#practice">Practice</a>
+        <a href="/vocab.html">Vocab Mountain</a>
+        <a href="/quant/mock.html">Mock Tests</a>
+      </div>
+      <div class="footer-column">
+        <h3>Get in touch</h3>
+        <a href="/contact.html">Contact Us</a>
+        <a href="mailto:info@drillgre.com">info@drillgre.com</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>Copyright © DrillGRE 2026.</span>
+      <span>GRE preparation, one question at a time.</span>
+    </div>
+  </footer>
+</body>
+</html>
