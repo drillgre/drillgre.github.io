@@ -11,7 +11,9 @@ Deliver a hybrid dashboard that combines performance analytics with practical co
 - Topic and subtopic accuracy with answer counts.
 - Coaching suggestions based on observed topic performance.
 - Weekly practice trend for the most recent 16 weeks.
-- Practice-source breakdown for Question Bank, topic quizzes, Superquizzes, and mock tests.\n- Recent completed DrillGRE mock-score progression, explicitly identified as an internal practice estimate.\n- A private Mistake Notebook covering incorrect answers, learner notes, review/mastered status, filters, and search.
+- Practice-source breakdown for Question Bank, topic quizzes, Superquizzes, and mock tests.
+- Recent completed DrillGRE mock-score progression, explicitly identified as an internal practice estimate.
+- A private Mistake Notebook covering incorrect answers, learner notes, review/mastered status, filters, and search.
 - Existing lesson completion, quiz history, and mock history remain available.
 - Vocabulary and Word Archery statistics are removed from the main Quant dashboard view. Profile details are also de-emphasised.
 
@@ -31,7 +33,9 @@ Deliver a hybrid dashboard that combines performance analytics with practical co
 | `dashboard.html` | Added Quant insights, responsive analytics layout, and a focused Quant dashboard hierarchy. |
 | `assets/js/learner-dashboard.js` | Preserved authentication, guest-attempt claiming, lesson progress, and quiz/mock history. Removed the unrelated vocabulary/Word Archery load from the main dashboard flow. |
 | `assets/js/learner-quant-analytics.js` | New client renderer for Quant analytics and practice recommendations. |
-| `supabase/learner-dashboard-analytics.sql` | New learner-scoped, read-only analytics RPC. |\n| `assets/js/learner-mistake-notebook.js` | New Mistake Notebook renderer, filters, search, notes, and mastery controls. |\n| `supabase/learner-mistake-notebook.sql` | New learner-private notes table and learner-scoped notebook RPC. |
+| `supabase/learner-dashboard-analytics.sql` | New learner-scoped, read-only analytics RPC. |
+| `assets/js/learner-mistake-notebook.js` | New Mistake Notebook renderer, filters, search, notes, and mastery controls. |
+| `supabase/learner-mistake-notebook.sql` | New learner-private notes table and learner-scoped notebook RPC. |
 
 ## Supabase deployment
 
@@ -39,7 +43,8 @@ Deliver a hybrid dashboard that combines performance analytics with practical co
 2. Open **SQL Editor** and create a new query.
 3. Copy the complete contents of `supabase/learner-dashboard-analytics.sql` from this repository.
 4. Run the script.
-5. Run `supabase/learner-mistake-notebook.sql` after the analytics migration and existing assessment migrations.\n6. Sign in with a learner account and refresh `/dashboard.html`.
+5. Run `supabase/learner-mistake-notebook.sql` after the analytics migration and existing assessment migrations.
+6. Sign in with a learner account and refresh `/dashboard.html`.
 
 This migration depends on the existing Question Bank diagnostics, persistent topic quiz, mock test, and Question Bank/Superquiz tracking tables. Apply the existing setup migrations first if they have not already been run. Do not rerun or replace the Question Bank or Mock Test engines for this dashboard release.
 
@@ -71,7 +76,9 @@ If the migration has not been applied, the dashboard displays an explicit setup 
 - Question Bank, quiz, Superquiz, and mock pages continue to start, save, resume, submit, and review attempts as before.
 - Completing a practice activity updates dashboard analytics after refresh.
 - Topic recommendations are not generated for topics with fewer than five recorded answers.
-- The dashboard works on desktop and mobile widths.\n- Mistake Notebook displays only the signed-in learner's incorrect answers.\n- Notes and mastered/review status persist after refresh and remain private to the learner.
+- The dashboard works on desktop and mobile widths.
+- Mistake Notebook displays only the signed-in learner's incorrect answers.
+- Notes and mastered/review status persist after refresh and remain private to the learner.
 - Mock score labels remain clearly identified as DrillGRE practice estimates, not official ETS scores.
 
 ## Recommended next iteration
