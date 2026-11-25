@@ -213,6 +213,7 @@
 
     $("dashboardContent").hidden = false;
     setStatus("");
+    loadVocabularyAndArchery().catch(() => {});
   }
 
   $("signOut").addEventListener("click", async () => {
