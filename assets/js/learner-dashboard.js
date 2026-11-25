@@ -230,5 +230,64 @@
     }
   });
 
+
+  // Account deletion is performed server-side by a Supabase Edge Function.
+  // The function verifies the caller's access token and uses the server-only
+  // service-role key to delete only that authenticated user.
+  $("showDeleteAccount")?.addEventListener("click", () => {
+    $("deleteAccountConfirm").hidden = false;
+    $("deleteAccountPhrase").focus();
+  });
+
+  $("cancelDeleteAccount")?.addEventListener("click", () => {
+    $("deleteAccountConfirm").hidden = true;
+    $("deleteAccountPhrase").value = "";
+    $("confirmDeleteAccount").disabled = true;
+    $("deleteAccountStatus").textContent = "";
+  });
+
+  $("deleteAccountPhrase")?.addEventListener("input", event => {
+    $("confirmDeleteAccount").disabled = event.target.value.trim() !== "DELETE";
+  });
+
+  $("confirmDeleteAccount")?.addEventListener("click", async () => {
+    const button = $("confirmDeleteAccount");
+    const phrase = $("deleteAccountPhrase").value.trim();
+    if (phrase !== "DELETE") return;
+
+    const confirmed = window.confirm(
+      "This permanently deletes your DrillGRE account. This cannot be undone. Continue?"
+    );
+    if (!confirmed) return;
+
+    button.disabled = true;
+    button.textContent = "Deleting account…";
+    $("deleteAccountStatus").textContent = "Please wait while your account is deleted.";
+
+    try {
+      const { data, error } = await db.functions.invoke("delete-account", {
+        body: { confirmation: phrase }
+      });
+      if (error) {
+        let detail = error.message || "The account deletion request failed.";
+        try {
+          const body = await error.context?.json?.();
+          if (body?.error) detail = body.error;
+        } catch (_) {}
+        throw new Error(detail);
+      }
+      if (!data?.success) throw new Error(data?.error || "The server did not confirm account deletion.");
+
+      await db.auth.signOut({ scope: "local" });
+      localStorage.removeItem("drillgre_guest_visitor_key_v1");
+      window.location.replace("/?account_deleted=1");
+    } catch (error) {
+      $("deleteAccountStatus").textContent =
+        "Account deletion failed: " + (error.message || "Please try again.");
+      button.disabled = false;
+      button.textContent = "Permanently delete account";
+    }
+  });
+
   document.addEventListener("DOMContentLoaded", loadDashboard);
 })();
