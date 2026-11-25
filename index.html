@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="DrillGRE: focused GRE Quant, Verbal, vocabulary, and mock test practice." />
-  <title>DrillGRE | FREE GRE Practice</title>
+  <title>DrillGRE | GRE Preparation and Practice</title>
   <link rel="canonical" href="https://drillgre.github.io/">
   <style>
     :root {
@@ -111,9 +111,14 @@
     .cta-panel h2 { color: white; margin: 0 0 8px; font-size: 2rem; }
     .cta-panel p { color: #d9e3ff; margin: 0; }
     .cta-panel .btn { background: white; color: #244fc8; white-space: nowrap; }
-    footer { padding: 28px 0; border-top: 1px solid var(--line); color: #7a8498; font-size: .85rem; }
-    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-    .footer-links { display: flex; gap: 20px; }
+    .site-footer { padding: 48px 0 20px; border-top: 1px solid var(--line); background: #fbfcff; color: #68748b; font-size: .9rem; }
+    .footer-main { display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: 42px; padding-bottom: 36px; }
+    .footer-brand p { max-width: 280px; margin: 14px 0 0; color: #7a8498; }
+    .footer-column { display: grid; align-content: start; justify-items: start; gap: 10px; }
+    .footer-column h3 { margin: 2px 0 5px; color: var(--navy); font-size: .9rem; }
+    .footer-column a { color: #68748b; transition: color .15s ease; }
+    .footer-column a:hover { color: var(--blue); }
+    .footer-bottom { display: flex; justify-content: space-between; gap: 18px; border-top: 1px solid var(--line); padding-top: 18px; color: #8992a4; font-size: .82rem; }
     .notice { display: none; margin-top: 14px; color: #52617b; font-size: .85rem; }
 
     /* Homepage motion system */
@@ -215,7 +220,9 @@
       .feature-grid, .steps { grid-template-columns: 1fr; }
       .cta { padding-bottom: 58px; }
       .cta-panel { padding: 28px; flex-direction: column; align-items: flex-start; }
-      .footer-inner { flex-direction: column; align-items: flex-start; }
+      .footer-main { grid-template-columns: 1fr 1fr; gap: 28px; }
+      .footer-brand { grid-column: 1 / -1; }
+      .footer-bottom { flex-direction: column; gap: 7px; }
     }
     /* Keep the account link visibly outlined on the homepage. */
     .drillgre-site-header .drillgre-nav-actions > a.drillgre-account-link,
@@ -239,7 +246,6 @@
     <a class="drillgre-brand" href="/" aria-label="DrillGRE home">
       <span class="drillgre-brand-mark">D</span>
       <span class="drillgre-brand-name">Drill<span>GRE</span></span>
-      <span class="drillgre-free-tag">FREE</span>
     </a>
     <button class="drillgre-nav-toggle" type="button" data-site-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
     <nav class="drillgre-nav-links" data-site-nav-links aria-label="Main navigation">
@@ -255,6 +261,7 @@
       <a href="/leaderboard.html">Leaderboard</a>
       <a href="/quant/mock.html">Mock Tests</a>
       <a href="/#how">How it works</a>
+      <a href="/contact.html">Contact Us</a>
     </nav>
     <div class="drillgre-nav-actions">
       <a class="drillgre-account-link" data-site-auth-link href="/account.html">Login / Sign up</a>
@@ -267,9 +274,9 @@
     <section class="hero" id="home">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow"><span class="dot"></span> Your FREE GRE practice space</div>
+          <div class="eyebrow"><span class="dot"></span> Focused GRE preparation</div>
           <h1 class="typing-headline" aria-label="Make every practice question count"><span class="typing-line" id="heroTypingLine1" aria-hidden="true"></span><span class="typing-line" id="heroTypingLine2" aria-hidden="true"></span><span class="typing-line typing-line-accent" id="heroTypingLine3" aria-hidden="true"></span></h1>
-          <p class="hero-copy">DrillGRE is a FREE GRE preparation initiative. Build confidence with focused practice, vocabulary review, and mock tests designed to help you improve one question at a time.</p>
+          <p class="hero-copy">Build confidence with focused GRE practice, vocabulary review, and mock tests designed to help you improve one question at a time.</p>
           <div class="hero-buttons">
             <a class="btn btn-primary" href="#practice">Start practicing <span aria-hidden="true">→</span></a>
             <a class="btn btn-outline" href="#vocab">Explore Vocab Mountain</a>
@@ -367,17 +374,31 @@
     </section>
   </main>
 
-  <footer>
-    <div class="container footer-inner">
-      <a class="brand" href="#home"><span class="brand-mark">D</span><span style="color:var(--navy)">Drill<span>GRE</span></span></a>
-      <span>© <span id="year"></span> DrillGRE. A FREE GRE preparation initiative.</span>
-      <div class="footer-links"><a href="#practice">Practice</a><a href="#vocab">Vocab Mountain</a><a href="quant/mock.html">Mock Tests</a></div>
+  <footer class="site-footer">
+    <div class="container footer-main">
+      <div class="footer-brand">
+        <a class="brand" href="#home"><span class="brand-mark">D</span><span style="color:var(--navy)">Drill<span>GRE</span></span></a>
+        <p>Focused practice for a more confident GRE journey.</p>
+      </div>
+      <div class="footer-column">
+        <h3>Explore</h3>
+        <a href="#practice">Practice</a>
+        <a href="#vocab">Vocab Mountain</a>
+        <a href="/quant/mock.html">Mock Tests</a>
+      </div>
+      <div class="footer-column">
+        <h3>Get in touch</h3>
+        <a href="/contact.html">Contact Us</a>
+        <a href="mailto:info@drillgre.com">info@drillgre.com</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>Copyright © DrillGRE 2026.</span>
+      <span>GRE preparation, one question at a time.</span>
     </div>
   </footer>
 
   <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-
     // Typewriter headline: fixed three-line layout, typing and erasing in place.
     (() => {
       const lines = [
