@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js"></script>
-  <script defer src="assets/js/learner-quant-analytics.js"></script>
+  <script defer src="assets/js/learner-quant-analytics.js?v=20261125-2"></script>
   <script defer src="assets/js/learner-mistake-notebook.js"></script>
-  <script defer src="assets/js/learner-vocabulary-progress.js"></script>
+  <script defer src="assets/js/learner-vocabulary-progress.js?v=20261125-2"></script>
   <style>
 
     #archeryPanel,#profilePanel{display:none}\n
@@ -149,7 +149,7 @@
     @media(max-width:560px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-hero h1{font-size:27px}.progress-secondary{grid-template-columns:1fr}.quiz-attempt-row{grid-template-columns:1fr}.quiz-attempt-row a{justify-self:start}}
 
     /* Refined learner dashboard layout */
-    .dash-shell{max-width:1040px;padding:22px 18px 44px}
+    .dash-shell{width:min(1600px,calc(100% - 56px));max-width:1600px;padding:22px 28px 44px;margin:0 auto}
     .dash-hero{padding:20px 22px;border-radius:16px;box-shadow:0 8px 24px rgba(24,42,82,.045)}
     .dash-hero h1{font-size:27px;letter-spacing:-.8px}
     .dash-hero p{font-size:12px}
