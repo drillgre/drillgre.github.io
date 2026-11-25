@@ -210,7 +210,6 @@
     renderLessonProgress(data.lesson_progress || []);
     renderQuizHistory(data.topic_quiz_attempts || []);
     renderAttempts(data.recent_attempts || []);
-    await loadVocabularyAndArchery();
 
     $("dashboardContent").hidden = false;
     setStatus("");
