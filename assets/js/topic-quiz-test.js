@@ -7,7 +7,7 @@
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(window.location.search);
   const savedAttemptId = params.get("attempt");
-  const sessionToken = params.get("token") || (crypto.randomUUID() + "-" + crypto.randomUUID());
+  const sessionToken = params.get("token") || (createSecureToken());
   const STATE_KEY = "drillgre_topic_quiz_" + (savedAttemptId || sessionToken);
   const isSuperquiz = params.get("mode") === "superquiz";
   const requestedCount = isSuperquiz
@@ -54,7 +54,7 @@
   function getVisitorKey() {
     let key = localStorage.getItem("drillgre_guest_visitor_key_v1");
     if (!key || key.length < 32) {
-      key = crypto.randomUUID() + "-" + crypto.randomUUID();
+      key = createSecureToken();
       localStorage.setItem("drillgre_guest_visitor_key_v1", key);
     }
     return key;
