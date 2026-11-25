@@ -98,12 +98,10 @@
   }
 
   function renderSources(rows) {
-    const host = $("practiceSources");
-    if (!rows.length) {
-      host.innerHTML = empty("Your practice source mix will appear here.");
-      return;
-    }
-    host.innerHTML = rows.map(row => '<div class="source-row"><span>' + safe(row.source) + '</span><strong>' + number(row.answered) + ' answers</strong><small>' + percent(row.accuracy) + ' accuracy</small></div>').join("");
+    const host=$("practiceSources");
+    if(!rows.length){host.innerHTML=empty("Your practice source mix will appear here.");return;}
+    const max=Math.max(1,...rows.map(x=>Number(x.answered||0)));
+    host.innerHTML=rows.map(row=>{const count=Number(row.answered||0),width=Math.max(0,Math.min(100,count/max*100));return '<article class="source-row"><span class="source-name">'+safe(row.source)+'</span><span class="source-count">'+number(count)+' answers</span><div class="source-meter"><span style="width:'+width+'%"></span></div><span class="source-accuracy">'+percent(row.accuracy)+' accuracy</span></article>'}).join("");
   }
 
   function renderMockScores(scores) {
