@@ -31,28 +31,101 @@
     return url.toString();
   }
 
-  async function signInWithGoogle() {
-    const button = $("googleOAuth");
-    const label = button.querySelector("span");
-    const originalText = label.textContent;
+  const GOOGLE_CLIENT_ID = "945303545006-g3stkv8se32igo6u47ornfhojjkepgca.apps.googleusercontent.com";
+  let googleRawNonce = null;
+  let googleScriptPromise = null;
 
-    button.disabled = true;
-    label.textContent = "Connecting…";
-    showMessage("Connecting to Google…");
+  function loadGoogleIdentityServices() {
+    if (window.google?.accounts?.id) return Promise.resolve();
+    if (googleScriptPromise) return googleScriptPromise;
+
+    googleScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existing) {
+        existing.addEventListener("load", resolve, { once: true });
+        existing.addEventListener("error", reject, { once: true });
+        if (window.google?.accounts?.id) resolve();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("Google sign-in could not be loaded. Check your connection and try again."));
+      document.head.appendChild(script);
+    });
+    return googleScriptPromise;
+  }
+
+  async function createGoogleNonce() {
+    const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+    const rawNonce = btoa(String.fromCharCode(...randomBytes));
+    const encodedNonce = new TextEncoder().encode(rawNonce);
+    const digest = await crypto.subtle.digest("SHA-256", encodedNonce);
+    const hashedNonce = Array.from(new Uint8Array(digest))
+      .map(byte => byte.toString(16).padStart(2, "0"))
+      .join("");
+    return { rawNonce, hashedNonce };
+  }
+
+  async function handleGoogleCredential(response) {
+    if (!response?.credential || !googleRawNonce) {
+      showMessage("Google did not return a valid sign-in credential. Please try again.", true);
+      return;
+    }
+
+    const rawNonce = googleRawNonce;
+    googleRawNonce = null;
+    showMessage("Verifying your Google account…");
 
     try {
-      const { error } = await db.auth.signInWithOAuth({
+      const { data, error } = await db.auth.signInWithIdToken({
         provider: "google",
-        options: {
-          redirectTo: oauthCallbackUrl(),
-          queryParams: { prompt: "select_account" }
-        }
+        token: response.credential,
+        nonce: rawNonce
       });
       if (error) throw error;
+      await claimGuestAttemptsAndContinue(data.user);
     } catch (error) {
-      button.disabled = false;
-      label.textContent = originalText;
-      showMessage(error.message || "Google sign-in could not be started. Please try again.", true);
+      showMessage(error.message || "Google sign-in failed. Please try again.", true);
+      // A nonce is single-use. Prepare a fresh one for the next attempt.
+      initializeGoogleSignIn().catch(() => {});
+    }
+  }
+
+  async function initializeGoogleSignIn() {
+    const host = $("googleSignInButton");
+    if (!host) return;
+
+    host.textContent = "Loading Google sign-in…";
+    try {
+      await loadGoogleIdentityServices();
+      const { rawNonce, hashedNonce } = await createGoogleNonce();
+      googleRawNonce = rawNonce;
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        nonce: hashedNonce,
+        ux_mode: "popup",
+        auto_select: false
+      });
+
+      host.replaceChildren();
+      window.google.accounts.id.renderButton(host, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rect",
+        logo_alignment: "left",
+        width: Math.min(Math.max(host.clientWidth || 360, 200), 400)
+      });
+    } catch (error) {
+      host.textContent = "Google sign-in is temporarily unavailable.";
+      showMessage(error.message || "Google sign-in could not be initialized.", true);
     }
   }
 
@@ -160,7 +233,7 @@
     window.location.replace(destination);
   }
 
-  $("googleOAuth").addEventListener("click", signInWithGoogle);
+  initializeGoogleSignIn();
 
   $("loginTab").addEventListener("click", () => setMode("login"));
   $("registerTab").addEventListener("click", () => setMode("register"));
