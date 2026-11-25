@@ -9,8 +9,52 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js"></script>
+  <script defer src="assets/js/learner-quant-analytics.js"></script>
   <style>
-    .dash-shell{max-width:1120px;margin:0 auto;padding:28px 18px 60px}
+
+    .quant-insights{padding:24px}
+    .insights-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:16px}
+    .insights-heading h2{font-size:22px;margin:4px 0}
+    .analytics-note,.insight-legend{font-size:11px;color:var(--muted);background:#f4f6fb;border-radius:99px;padding:7px 10px}
+    .analytics-status{padding:12px 14px;border-radius:10px;background:#f7f9fd;color:var(--muted);font-size:13px}
+    .analytics-status.error{background:#fff4f2;color:#9c3023}
+    .insight-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+    .insight-kpi{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fbfcff}
+    .insight-kpi span,.insight-kpi small{display:block;color:var(--muted);font-size:11px}
+    .insight-kpi strong{display:block;font-size:27px;color:var(--navy);margin:5px 0}
+    .insight-kpi small{line-height:1.4}
+    .insights-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+    .insight-card{border:1px solid var(--line);border-radius:13px;padding:17px;min-width:0}
+    .insight-card-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+    .insight-card h3{font-size:15px;margin:0 0 4px}
+    .insight-card-heading p{font-size:11px;color:var(--muted);margin:0}
+    .topic-row{padding:12px 0;border-bottom:1px solid #eef0f5}
+    .topic-row:last-child{border-bottom:0}
+    .topic-row-head{display:flex;justify-content:space-between;gap:10px;font-size:12px}
+    .topic-row-head strong{text-transform:capitalize}
+    .topic-row-head span{color:var(--muted);white-space:nowrap}
+    .topic-meter{height:7px;background:#edf0f6;border-radius:99px;overflow:hidden;margin:8px 0}
+    .topic-meter span{display:block;height:100%;border-radius:99px;background:#5276d8}
+    .subtopic-list{display:grid;gap:5px;margin:8px 0 0 10px}
+    .subtopic-item{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px;text-transform:capitalize}
+    .recommendation{padding:11px 0;border-bottom:1px solid #eef0f5}
+    .recommendation:last-child{border:0}
+    .recommendation strong{display:block;font-size:12px;text-transform:capitalize}
+    .recommendation p{font-size:11px;line-height:1.5;color:var(--muted);margin:4px 0 0}
+    .recommendation a{display:inline-block;margin-top:6px;color:var(--blue);font-size:11px;font-weight:800;text-decoration:none}
+    .trend-row{display:grid;grid-template-columns:76px 1fr 48px;align-items:center;gap:8px;margin:9px 0;font-size:10px}
+    .trend-row span:first-child{color:var(--muted)}
+    .trend-meter{height:8px;background:#edf0f6;border-radius:99px;overflow:hidden}
+    .trend-meter span{display:block;height:100%;background:#5276d8;border-radius:99px}
+    .trend-row strong{text-align:right;font-size:10px}
+    .source-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:9px 0;border-bottom:1px solid #eef0f5;font-size:11px}
+    .source-row span{color:var(--muted)}
+    .source-row strong{font-size:12px}
+    .source-row small{grid-column:1/-1;color:var(--muted)}
+    .analytics-footnote{font-size:10px;line-height:1.6;color:var(--muted);margin:16px 0 0}
+    @media(max-width:800px){.insight-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.insights-grid{grid-template-columns:1fr}.insights-heading{flex-direction:column}}
+    @media(max-width:480px){.quant-insights{padding:16px}.insight-kpi strong{font-size:23px}}
+\n    .dash-shell{max-width:1120px;margin:0 auto;padding:28px 18px 60px}
     .account-muted{color:var(--muted);font-size:13px;line-height:1.6}
     .dash-hero{display:flex;justify-content:space-between;align-items:center;gap:22px;background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:18px;padding:26px}
     .dash-hero h1{font-size:32px;letter-spacing:-1.2px;margin:6px 0}
@@ -110,6 +154,25 @@
         <button id="signOut" class="btn" type="button">Sign out</button>
       </div>
     </div>
+    <section class="dash-panel quant-insights" aria-labelledby="quantInsightsTitle">
+      <div class="insights-heading"><div><div class="eyebrow">Your Quant performance</div><h2 id="quantInsightsTitle">Your progress, at a glance</h2><p class="account-muted">A combined view of your Question Bank, quizzes, Superquizzes and completed mocks.</p></div><span id="analyticsUpdated" class="analytics-note">Personal learning analytics</span></div>
+      <div id="analyticsStatus" class="analytics-status" role="status">Loading your Quant insights…</div>
+      <div id="quantAnalytics" hidden>
+        <div class="insight-kpis">
+          <article class="insight-kpi"><span>Recorded answers</span><strong id="qaAnswered">0</strong><small>Across completed practice</small></article>
+          <article class="insight-kpi"><span>Overall accuracy</span><strong id="qaAccuracy">—</strong><small>Correct recorded answers</small></article>
+          <article class="insight-kpi"><span>Question Bank first try</span><strong id="qaFirstAccuracy">—</strong><small id="qaFirstCount">No first-attempt data yet</small></article>
+          <article class="insight-kpi"><span>Topics practised</span><strong id="qaTopics">0</strong><small>With recorded answers</small></article>
+        </div>
+        <div class="insights-grid">
+          <section class="insight-card"><div class="insight-card-heading"><div><h3>Topic performance</h3><p>Accuracy by topic, with subtopic detail</p></div><span class="insight-legend">Minimum 5 answers for coaching signals</span></div><div id="topicPerformance" class="topic-performance"></div></section>
+          <section class="insight-card"><div class="insight-card-heading"><div><h3>Your next practice priorities</h3><p>Suggested from your recorded performance</p></div></div><div id="practiceRecommendations" class="recommendations"></div></section>
+          <section class="insight-card"><div class="insight-card-heading"><div><h3>Weekly practice trend</h3><p>Accuracy and answered questions over the last 16 weeks</p></div></div><div id="weeklyTrend" class="weekly-trend"></div></section>
+          <section class="insight-card"><div class="insight-card-heading"><div><h3>Practice sources</h3><p>Where your recorded answers come from</p></div></div><div id="practiceSources" class="source-breakdown"></div></section>
+        </div>
+        <p class="analytics-footnote">Accuracy combines the latest saved Question Bank result for each question with submitted answers from completed quizzes, Superquizzes and mocks. Question Bank first-attempt accuracy is reported separately. Topic guidance is withheld until at least five answers are recorded. DrillGRE mock scores are practice estimates, not official ETS scores.</p>
+      </div>
+    </section>
     <div class="dash-grid">
       <div class="dash-stat"><strong id="lessonsCompleted">0</strong><span>Lessons completed</span></div>
       <div class="dash-stat"><strong id="quizzesStarted">0</strong><span>Quizzes attempted</span></div>
@@ -117,7 +180,7 @@
       <div class="dash-stat"><strong id="mocksStarted">0</strong><span>Mock tests attempted</span></div>
       <div class="dash-stat"><strong id="mocksCompleted">0</strong><span>Mock tests completed</span></div>
       <div class="dash-stat"><strong id="questionBankCompleted">0</strong><span>Question Bank completed</span></div>
-      <div class="dash-stat"><strong id="wordsNailed">0</strong><span>Words nailed</span></div>
+
     </div>
     <section class="dash-panel">
       <h2>Learning progress</h2>
