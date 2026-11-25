@@ -89,3 +89,10 @@ After the first release is live and real learner data has been observed:
 3. Add a more detailed mock-score progression view with a clear explanation of the DrillGRE scoring scale.
 4. Add prospective per-question timing consistently across Question Bank, quizzes, and mocks before showing time-management diagnostics.
 5. Consider a comparison of recent versus previous four-week performance once sample sizes are adequate.
+
+
+## Account deletion
+
+Learners can permanently delete their own account from the bottom of the learner dashboard. The browser calls the `delete-account` Supabase Edge Function. The function validates the signed-in user's access token, requires the explicit `DELETE` confirmation, and calls the Supabase Auth Admin API using the server-side `SUPABASE_SERVICE_ROLE_KEY`. Never place the service-role key in GitHub Pages JavaScript or any public file.
+
+Deploy `supabase/functions/delete-account/index.ts` as the `delete-account` Edge Function. Keep JWT verification enabled and ensure the function has the standard `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` secrets configured. The Auth user is permanently deleted. Dependent database records are handled by their existing foreign-key delete rules, so review those rules before production use.
