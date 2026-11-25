@@ -141,7 +141,8 @@
     renderTopics(topics);
     renderRecommendations(topics);
     renderTrend(data.weekly || []);
-    renderSources(data.sources || []);\n    renderMockScores(data.mock_scores || []);
+    renderSources(data.sources || []);
+    renderMockScores(data.mock_scores || []);
     $("quantAnalytics").hidden = false;
     status.hidden = true;
   }
