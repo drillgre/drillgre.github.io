@@ -47,6 +47,16 @@ GitHub Pages serves the static site over HTTPS, but it does not provide a reposi
 
 These changes reduce common exposure and privilege-escalation risks. They do not make any public website impossible to attack. Keep Supabase, dependencies, and access policies updated, and review logs for unusual activity.
 
+
+## Quant learner dashboard analytics
+
+Run `learner-dashboard-analytics.sql` after the Question Bank diagnostics, persistent topic quiz, mock test, and Question Bank/Superquiz migrations have been applied. This migration adds the read-only `get_learner_quant_analytics()` RPC used by the Quant learner dashboard.
+
+The dashboard combines the latest saved Question Bank result per question with submitted answers from completed topic quizzes, Superquizzes, and completed mock tests. It reports overall recorded-answer accuracy, Question Bank first-attempt accuracy, topic and subtopic performance, weekly activity, and practice-source mix. Topic coaching suggestions require at least five recorded answers in that topic.
+
+The analytics function derives the learner identity from `auth.uid()`, returns only that learner's aggregates, and is executable by authenticated users only. It does not modify Question Bank, quiz, or mock attempt records. Apply the migration in the Supabase SQL Editor, then refresh `/dashboard.html`. See [the dashboard implementation blueprint](../docs/learner-dashboard-blueprint.md) for metric definitions, limitations, and acceptance checks.
+
+
 ## Public Question Bank count
 
 Run `question-bank-public-count.sql` after `security-hardening.sql`. Visitors who are not signed in can see the total number of published questions marked **Practice** or **Both**. This RPC returns only an integer count. The Question Bank list, question-opening controls, completion summary, and diagnostics remain available only after sign-in.
