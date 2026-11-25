@@ -208,6 +208,22 @@
         <p class="analytics-footnote">Accuracy combines the latest saved Question Bank result for each question with submitted answers from completed quizzes, Superquizzes and mocks. Question Bank first-attempt accuracy is reported separately. Topic guidance is withheld until at least five answers are recorded. DrillGRE mock scores are practice estimates, not official ETS scores.</p>
       </div>
     </section>
+    <section class="mistake-notebook" aria-labelledby="mistakeNotebookTitle">
+      <div class="mistake-heading">
+        <div><div class="eyebrow">Learn from every attempt</div><h2 id="mistakeNotebookTitle">Mistake Notebook</h2><p class="account-muted">Review questions you missed, write down what you learned, and mark concepts you have mastered.</p></div>
+        <div class="mistake-total"><strong id="mistakeTotal">0</strong><span>questions to revisit</span></div>
+      </div>
+      <div class="mistake-toolbar">
+        <div class="mistake-filters" role="group" aria-label="Filter mistakes">
+          <button type="button" class="mistake-filter active" data-mistake-filter="all">All</button>
+          <button type="button" class="mistake-filter" data-mistake-filter="review">To review</button>
+          <button type="button" class="mistake-filter" data-mistake-filter="mastered">Mastered</button>
+        </div>
+        <input id="mistakeSearch" type="search" placeholder="Search questions or topics" aria-label="Search mistakes">
+      </div>
+      <div id="mistakeNotebookStatus" class="analytics-status">Loading your saved mistakes…</div>
+      <div id="mistakeNotebookList" class="mistake-list" hidden></div>
+    </section>
     <div class="dash-grid">
       <div class="dash-stat"><strong id="lessonsCompleted">0</strong><span>Lessons completed</span></div>
       <div class="dash-stat"><strong id="quizzesStarted">0</strong><span>Quizzes attempted</span></div>
