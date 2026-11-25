@@ -73,15 +73,15 @@ begin
     from events
   ),
   topics as (
-    select topic, count(*)::integer as answered,
-      count(*) filter (where is_correct)::integer as correct,
-      round(100.0 * count(*) filter (where is_correct) / nullif(count(*),0),1) as accuracy,
-      coalesce(jsonb_agg(jsonb_build_object(
+    select topic, sum(answered)::integer as answered,
+      sum(correct)::integer as correct,
+      round(100.0 * sum(correct) / nullif(sum(answered),0),1) as accuracy,
+      jsonb_agg(jsonb_build_object(
         'subtopic',subtopic,
-        'answered',sub.answered,
-        'correct',sub.correct,
-        'accuracy',sub.accuracy
-      ) order by sub.subtopic), '[]'::jsonb) as subtopics
+        'answered',answered,
+        'correct',correct,
+        'accuracy',accuracy
+      ) order by subtopic) as subtopics
     from (
       select topic,subtopic,count(*)::integer as answered,
         count(*) filter (where is_correct)::integer as correct,
