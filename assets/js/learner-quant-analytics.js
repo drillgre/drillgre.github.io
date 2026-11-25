@@ -132,6 +132,7 @@
   }
 
   async function load() {
+    renderCompass([]);
     const status = $("analyticsStatus");
     if (!status) return;
     const { data: sessionData } = await db.auth.getSession();
