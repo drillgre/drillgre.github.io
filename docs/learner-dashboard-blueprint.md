@@ -11,7 +11,7 @@ Deliver a hybrid dashboard that combines performance analytics with practical co
 - Topic and subtopic accuracy with answer counts.
 - Coaching suggestions based on observed topic performance.
 - Weekly practice trend for the most recent 16 weeks.
-- Practice-source breakdown for Question Bank, topic quizzes, Superquizzes, and mock tests.
+- Practice-source breakdown for Question Bank, topic quizzes, Superquizzes, and mock tests.\n- Recent completed DrillGRE mock-score progression, explicitly identified as an internal practice estimate.
 - Existing lesson completion, quiz history, and mock history remain available.
 - Vocabulary and Word Archery statistics are removed from the main Quant dashboard view. Profile details are also de-emphasised.
 
