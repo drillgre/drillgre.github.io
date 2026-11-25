@@ -146,6 +146,74 @@
     @media(max-width:1050px){.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archery-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archery-heading{align-items:flex-start;flex-direction:column}}
     @media(max-width:560px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-hero h1{font-size:27px}.progress-secondary{grid-template-columns:1fr}.quiz-attempt-row{grid-template-columns:1fr}.quiz-attempt-row a{justify-self:start}}
+
+    /* Refined learner dashboard layout */
+    .dash-shell{max-width:1040px;padding:22px 18px 44px}
+    .dash-hero{padding:20px 22px;border-radius:16px;box-shadow:0 8px 24px rgba(24,42,82,.045)}
+    .dash-hero h1{font-size:27px;letter-spacing:-.8px}
+    .dash-hero p{font-size:12px}
+    .dash-button,.dash-actions .btn{padding:10px 13px;font-size:12px}
+    .dashboard-focus-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+    .focus-card{min-width:0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 7px 22px rgba(24,42,82,.035)}
+    .focus-card-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .focus-card-heading h2{font-size:17px;letter-spacing:-.3px;margin:4px 0}
+    .focus-card-heading p{font-size:11px;color:var(--muted);margin:0}
+    .focus-icon{width:34px;height:34px;border-radius:11px;background:#eef2ff;color:#315efb;display:grid;place-items:center;font-weight:850}
+    .score-compass-wrap{display:flex;align-items:center;gap:18px;margin:7px 0 0}
+    .score-compass{position:relative;width:150px;height:150px;flex:0 0 150px}
+    .score-compass svg{width:100%;height:100%;overflow:visible}
+    .compass-track{fill:none;stroke:#edf0f6;stroke-width:9}
+    .compass-progress{fill:none;stroke:#4268ed;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+    .compass-inner{fill:#f8faff;stroke:#e8edfa;stroke-width:1}
+    .compass-needle{transform-origin:90px 90px;transition:transform .6s ease}
+    .compass-needle path:first-child{fill:#315efb}
+    .compass-needle .needle-tail{fill:#aebcf0}
+    .compass-pivot{fill:#172b61;stroke:#fff;stroke-width:2}
+    .compass-point{position:absolute;z-index:2;font-size:8px;font-weight:850;color:#9aa5b8}
+    .compass-point.north{top:0;left:50%;transform:translateX(-50%);color:#315efb}
+    .compass-point.east{right:0;top:50%;transform:translateY(-50%)}
+    .compass-point.south{bottom:0;left:50%;transform:translateX(-50%)}
+    .compass-point.west{left:0;top:50%;transform:translateY(-50%)}
+    .compass-score{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2px;pointer-events:none}
+    .compass-score strong{font-size:30px;letter-spacing:-1.5px;color:#172b61}
+    .compass-score span{font-size:10px;color:var(--muted);align-self:center;margin-top:12px}
+    .score-compass-caption{display:grid;gap:5px;min-width:0}
+    .score-compass-caption strong{font-size:14px;color:var(--navy)}
+    .score-compass-caption span{font-size:11px;line-height:1.55;color:var(--muted)}
+    .focus-footnote{display:block;font-size:10px;line-height:1.5;color:#8a94a7;margin:8px 0 0}
+    .vocab-progress-main{display:flex;align-items:baseline;gap:8px;margin:22px 0 10px}
+    .vocab-progress-main strong{font-size:36px;letter-spacing:-1.5px;color:#172b61}
+    .vocab-progress-main span{font-size:12px;color:var(--muted)}
+    .vocab-progress-track{height:10px;background:#edf0f6;border-radius:99px;overflow:hidden}
+    .vocab-progress-track span{display:block;height:100%;width:0;background:linear-gradient(90deg,#4268ed,#7b91ef);border-radius:99px;transition:width .5s ease}
+    .vocab-progress-meta{display:flex;justify-content:space-between;gap:8px;margin-top:7px;font-size:10px;color:var(--muted)}
+    .vocab-progress-meta strong{font-weight:700;color:#536078}
+    .vocab-mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:17px 0 12px}
+    .vocab-mini-stats>div{padding:10px 12px;background:#f7f9fd;border:1px solid #edf0f6;border-radius:10px}
+    .vocab-mini-stats strong,.vocab-mini-stats span{display:block}
+    .vocab-mini-stats strong{font-size:17px;color:var(--navy)}
+    .vocab-mini-stats span{font-size:10px;color:var(--muted);margin-top:2px}
+    .focus-link{display:flex;justify-content:space-between;align-items:center;color:#315efb;font-size:11px;font-weight:800;padding-top:4px}
+    .quant-insights{padding:18px;margin:14px 0}
+    .insights-heading{margin-bottom:12px}
+    .insights-heading h2{font-size:19px}
+    .insight-kpis{gap:9px;margin:12px 0}
+    .insight-kpi{padding:11px 13px}
+    .insight-kpi strong{font-size:23px;margin:3px 0}
+    .insight-card{padding:14px}
+    .mistake-notebook{padding:17px;margin:14px 0}
+    .dash-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}
+    .dash-stat{padding:12px 14px;border-radius:12px}
+    .dash-stat strong{font-size:22px}
+    .dash-stat span{font-size:10px}
+    .dash-panel{padding:17px;margin:12px 0}
+    .dash-panel h2{font-size:16px;margin-bottom:10px}
+    .progress-secondary{margin-top:12px}
+    .dash-columns{grid-template-columns:1fr 1fr;gap:12px}
+    .dash-columns .dash-panel{min-width:0}
+    @media(max-width:760px){.dashboard-focus-grid{grid-template-columns:1fr}.dash-columns{grid-template-columns:1fr}.score-compass-wrap{justify-content:flex-start}}
+    @media(max-width:560px){.dash-shell{padding:16px 12px 34px}.dash-hero{padding:17px}.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.score-compass{width:132px;height:132px;flex-basis:132px}.score-compass-wrap{gap:12px}.compass-score strong{font-size:26px}}
+
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script defer src="/assets/js/site-nav.js"></script>
@@ -197,6 +265,36 @@
         <button id="signOut" class="btn" type="button">Sign out</button>
       </div>
     </div>
+
+    <section class="dashboard-focus-grid" aria-label="Your learning snapshot">
+      <article class="focus-card score-focus-card">
+        <div class="focus-card-heading"><div><span class="eyebrow">Quant score compass</span><h2>Your current level</h2><p>Based on your latest completed DrillGRE mock</p></div><span class="focus-icon">↗</span></div>
+        <div id="quantScoreCompass" class="score-compass-wrap">
+          <div class="score-compass" aria-label="Quant score indicator">
+            <span class="compass-point north">N</span><span class="compass-point east">E</span><span class="compass-point south">S</span><span class="compass-point west">W</span>
+            <svg viewBox="0 0 180 180" role="img" aria-label="Score compass">
+              <circle cx="90" cy="90" r="72" class="compass-track"/>
+              <circle cx="90" cy="90" r="72" class="compass-progress" id="compassProgress" transform="rotate(-90 90 90)" stroke-dasharray="452" stroke-dashoffset="452"/>
+              <circle cx="90" cy="90" r="55" class="compass-inner"/>
+              <g id="compassNeedle" class="compass-needle" transform="rotate(-135 90 90)"><path d="M90 34 L98 91 L90 83 L82 91 Z"/><path d="M90 146 L98 91 L90 99 L82 91 Z" class="needle-tail"/></g>
+              <circle cx="90" cy="90" r="5" class="compass-pivot"/>
+            </svg>
+            <div class="compass-score"><strong id="quantCompassScore">—</strong><span>/ 170</span></div>
+          </div>
+          <div class="score-compass-caption"><strong id="quantCompassLabel">Build your baseline</strong><span id="quantCompassDetail">Complete a mock to see your score indicator</span></div>
+        </div>
+        <small class="focus-footnote">Practice estimate only. Not an official ETS score.</small>
+      </article>
+      <article class="focus-card vocab-focus-card">
+        <div class="focus-card-heading"><div><span class="eyebrow">Vocab Mountain</span><h2>Vocabulary progress</h2><p>Words you have marked as mastered</p></div><span class="focus-icon">Aa</span></div>
+        <div class="vocab-progress-main"><strong id="vocabMastered">—</strong><span>words mastered</span></div>
+        <div class="vocab-progress-track"><span id="vocabProgressBar"></span></div>
+        <div class="vocab-progress-meta"><span id="vocabProgressPercent">Loading progress…</span><strong id="vocabTotal">— total words</strong></div>
+        <div class="vocab-mini-stats"><div><strong id="vocabLearning">—</strong><span>In progress</span></div><div><strong id="vocabRemaining">—</strong><span>To master</span></div></div>
+        <a class="focus-link" href="/vocab.html">Continue vocabulary practice <span>→</span></a>
+        <p id="vocabProgressStatus" class="focus-footnote" role="status"></p>
+      </article>
+    </section>
     <section class="dash-panel quant-insights" aria-labelledby="quantInsightsTitle">
       <div class="insights-heading"><div><div class="eyebrow">Your Quant performance</div><h2 id="quantInsightsTitle">Your progress, at a glance</h2><p class="account-muted">A combined view of your Question Bank, quizzes, Superquizzes and completed mocks.</p></div><span id="analyticsUpdated" class="analytics-note">Personal learning analytics</span></div>
       <div id="analyticsStatus" class="analytics-status" role="status">Loading your Quant insights…</div>
