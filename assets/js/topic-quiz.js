@@ -270,7 +270,7 @@
       if (status) {
         status.hidden = false;
         status.classList.add("error");
-        status.textContent = "Quiz history and guest limits require the latest quiz progress migration in Supabase. " + (error.message || "");
+        status.textContent = "Could not load quiz history or verify the guest quiz allowance. Confirm that supabase/quiz-progress.sql has been applied in Supabase. Details: " + (error.message || "Unknown error.");
       }
       $("quizQuotaNote").textContent = "Unable to verify your quiz allowance. Please try again after the Supabase quiz progress migration is applied.";
       historyReady = false;
