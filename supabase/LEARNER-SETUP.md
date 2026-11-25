@@ -48,6 +48,15 @@ GitHub Pages serves the static site over HTTPS, but it does not provide a reposi
 These changes reduce common exposure and privilege-escalation risks. They do not make any public website impossible to attack. Keep Supabase, dependencies, and access policies updated, and review logs for unusual activity.
 
 
+## Quant Mistake Notebook
+
+Run `learner-mistake-notebook.sql` after the Question Bank diagnostics, persistent topic quiz, Mock Test, and Question Bank/Superquiz migrations. It creates a private notes table and the `get_learner_mistake_notebook()` RPC used by the learner dashboard.
+
+The notebook collects incorrect submitted answers from the Question Bank, completed topic quizzes, Superquizzes, and completed mock tests. It displays the question, topic, source, date, and (where present in the saved question snapshot) the correct answer and explanation. Learners can write a private note, mark a question as **Mastered**, or return it to **To review**. Filters and search are available in the dashboard.
+
+Notes are protected by row-level security and keyed to the authenticated learner. The RPC uses `auth.uid()` and returns only that learner's mistakes. It does not change assessment attempts, answers, scoring, or the Question Bank and Mock Test engines. Existing incorrect-answer records are used where available; older Question Bank entries without a correctness result cannot be reconstructed.
+
+
 ## Quant learner dashboard analytics
 
 Run `learner-dashboard-analytics.sql` after the Question Bank diagnostics, persistent topic quiz, mock test, and Question Bank/Superquiz migrations have been applied. This migration adds the read-only `get_learner_quant_analytics()` RPC used by the Quant learner dashboard.
