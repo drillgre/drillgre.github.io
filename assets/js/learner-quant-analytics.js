@@ -106,6 +106,21 @@
     host.innerHTML = rows.map(row => '<div class="source-row"><span>' + safe(row.source) + '</span><strong>' + number(row.answered) + ' answers</strong><small>' + percent(row.accuracy) + ' accuracy</small></div>').join("");
   }
 
+  function renderMockScores(scores) {
+    const host = $("mockScoreProgression");
+    const ordered = [...scores].reverse();
+    if (!ordered.length) {
+      host.innerHTML = empty("Complete an adaptive mock to start tracking your DrillGRE mock score progression.");
+      return;
+    }
+    host.innerHTML = ordered.map(item => {
+      const date = item.date ? new Date(item.date).toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "Mock";
+      const score = Number(item.score || 0);
+      const width = Math.max(0,Math.min(100,(score - 130) / 40 * 100));
+      return '<div class="mock-score-row"><span>' + safe(date) + '</span><div class="topic-meter"><span style="width:' + width + '%"></span></div><strong>' + number(score) + '</strong></div>';
+    }).join("");
+  }
+
   async function load() {
     const status = $("analyticsStatus");
     if (!status) return;
@@ -126,7 +141,7 @@
     renderTopics(topics);
     renderRecommendations(topics);
     renderTrend(data.weekly || []);
-    renderSources(data.sources || []);
+    renderSources(data.sources || []);\n    renderMockScores(data.mock_scores || []);
     $("quantAnalytics").hidden = false;
     status.hidden = true;
   }
