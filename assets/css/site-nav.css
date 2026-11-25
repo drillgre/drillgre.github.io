@@ -40,8 +40,9 @@
   font-weight: 900;
 }
 .drillgre-brand-name span { color: #356df3; }
+/* Remove the FREE promotional badge from the shared site branding. */
 .drillgre-free-tag {
-  display: inline-flex;
+  display: none;
   align-items: center;
   border: 1px solid #cfe9dc;
   border-radius: 999px;
