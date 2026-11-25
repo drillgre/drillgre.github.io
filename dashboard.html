@@ -134,6 +134,15 @@
     .dash-status{padding:13px 15px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;margin:15px 0}
     .dash-status.error{color:#9c3023;background:#fff4f2;border-color:#f0c9c3}
     .dash-actions{display:flex;gap:9px;flex-wrap:wrap}
+    .account-danger{border:1px solid #f0c9c3;background:#fffafa;border-radius:14px;padding:20px;margin:18px 0}
+    .account-danger h2{font-size:17px;margin:0 0 8px;color:#922f25}
+    .account-danger p{font-size:12px;line-height:1.6;color:#6b7280}
+    .account-danger button{border:1px solid #c94b40;background:#fff;color:#a83228;border-radius:9px;padding:10px 14px;font-weight:800;cursor:pointer}
+    .account-danger button:disabled{opacity:.55;cursor:wait}
+    .account-delete-confirm{margin-top:14px;padding-top:14px;border-top:1px solid #f1d9d5}
+    .account-delete-confirm label{display:block;font-size:12px;font-weight:750;margin:10px 0}
+    .account-delete-confirm input{display:block;width:100%;max-width:320px;margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}
+    .account-delete-confirm .delete-final{background:#b42318;color:#fff;border-color:#b42318}
     @media(max-width:1050px){.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     @media(max-width:800px){.dash-columns{grid-template-columns:1fr}.dash-hero{align-items:flex-start;flex-direction:column}.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archery-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archery-heading{align-items:flex-start;flex-direction:column}}
     @media(max-width:560px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-hero h1{font-size:27px}.progress-secondary{grid-template-columns:1fr}.quiz-attempt-row{grid-template-columns:1fr}.quiz-attempt-row a{justify-self:start}}
@@ -285,6 +294,22 @@
         <div id="mockHistory"></div>
       </section>
     </div>
+    <section class="account-danger" aria-labelledby="deleteAccountTitle">
+      <h2 id="deleteAccountTitle">Delete account</h2>
+      <p>Deleting your account is permanent. You will lose access to your learner profile and saved learning history. This action cannot be undone.</p>
+      <button id="showDeleteAccount" type="button">Delete my account</button>
+      <div id="deleteAccountConfirm" class="account-delete-confirm" hidden>
+        <p><strong>Are you absolutely sure?</strong> To confirm, type <strong>DELETE</strong> below. Your account will be permanently deleted.</p>
+        <label for="deleteAccountPhrase">Type DELETE to confirm
+          <input id="deleteAccountPhrase" type="text" autocomplete="off" spellcheck="false" maxlength="6" placeholder="DELETE">
+        </label>
+        <div class="dash-actions">
+          <button id="confirmDeleteAccount" class="delete-final" type="button" disabled>Permanently delete account</button>
+          <button id="cancelDeleteAccount" type="button">Cancel</button>
+        </div>
+        <p id="deleteAccountStatus" role="status" aria-live="polite"></p>
+      </div>
+    </section>
   </section>
 </main>
 <footer style="max-width:1120px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Learner dashboard</footer>
