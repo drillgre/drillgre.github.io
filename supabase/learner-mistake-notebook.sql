@@ -51,7 +51,7 @@ begin
     from public.gre_question_bank_progress p
     join public.questions q on q.id::text = p.question_id
     where p.learner_id = v_user_id
-      and p.last_attempt_correct = false
+      and (p.last_attempt_correct = false or p.first_attempt_correct = false)
 
     union all
 
