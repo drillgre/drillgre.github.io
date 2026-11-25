@@ -47,7 +47,7 @@
     .trend-meter{height:8px;background:#edf0f6;border-radius:99px;overflow:hidden}
     .trend-meter span{display:block;height:100%;background:#5276d8;border-radius:99px}
     .trend-row strong{text-align:right;font-size:10px}
-    .source-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:9px 0;border-bottom:1px solid #eef0f5;font-size:11px}
+    .mock-score-row{display:grid;grid-template-columns:76px 1fr 38px;gap:8px;align-items:center;margin:10px 0;font-size:10px}\n    .mock-score-row span:first-child{color:var(--muted)}\n    .mock-score-row strong{text-align:right}\n    .source-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:9px 0;border-bottom:1px solid #eef0f5;font-size:11px}
     .source-row span{color:var(--muted)}
     .source-row strong{font-size:12px}
     .source-row small{grid-column:1/-1;color:var(--muted)}
@@ -169,6 +169,7 @@
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Your next practice priorities</h3><p>Suggested from your recorded performance</p></div></div><div id="practiceRecommendations" class="recommendations"></div></section>
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Weekly practice trend</h3><p>Accuracy and answered questions over the last 16 weeks</p></div></div><div id="weeklyTrend" class="weekly-trend"></div></section>
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Practice sources</h3><p>Where your recorded answers come from</p></div></div><div id="practiceSources" class="source-breakdown"></div></section>
+          <section class="insight-card"><div class="insight-card-heading"><div><h3>Mock score progression</h3><p>Your latest completed DrillGRE mock estimates</p></div></div><div id="mockScoreProgression" class="mock-score-list"></div></section>
         </div>
         <p class="analytics-footnote">Accuracy combines the latest saved Question Bank result for each question with submitted answers from completed quizzes, Superquizzes and mocks. Question Bank first-attempt accuracy is reported separately. Topic guidance is withheld until at least five answers are recorded. DrillGRE mock scores are practice estimates, not official ETS scores.</p>
       </div>
