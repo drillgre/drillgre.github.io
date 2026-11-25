@@ -29,6 +29,7 @@ begin
     from public.gre_question_bank_progress p
     left join public.questions q on q.id::text = p.question_id
     where p.learner_id = v_user_id
+      and (p.last_attempt_correct is not null or p.first_attempt_correct is not null)
 
     union all
 
