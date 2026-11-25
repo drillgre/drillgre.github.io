@@ -6,6 +6,16 @@
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const $ = id => document.getElementById(id);
 
+  function createSecureToken() {
+    const cryptoApi = window.crypto;
+    if (!cryptoApi || typeof cryptoApi.getRandomValues !== "function") {
+      throw new Error("Secure random number generation is unavailable. Please use an updated browser.");
+    }
+    const bytes = new Uint8Array(32);
+    cryptoApi.getRandomValues(bytes);
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+  }
+
   const CATEGORY_LABELS = {
     arithmetic:"Arithmetic",
     data_analysis:"Data Analysis",
@@ -52,7 +62,7 @@
   function getVisitorKey() {
     let key = localStorage.getItem("drillgre_guest_visitor_key_v1");
     if (!key || key.length < 32) {
-      key = crypto.randomUUID() + "-" + crypto.randomUUID();
+      key = createSecureToken();
       localStorage.setItem("drillgre_guest_visitor_key_v1",key);
     }
     return key;
@@ -329,7 +339,7 @@
       [ids[index],ids[j]]=[ids[j],ids[index]];
     }
     const selected = ids.slice(0,requested);
-    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+    const token = createSecureToken();
     const query = new URLSearchParams({
       mode:"superquiz",
       question_ids:JSON.stringify(selected),
@@ -356,7 +366,7 @@
       return;
     }
 
-    const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+    const token = createSecureToken();
     const query = new URLSearchParams({
       subtopics:JSON.stringify(selectedSubtopicKeys()),
       count:String(requested),
