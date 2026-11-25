@@ -5,6 +5,16 @@
   const SUPABASE_KEY = "sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const $ = id => document.getElementById(id);
+  function createSecureToken() {
+    const cryptoApi = window.crypto;
+    if (!cryptoApi || typeof cryptoApi.getRandomValues !== "function") {
+      throw new Error("Secure random number generation is unavailable. Please use an updated browser.");
+    }
+    const bytes = new Uint8Array(32);
+    cryptoApi.getRandomValues(bytes);
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+  }
+
   const params = new URLSearchParams(window.location.search);
   const savedAttemptId = params.get("attempt");
   const sessionToken = params.get("token") || (createSecureToken());
