@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
-<title id="title">DrillGRE</title>
-<defs><linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1687ff"/><stop offset="1" stop-color="#3158e8"/></linearGradient></defs>
-<rect x="3" y="3" width="122" height="122" rx="27" fill="#fff"/>
-<path d="M24 15h35c38 0 58 20 58 49s-20 49-58 49H24V15zm27 23v52h9c20 0 30-9 30-26S80 38 60 38h-9z" fill="#10264b"/>
-<rect x="34" y="76" width="10" height="26" rx="2" fill="#10264b"/><rect x="50" y="62" width="10" height="40" rx="2" fill="#10264b"/><rect x="66" y="49" width="10" height="53" rx="2" fill="#10264b"/>
-<path d="M17 106C47 96 73 79 94 48" fill="none" stroke="url(#blue)" stroke-width="7" stroke-linecap="round"/><path d="M84 44l24-13-4 28z" fill="#ff941f"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+<title id="title">DrillGRE icon</title>
+<defs><linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#09224d"/><stop offset="1" stop-color="#102b59"/></linearGradient><linearGradient id="blue" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#0878f9"/><stop offset="1" stop-color="#1457ec"/></linearGradient></defs>
+<rect x="5" y="5" width="246" height="246" rx="48" fill="#fff"/>
+<path d="M40 34H111C184 34 221 71 221 132S184 222 111 222H40L61 178H111C151 178 174 164 174 128S151 79 111 79H79L59 196H23L40 34Z" fill="url(#navy)"/>
+<path d="M45 174L83 158V121L45 134Z" fill="url(#blue)"/><path d="M91 153L128 136V97L91 114Z" fill="url(#blue)"/><path d="M137 132L173 111V74L137 94Z" fill="url(#blue)"/>
+<path d="M24 205C86 194 143 164 204 111L190 153C144 193 86 216 29 225Z" fill="url(#blue)"/>
 </svg>
