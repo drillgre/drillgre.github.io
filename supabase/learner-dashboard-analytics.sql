@@ -124,6 +124,13 @@ begin
       where learner_id = v_user_id and status = 'completed'
       order by completed_at desc limit 12
     ) x
+  ),
+  daily_activity as (
+    select occurred_at::date as activity_date,count(*)::integer as answered
+    from events
+    where occurred_at >= current_date - 364
+    group by occurred_at::date
+    order by occurred_at::date
   )
   select jsonb_build_object(
     'answered',totals.answered,
@@ -135,7 +142,8 @@ begin
     'topics',coalesce((select jsonb_agg(to_jsonb(t) order by t.topic) from topics t),'[]'::jsonb),
     'weekly',coalesce((select jsonb_agg(to_jsonb(w) order by w.week_start) from trend w),'[]'::jsonb),
     'sources',coalesce((select jsonb_agg(to_jsonb(s) order by s.source) from sources s),'[]'::jsonb),
-    'mock_scores',mocks.scores
+    'mock_scores',mocks.scores,
+    'daily_activity',coalesce((select jsonb_agg(jsonb_build_object('activity_date',d.activity_date,'answered',d.answered) order by d.activity_date) from daily_activity d),'[]'::jsonb')
   )
   into v_result
   from totals, first_attempts, mocks;
