@@ -2,6 +2,20 @@
 (() => {
   "use strict";
 
+  // Make the install metadata available on every page that loads shared navigation.
+  if (!document.querySelector('link[rel="manifest"]')) {
+    const manifestLink = document.createElement("link");
+    manifestLink.rel = "manifest";
+    manifestLink.href = "/manifest.webmanifest";
+    document.head.appendChild(manifestLink);
+  }
+  if (!document.querySelector('meta[name="theme-color"]')) {
+    const themeMeta = document.createElement("meta");
+    themeMeta.name = "theme-color";
+    themeMeta.content = "#102b59";
+    document.head.appendChild(themeMeta);
+  }
+
   const SUPABASE_URL = "https://aayzpcfryixauwsytphd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
 
