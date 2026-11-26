@@ -56,3 +56,86 @@ button,input[type=button],input[type=submit],input[type=reset],.btn,[role=button
 button:not(:disabled):hover,input[type=button]:not(:disabled):hover,input[type=submit]:not(:disabled):hover,input[type=reset]:not(:disabled):hover,.btn:not(:disabled):hover,[role=button]:not([aria-disabled=true]):hover,a.button:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(16,26,53,.12)}
 @media(max-width:680px){.drillgre-footer-shell{width:calc(100% - 32px)}.drillgre-footer-main{grid-template-columns:1fr 1fr;gap:30px}.drillgre-footer-brand{grid-column:1/-1}.drillgre-footer-bottom{flex-direction:column;gap:8px}}
 @media(prefers-reduced-motion:reduce){button,.btn,[role=button],a.button,.drillgre-footer-column a{transition:none!important}}
+
+
+/* Refined desktop dropdown menus */
+@media (min-width:821px) {
+  .drillgre-nav-dropdown { position:relative; }
+  .drillgre-nav-dropdown > summary {
+    padding:12px 0!important;
+    line-height:1.2!important;
+    gap:8px!important;
+    border:0!important;
+    background:transparent!important;
+  }
+  .drillgre-nav-dropdown > summary::after {
+    content:"";
+    width:6px;height:6px;
+    border-right:1.5px solid #7b879a;
+    border-bottom:1.5px solid #7b879a;
+    transform:rotate(45deg) translateY(-2px);
+    transition:transform .18s ease,border-color .18s ease;
+  }
+  .drillgre-nav-dropdown[open] > summary::after {
+    transform:rotate(225deg) translate(-1px,-1px);
+    border-color:var(--drillgre-blue);
+  }
+  .drillgre-nav-dropdown[open] > summary { color:var(--drillgre-blue)!important; }
+  .drillgre-nav-submenu {
+    top:calc(100% + 5px)!important;
+    left:-18px!important;
+    width:232px!important;
+    min-width:232px!important;
+    padding:8px!important;
+    display:grid!important;
+    gap:3px!important;
+    background:#fff!important;
+    border:1px solid #e8edf5!important;
+    border-radius:14px!important;
+    box-shadow:0 18px 48px rgba(16,26,53,.16),0 3px 10px rgba(16,26,53,.05)!important;
+    z-index:1200!important;
+    animation:drillgre-menu-in .16s ease-out both;
+  }
+  .drillgre-nav-dropdown::after {
+    content:"";
+    position:absolute;
+    top:100%;
+    left:-18px;
+    width:232px;
+    height:9px;
+  }
+  .drillgre-nav-submenu a,
+  .drillgre-nav-links .drillgre-nav-submenu a {
+    display:flex!important;
+    align-items:center!important;
+    min-height:42px!important;
+    width:100%!important;
+    margin:0!important;
+    padding:10px 12px!important;
+    border-radius:9px!important;
+    color:#34415b!important;
+    background:transparent!important;
+    font-size:13px!important;
+    font-weight:600!important;
+    line-height:1.35!important;
+    letter-spacing:0!important;
+    text-decoration:none!important;
+    white-space:normal!important;
+    transition:background .16s ease,color .16s ease,transform .16s ease!important;
+  }
+  .drillgre-nav-submenu a:hover,
+  .drillgre-nav-links .drillgre-nav-submenu a:hover {
+    color:var(--drillgre-blue)!important;
+    background:#f1f4ff!important;
+    transform:translateX(2px)!important;
+  }
+  .drillgre-nav-submenu a[aria-current="page"] {
+    color:var(--drillgre-blue)!important;
+    background:#eef2ff!important;
+    font-weight:750!important;
+  }
+}
+@keyframes drillgre-menu-in {
+  from { opacity:0;transform:translateY(5px); }
+  to { opacity:1;transform:translateY(0); }
+}
