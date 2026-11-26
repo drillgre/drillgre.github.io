@@ -6,7 +6,6 @@ create table if not exists public.gre_learner_mistake_notes (
   learner_id uuid not null references auth.users(id) on delete cascade,
   question_id text not null,
   note text not null default '',
-  error_type text not null default 'unclassified' check (error_type in ('unclassified','conceptual','calculation','misread','strategy','time_pressure')),
   status text not null default 'review'
     check (status in ('review','mastered')),
   created_at timestamptz not null default now(),
@@ -14,7 +13,6 @@ create table if not exists public.gre_learner_mistake_notes (
   primary key (learner_id, question_id)
 );
 
-alter table public.gre_learner_mistake_notes add column if not exists error_type text not null default 'unclassified';
 alter table public.gre_learner_mistake_notes enable row level security;
 revoke all on public.gre_learner_mistake_notes from public, anon, authenticated;
 grant select, insert, update on public.gre_learner_mistake_notes to authenticated;
@@ -110,7 +108,6 @@ begin
     'question',m.snapshot,
     'stimulus',s.stimulus_text,
     'note',coalesce(n.note,''),
-    'error_type',coalesce(n.error_type,'unclassified'),
     'status',coalesce(n.status,'review'),
     'updated_at',n.updated_at
   ) order by m.occurred_at desc),'[]'::jsonb)
