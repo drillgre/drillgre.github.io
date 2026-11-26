@@ -55,9 +55,9 @@ begin
 
     -- Submitted answers from completed adaptive mocks.
     select
-      coalesce(ma.question_snapshot->>'topic_category','other'),
-      coalesce(ma.question_snapshot->>'subtopic','unclassified'),
-      nullif(ma.question_snapshot->>'difficulty','')::integer,
+      coalesce(mq.question_snapshot->>'topic_category','other'),
+      coalesce(mq.question_snapshot->>'subtopic','unclassified'),
+      nullif(mq.question_snapshot->>'difficulty','')::integer,
       ans.is_correct,
       coalesce(ma.completed_at, ma.created_at),
       'Mock test'::text
