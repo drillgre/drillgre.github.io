@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js"></script>
-  <script defer src="assets/js/learner-quant-analytics.js?v=20261126-ets-percentiles"></script>
+  <script defer src="assets/js/learner-quant-analytics.js?v=20261126-ets-percentiles-layout2"></script>
   <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
   <script defer src="assets/js/learner-study-plan.js?v=20261126-1"></script>
@@ -265,6 +265,11 @@ html{scroll-behavior:smooth}
       .dashboard-jump-nav a{display:none!important}
       .dash-shell{width:calc(100% - 30px)!important;max-width:100%!important;margin:0 auto!important;padding:16px 12px 34px!important}
     }
+
+  
+    /* Dashboard container alignment and responsive score compass */
+    .dash-shell{width:min(1536px,calc(100% - 48px))!important;max-width:1536px!important;margin:0 auto!important;padding-left:0!important;padding-right:0!important}
+    @media(max-width:900px){.dash-shell{width:calc(100% - 30px)!important;max-width:100%!important;margin:0 auto!important;padding:16px 12px 34px!important}}
 
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
