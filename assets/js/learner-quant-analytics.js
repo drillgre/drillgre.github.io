@@ -210,7 +210,8 @@
     renderRecommendations(topics);
     renderTrend(data.weekly || []);
     renderSources(data.sources || []);
-    renderMockScores(data.mock_scores || []);\n    renderStudyHeatmap(data.daily_activity || []);
+    renderMockScores(data.mock_scores || []);
+    renderStudyHeatmap(data.daily_activity || []);
     renderCompass(data.mock_scores || []);
     $("quantAnalytics").hidden = false;
     status.hidden = true;
