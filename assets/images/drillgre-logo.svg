@@ -1,15 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" role="img" aria-labelledby="title desc">
-<title id="title">DrillGRE</title><desc id="desc">DrillGRE wordmark with a rising bar chart inside a stylized D and a graduation cap above the letter i.</desc>
-<defs><linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#09224d"/><stop offset="1" stop-color="#102b59"/></linearGradient><linearGradient id="blue" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#0878f9"/><stop offset="1" stop-color="#1457ec"/></linearGradient></defs>
-<!-- D emblem with rising performance bars -->
-<path d="M18 22H91C174 22 215 63 215 133S174 202 91 202H18L42 160H91C137 160 162 151 162 112S137 64 91 64H60L39 181H0L18 22Z" fill="url(#navy)"/>
-<path d="M42 158L77 145V111L42 121Z" fill="url(#blue)"/><path d="M85 143L120 127V91L85 105Z" fill="url(#blue)"/><path d="M128 124L161 105V70L128 87Z" fill="url(#blue)"/>
-<path d="M14 190C73 180 125 157 181 106L169 143C127 178 74 199 18 207Z" fill="url(#blue)"/>
-<!-- Wordmark -->
-<text x="246" y="169" font-family="Arial, Helvetica, sans-serif" font-size="146" font-weight="800" letter-spacing="-8" fill="#0b234d">Drill</text>
-<text x="561" y="169" font-family="Arial, Helvetica, sans-serif" font-size="146" font-weight="800" letter-spacing="-7" fill="#145cf0">GRE</text>
-<!-- Graduation cap over the i -->
-<path d="M383 15L427 0L471 15L427 31Z" fill="#0b234d"/>
-<path d="M399 19V36C416 49 439 49 456 36V19L427 29Z" fill="#0b234d"/>
-<path d="M465 14V43" stroke="#f59a18" stroke-width="4" stroke-linecap="round"/><circle cx="465" cy="46" r="4" fill="#f59a18"/>
+<title id="title">DrillGRE</title><desc id="desc">A single D containing a spiral drill bit, followed by the DrillGRE wordmark.</desc>
+<defs><linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08224e"/><stop offset="1" stop-color="#102b59"/></linearGradient><linearGradient id="blue" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#0878f9"/><stop offset="1" stop-color="#1457ec"/></linearGradient></defs>
+<!-- One integrated D glyph -->
+<path d="M18 22H106C190 22 231 63 231 132S190 202 106 202H12L42 162H106C151 162 177 151 177 112S151 62 106 62H51L36 181H0L18 22Z" fill="url(#navy)"/>
+<!-- drill chuck -->
+<path d="M70 62H142V79C142 88 136 94 126 99L126 111L89 137L89 100C78 96 70 89 70 79Z" fill="#0b2857"/>
+<!-- spiral flutes and drill point -->
+<path d="M89 132L126 108V130L89 155Z" fill="url(#blue)"/>
+<path d="M89 155L126 131V153L89 179Z" fill="url(#blue)"/>
+<path d="M89 179L126 155L108 196Z" fill="url(#blue)"/>
+<!-- subtle drilling impact marks -->
+<path d="M79 184L61 197M137 184L155 197M108 199V211" fill="none" stroke="#0b2857" stroke-width="4" stroke-linecap="round"/>
+<!-- Wordmark: the D is not repeated -->
+<text x="248" y="169" font-family="Arial, Helvetica, sans-serif" font-size="146" font-weight="800" letter-spacing="-8" fill="#0b234d">r</text>
+<text x="300" y="169" font-family="Arial, Helvetica, sans-serif" font-size="146" font-weight="800" letter-spacing="-8" fill="#0b234d">i</text>
+<text x="342" y="169" font-family="Arial, Helvetica, sans-serif" font-size="146" font-weight="800" letter-spacing="-8" fill="#0b234d">ll</text>
+<circle cx="325" cy="35" r="15" fill="#145cf0"/>
+<text x="480" y="169" font-family="Arial, Helvetica, sans-serif" font-size="146" font-weight="800" letter-spacing="-7" fill="#145cf0">GRE</text>
 </svg>
