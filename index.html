@@ -296,6 +296,103 @@
       .cta { padding-bottom:62px; }
       .cta-panel { padding:29px 25px; }
     }
+
+    /* DrillGRE brand experience: kinetic editorial layout */
+    :root{--night:#101a35;--electric:#4169ff;--violet:#8b79ff;--lime:#d7f36a;--paper:#f8f8f4}
+    body{background:var(--paper);color:#17213b}
+    .drillgre-site-header{background:rgba(248,248,244,.88)!important;border-bottom:1px solid rgba(16,26,53,.09)!important}
+    .drillgre-brand-mark{background:var(--night)!important;box-shadow:none!important;border-radius:11px!important}
+    .drillgre-brand-name span{color:var(--electric)!important}
+    .drillgre-start-link{background:var(--night)!important;border-color:var(--night)!important;box-shadow:none!important}
+    .hero{padding:84px 0 88px;background:var(--night);color:#fff;isolation:isolate}
+    .hero:before{content:"";position:absolute;z-index:-1;width:780px;height:780px;right:-190px;top:-370px;border-radius:50%;border:1px solid rgba(255,255,255,.11);box-shadow:0 0 0 70px rgba(255,255,255,.025),0 0 0 140px rgba(255,255,255,.02)}
+    .hero:after{content:"";position:absolute;z-index:-1;inset:0;background:radial-gradient(ellipse at 78% 45%,rgba(65,105,255,.28),transparent 44%),linear-gradient(110deg,transparent 45%,rgba(255,255,255,.025));pointer-events:none}
+    .hero-grid{grid-template-columns:1fr 1fr;gap:54px}
+    .hero h1{color:#fff;font-size:clamp(3.4rem,6.5vw,6.1rem);line-height:.98;letter-spacing:-.075em;font-weight:850;margin:25px 0}
+    .hero h1 em{color:var(--lime);font-style:normal}
+    .hero-copy{color:#c2c9dc;font-size:1.12rem;line-height:1.8;max-width:530px}
+    .eyebrow{color:#dce4ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);letter-spacing:.14em;font-size:.67rem}
+    .eyebrow .dot{background:var(--lime);box-shadow:0 0 12px var(--lime)}
+    .hero-buttons .btn{border-radius:6px;min-height:52px;padding:14px 21px}
+    .hero-buttons .btn-primary{background:var(--lime);color:var(--night);box-shadow:none}
+    .hero-buttons .btn-primary:hover{background:#e5ff85}
+    .hero-buttons .btn-outline{border-color:rgba(255,255,255,.28);background:transparent;color:#fff}
+    .hero-buttons .btn-outline:hover{background:rgba(255,255,255,.08);border-color:#fff;color:#fff}
+    .proof{color:#8f9bb9;font-size:.67rem;letter-spacing:.09em}
+    .hero-visual{min-height:455px}
+    .visual-orb{width:390px;height:390px;background:radial-gradient(circle at 50% 50%,rgba(65,105,255,.45),rgba(65,105,255,.08) 60%,transparent 70%);border:1px solid rgba(255,255,255,.16);box-shadow:0 0 100px rgba(65,105,255,.15);animation:orbitPulse 8s ease-in-out infinite}
+    .hero-symbol{color:var(--lime);opacity:.65}
+    .symbol-pi{font-size:3rem;top:7%;left:5%;animation:floatMath 7s ease-in-out infinite}
+    .symbol-sigma{font-size:3.4rem;right:1%;bottom:12%;animation:floatMath 9s ease-in-out -2s infinite}
+    .symbol-root{font-size:2.4rem;top:12%;right:12%;animation:floatMath 8s ease-in-out -4s infinite}
+    .study-card{width:min(100%,410px);padding:28px;background:#f9f9f4;border:0;border-radius:8px;box-shadow:0 35px 90px rgba(0,0,0,.34);transform:rotate(-3deg);animation:cardFloat 7s ease-in-out infinite}
+    .study-label{letter-spacing:.12em;font-size:.65rem;color:#7b8295}
+    .pill{background:#e9f2c8;color:#4d6211}
+    .question{font-size:1.08rem;color:#17213b;line-height:1.55}
+    .answer{border-radius:5px;background:#fff}
+    .answer.selected{background:#e9efff;border-color:#4169ff;color:#2448cf}
+    .card-foot{color:#81899a}
+    .floating-note{border:1px solid rgba(255,255,255,.16);background:#1b294b;color:#e8edff;border-radius:6px;box-shadow:0 15px 35px rgba(0,0,0,.2);font-size:.74rem}
+    .floating-note strong{color:var(--lime);font-size:1.15rem}
+    .note-one{animation:floatNote 6s ease-in-out infinite}
+    .note-two{animation:floatNote 7s ease-in-out -3s infinite}
+    .brand-marquee{overflow:hidden;background:var(--lime);color:var(--night);padding:17px 0;white-space:nowrap;border-bottom:1px solid rgba(16,26,53,.08)}
+    .marquee-track{display:flex;align-items:center;gap:32px;width:max-content;animation:marquee 34s linear infinite}
+    .marquee-track span{font-size:.72rem;font-weight:900;letter-spacing:.16em}
+    .marquee-track i{font-style:normal;font-size:1.1rem}
+    .brand-marquee:hover .marquee-track{animation-play-state:paused}
+    .stats{background:var(--paper);border:0}
+    .stats-grid{padding:36px 0}
+    .stat{border-color:#dedfd7}
+    .stat strong{font-size:1.35rem;color:var(--night);letter-spacing:-.04em}
+    .stat span{color:#707789}
+    section{padding:94px 0}
+    #practice{background:var(--paper)}
+    .section-heading .kicker{color:#526cf1;letter-spacing:.2em}
+    .section-heading h2{font-size:clamp(2.4rem,4vw,3.5rem);letter-spacing:-.065em}
+    .feature-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .feature-card{position:relative;min-height:285px;overflow:hidden;background:#fff;border:1px solid #e7e8e2;border-radius:8px;padding:28px;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s}
+    .feature-card:after{content:"";position:absolute;width:150px;height:150px;right:-70px;bottom:-75px;border-radius:50%;background:var(--card-glow,rgba(65,105,255,.07));transition:transform .4s}
+    .feature-card:hover{transform:translateY(-7px);box-shadow:0 22px 50px rgba(16,26,53,.1);border-color:#cbd3fa}
+    .feature-card:hover:after{transform:scale(1.8)}
+    .feature-icon{background:#edf0ff!important;color:#3d5be6;border-radius:7px}
+    .feature-tag{font-size:.62rem;letter-spacing:.17em;color:#7a8294;font-weight:850}
+    .feature-card h3{font-size:1.22rem;letter-spacing:-.04em}
+    .feature-card p{line-height:1.75;color:#687187}
+    .feature-card:nth-child(2){--card-glow:rgba(139,121,255,.12)}
+    .feature-card:nth-child(3){--card-glow:rgba(215,243,106,.2)}
+    .feature-card:nth-child(4){--card-glow:rgba(65,105,255,.12)}
+    .feature-card:nth-child(5){--card-glow:rgba(215,243,106,.2)}
+    .feature-card:nth-child(6){--card-glow:rgba(139,121,255,.1)}
+    .feature-card-coming{background:#f2f1eb}
+    .how{background:#eceee9}
+    .how .section-heading h2{color:var(--night)}
+    .step{border:0;border-radius:7px;background:#f9f9f4;padding:30px}
+    .step-number{background:var(--night);color:var(--lime);border-radius:5px}
+    .step h3{letter-spacing:-.03em}
+    .cta{background:#eceee9;padding-bottom:94px}
+    .cta-panel{border-radius:8px;background:var(--night);padding:54px;position:relative;overflow:hidden}
+    .cta-panel:after{content:"DRILL";position:absolute;right:7%;bottom:-.35em;font-size:clamp(7rem,18vw,15rem);font-weight:950;letter-spacing:-.1em;color:rgba(255,255,255,.045);pointer-events:none}
+    .cta-panel h2{font-size:clamp(2rem,4vw,3.2rem);letter-spacing:-.06em;max-width:650px}
+    .cta-panel .btn{background:var(--lime);color:var(--night);border-radius:5px;position:relative;z-index:1}
+    .site-footer{background:var(--night);color:#aeb8d0;border:0}
+    .site-footer .brand{color:white}
+    .site-footer .brand span:last-child{color:#fff!important}
+    .site-footer .brand span:last-child span{color:var(--lime)}
+    .site-footer .brand-mark{background:var(--electric);color:white}
+    .footer-brand p,.footer-column a{color:#aeb8d0}
+    .footer-column h3{color:white}
+    .footer-bottom{border-color:rgba(255,255,255,.13);color:#7785a6}
+    .motion-ready .feature-card,.motion-ready .step,.motion-ready .section-heading,.motion-ready .cta-panel{opacity:0;transform:translateY(28px)}
+    .motion-ready .feature-card.is-visible,.motion-ready .step.is-visible,.motion-ready .section-heading.is-visible,.motion-ready .cta-panel.is-visible{opacity:1;transform:translateY(0)}
+    @keyframes marquee{to{transform:translateX(-50%)}}
+    @keyframes orbitPulse{0%,100%{transform:scale(.96);opacity:.85}50%{transform:scale(1.04);opacity:1}}
+    @keyframes floatMath{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-18px) rotate(8deg)}}
+    @keyframes cardFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-11px) rotate(-1deg)}}
+    @keyframes floatNote{0%,100%{translate:0 0}50%{translate:0 -9px}}
+    @media(max-width:900px){.hero-grid{gap:20px}.hero h1{font-size:clamp(3.1rem,7vw,4.5rem)}.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){.hero{padding:60px 0 52px}.hero-grid{grid-template-columns:1fr}.hero h1{font-size:clamp(3rem,13vw,4rem)}.hero-visual{min-height:350px;margin-top:8px}.visual-orb{width:290px;height:290px}.study-card{padding:21px}.feature-grid{grid-template-columns:1fr}.feature-card{min-height:0}.cta-panel{padding:32px 25px}section{padding:66px 0}}
+    @media(prefers-reduced-motion:reduce){.marquee-track,.visual-orb,.hero-symbol,.study-card,.floating-note{animation:none!important}.motion-ready .feature-card,.motion-ready .step,.motion-ready .section-heading,.motion-ready .cta-panel{opacity:1;transform:none}}
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css?v=20261110-black-outline-2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -336,14 +433,14 @@
     <section class="hero" id="home">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow"><span class="dot"></span> A smarter way to prepare for the GRE</div>
-          <h1>Prepare with purpose.<br><em>Progress with confidence.</em></h1>
-          <p class="hero-copy">Build strong quantitative skills through structured lessons, focused question practice, quizzes and mock tests. Strengthen your vocabulary with a dedicated learning experience.</p>
+          <div class="eyebrow"><span class="dot"></span> THE PRACTICE-LED GRE PLATFORM</div>
+          <h1>Think sharper.<br><em>Score with purpose.</em></h1>
+          <p class="hero-copy">Great scores are built one deliberate step at a time. Learn the method, challenge your thinking and turn every practice session into progress.</p>
           <div class="hero-buttons">
-            <a class="btn btn-primary" href="/quant/index.html">Explore Quant lessons <span aria-hidden="true">→</span></a>
-            <a class="btn btn-outline" href="/account.html">Create your account</a>
+            <a class="btn btn-primary" href="/quant/index.html">Start your preparation <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-outline" href="#practice">Explore the platform</a>
           </div>
-          <div class="proof"><span>Learn the concept. Practise the skill. Review your progress.</span></div>
+          <div class="proof"><span>QUANTITATIVE REASONING&nbsp;&nbsp; · &nbsp;&nbsp;VOCABULARY&nbsp;&nbsp; · &nbsp;&nbsp;PRACTICE</span></div>
         </div>
         <div class="hero-visual" aria-label="Sample GRE practice question preview">
           <span class="hero-symbol symbol-pi" aria-hidden="true">π</span><span class="hero-symbol symbol-sigma" aria-hidden="true">∑</span><span class="hero-symbol symbol-root" aria-hidden="true">√x</span>
@@ -363,6 +460,12 @@
       </div>
     </section>
 
+    <div class="brand-marquee" aria-label="Learn. Practise. Improve.">
+      <div class="marquee-track">
+        <span>LEARN WITH INTENTION</span><i>✳</i><span>PRACTISE WITH PURPOSE</span><i>✳</i><span>THINK BEYOND THE FORMULA</span><i>✳</i><span>MAKE EVERY QUESTION COUNT</span><i>✳</i>
+        <span aria-hidden="true">LEARN WITH INTENTION</span><i aria-hidden="true">✳</i><span aria-hidden="true">PRACTISE WITH PURPOSE</span><i aria-hidden="true">✳</i><span aria-hidden="true">THINK BEYOND THE FORMULA</span><i aria-hidden="true">✳</i><span aria-hidden="true">MAKE EVERY QUESTION COUNT</span><i aria-hidden="true">✳</i>
+      </div>
+    </div>
     <div class="stats">
       <div class="container stats-grid">
         <div class="stat"><strong>Learn</strong><span>Build concepts with Quant lessons</span></div>
