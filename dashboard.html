@@ -14,6 +14,23 @@
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
   <script defer src="assets/js/learner-study-plan.js?v=20261126-1"></script>
   <style>
+.dashboard-jump-nav{position:fixed;right:18px;top:145px;width:168px;z-index:20;background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px;box-shadow:0 8px 24px rgba(24,42,82,.08)}
+.dashboard-jump-nav strong{display:block;font-size:11px;margin:0 0 8px;color:var(--navy)}
+.dashboard-jump-nav a{display:block;padding:7px 8px;border-radius:7px;font-size:10px;color:#526078;text-decoration:none;line-height:1.35}
+.dashboard-jump-nav a:hover,.dashboard-jump-nav a:focus{background:#eef2ff;color:#244fc1}
+.dash-shell{width:min(1380px,calc(100% - 230px));max-width:1380px;margin-left:max(18px,calc((100vw - 1600px)/2))}
+.analytics-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.analytics-feature-card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px;min-width:0}
+.analytics-feature-card h3{font-size:14px;margin:0 0 5px}.analytics-feature-card p{font-size:11px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+.difficulty-row{display:grid;grid-template-columns:92px 1fr 54px;gap:8px;align-items:center;margin:10px 0;font-size:11px}.difficulty-row strong{text-align:right;font-size:11px}.difficulty-row small{grid-column:2/-1;color:var(--muted);font-size:9px}
+.mastery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mastery-tile{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fbfcff}.mastery-tile strong{display:block;font-size:11px;text-transform:capitalize}.mastery-tile span{display:block;font-size:17px;font-weight:800;color:var(--navy);margin:4px 0}.mastery-tile small{font-size:9px;color:var(--muted)}
+.target-score-form{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0}.target-score-form label{font-size:10px;color:var(--muted);font-weight:700}.target-score-form input{display:block;width:110px;margin-top:5px;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit}.target-score-form button{border:0;border-radius:8px;background:var(--blue);color:white;padding:10px 12px;font-size:11px;font-weight:800;cursor:pointer}
+.target-progress{height:10px;background:#edf0f6;border-radius:99px;overflow:hidden;margin:12px 0 7px}.target-progress span{display:block;height:100%;background:#5276d8}.target-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted)}
+.speed-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.speed-summary>div{background:#f7f9fd;border-radius:9px;padding:10px}.speed-summary strong{display:block;font-size:19px;color:var(--navy)}.speed-summary span{font-size:10px;color:var(--muted)}
+.next-action{border-left:3px solid #5276d8;padding:10px 12px;background:#f7f9fd;border-radius:0 9px 9px 0;margin:8px 0}.next-action strong{font-size:12px;display:block}.next-action p{font-size:11px;color:var(--muted);line-height:1.5;margin:5px 0}.next-action a{font-size:11px;font-weight:800;color:var(--blue);text-decoration:none}
+[id^="dash-"],#quantInsightsTitle{scroll-margin-top:24px}
+@media(max-width:1100px){.dashboard-jump-nav{position:static;width:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;margin:12px 0;padding:8px}.dashboard-jump-nav strong{white-space:nowrap;margin:0 5px}.dashboard-jump-nav a{white-space:nowrap}.dash-shell{width:calc(100% - 30px);margin:0 auto}}
+@media(max-width:650px){.analytics-feature-grid{grid-template-columns:1fr}.mastery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
     #archeryPanel,#profilePanel{display:none}
 
@@ -264,6 +281,7 @@
   <div class="crumb"><a href="/">Home</a> / Learner dashboard</div>
   <div id="dashboardStatus" class="dash-status">Loading your dashboard…</div>
   <section id="dashboardContent" hidden>
+    <aside class="dashboard-jump-nav" aria-label="Dashboard quick navigation"><strong>Jump to</strong><a href="#dash-difficulty">Accuracy by difficulty</a><a href="#dash-mastery">Topic mastery map</a><a href="#dash-target">Target score tracker</a><a href="#dash-speed">Speed and accuracy</a><a href="#dash-next">Next best action</a><a href="#myStudyPlan">Study plan</a><a href="#mistakeNotebookTitle">Mistake notebook</a><a href="#dash-history">Learning history</a></aside>
     <div class="dash-hero">
       <div>
         <div class="eyebrow">Learner dashboard</div>
@@ -307,7 +325,7 @@
         <p id="vocabProgressStatus" class="focus-footnote" role="status"></p>
       </article>
     </section>
-    <section class="dash-panel quant-insights" aria-labelledby="quantInsightsTitle">
+    <section class="dash-panel quant-insights" id="dash-analytics" aria-labelledby="quantInsightsTitle">
       <div class="insights-heading"><div><div class="eyebrow">Your Quant performance</div><h2 id="quantInsightsTitle">Your progress, at a glance</h2><p class="account-muted">A combined view of your Question Bank, quizzes, Superquizzes and completed mocks.</p></div><span id="analyticsUpdated" class="analytics-note">Personal learning analytics</span></div>
       <div id="analyticsStatus" class="analytics-status" role="status">Loading your Quant insights…</div>
       <div id="quantAnalytics" hidden>
@@ -325,6 +343,13 @@
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Study activity</h3><p>Daily answered questions over the last 12 months</p></div></div><div id="studyActivityHeatmap" class="study-heatmap" aria-label="Daily study activity"></div><div class="study-heatmap-legend"><span>Less</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>More</span></div></section>
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Practice sources</h3><p>Where your recorded answers come from</p></div></div><div id="practiceSources" class="source-breakdown"></div></section><section class="insight-card"><div class="insight-card-heading"><div><h3>Mock score progression</h3><p>Your latest completed DrillGRE mock estimates</p></div></div><div id="mockScoreProgression" class="mock-score-list"></div></section>
         </div>
+<div class="analytics-feature-grid">
+<section class="analytics-feature-card" id="dash-difficulty"><h3>Accuracy by difficulty</h3><p>See whether missed marks are concentrated in easier or harder questions.</p><div id="difficultyAccuracy"><p class="account-muted">Waiting for recorded difficulty data…</p></div></section>
+<section class="analytics-feature-card" id="dash-mastery"><h3>Topic mastery map</h3><p>A compact view of topic-level accuracy and practice volume.</p><div id="topicMasteryMap" class="mastery-grid"></div></section>
+<section class="analytics-feature-card" id="dash-target"><h3>Target score tracker</h3><p>Set a GRE Quant target and monitor the gap from your latest completed mock.</p><div class="target-score-form"><label for="targetQuantScore">Target Quant score<input id="targetQuantScore" type="number" min="130" max="170" step="1" value="165"></label><button id="saveTargetQuantScore" type="button">Save target</button></div><div id="targetScoreProgress"></div></section>
+<section class="analytics-feature-card" id="dash-speed"><h3>Speed and accuracy analysis</h3><p>Uses per-question timing saved in completed adaptive mocks. Untimed practice is excluded.</p><div id="speedAccuracy"><p class="account-muted">Waiting for timed mock data…</p></div></section>
+<section class="analytics-feature-card" id="dash-next"><h3>Next best action</h3><p>A practical recommendation based on your current performance.</p><div id="nextBestAction"><p class="account-muted">Your recommendation will appear when analytics load.</p></div></section>
+</div>
         <p class="analytics-footnote">Accuracy combines the latest saved Question Bank result for each question with submitted answers from completed quizzes, Superquizzes and mocks. Question Bank first-attempt accuracy is reported separately. Topic guidance is withheld until at least five answers are recorded. DrillGRE mock scores are practice estimates, not official ETS scores.</p>
       </div>
     </section>
@@ -362,7 +387,7 @@
       <div id="mistakeNotebookStatus" class="analytics-status">Loading your saved mistakes…</div>
       <div id="mistakeNotebookList" class="mistake-list" hidden></div>
     </section>
-    <div class="dash-grid">
+    <div class="dash-grid" id="dash-history">
       <div class="dash-stat"><strong id="lessonsCompleted">0</strong><span>Lessons completed</span></div>
       <div class="dash-stat"><strong id="quizzesStarted">0</strong><span>Quizzes attempted</span></div>
       <div class="dash-stat"><strong id="quizzesCompleted">0</strong><span>Quizzes completed</span></div>
