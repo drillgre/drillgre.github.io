@@ -96,6 +96,20 @@ begin
     where source='Mock test' and difficulty between 1 and 5 and time_spent_seconds > 0
     group by difficulty order by difficulty
   ),
+  speed_summary as (
+    select
+      count(*)::integer as timed_answers,
+      round(avg(time_spent_seconds)::numeric,1) as avg_seconds,
+      round(100.0*count(*) filter(where is_correct)/nullif(count(*),0),1) as accuracy,
+      count(*) filter(where time_spent_seconds <= 105 and is_correct)::integer as fast_correct,
+      count(*) filter(where time_spent_seconds <= 105 and not is_correct)::integer as fast_incorrect,
+      count(*) filter(where time_spent_seconds > 105 and is_correct)::integer as slow_correct,
+      count(*) filter(where time_spent_seconds > 105 and not is_correct)::integer as slow_incorrect,
+      round(avg(time_spent_seconds) filter(where is_correct)::numeric,1) as correct_avg_seconds,
+      round(avg(time_spent_seconds) filter(where not is_correct)::numeric,1) as incorrect_avg_seconds
+    from events
+    where source='Mock test' and time_spent_seconds > 0
+  ),
   mistake_areas as (
     select topic,subtopic,difficulty,
       count(*) filter (where not is_correct)::integer as wrong_answers,
@@ -194,6 +208,7 @@ begin
     'topics',coalesce((select jsonb_agg(to_jsonb(t) order by t.topic) from topics t),'[]'::jsonb),
     'difficulty_accuracy',coalesce((select jsonb_agg(to_jsonb(d) order by d.difficulty) from difficulty_accuracy d),'[]'::jsonb),
     'speed_accuracy',coalesce((select jsonb_agg(to_jsonb(s) order by s.difficulty) from speed_accuracy s),'[]'::jsonb),
+    'speed_summary',(select to_jsonb(ss) from speed_summary ss),
     'weekly',coalesce((select jsonb_agg(to_jsonb(w) order by w.week_start) from trend w),'[]'::jsonb),
     'sources',coalesce((select jsonb_agg(to_jsonb(s) order by s.source) from sources s),'[]'::jsonb),
     'mock_scores',mocks.scores,
