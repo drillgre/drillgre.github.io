@@ -35,6 +35,8 @@
           <a href="/vocab.html">Vocab Mountain</a>
           <a href="/leaderboard.html">Leaderboard</a>
           <a href="/contact.html">Contact Us</a>
+          <a href="/faq.html">FAQs</a>
+          <a href="/privacy.html">Privacy Policy</a>
           <a href="/account.html">Learner Account</a>
         </div>
       </div>
