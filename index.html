@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="DrillGRE: focused GRE Quant, Verbal, vocabulary, and mock test practice." />
+  <meta name="description" content="Prepare for the GRE with structured Quant lessons, targeted question practice, quizzes, mock tests, and vocabulary review on DrillGRE." />
   <title>DrillGRE | GRE Preparation and Practice</title>
   <link rel="canonical" href="https://drillgre.com/">
   <style>
@@ -217,6 +217,85 @@
       min-height: 44px;
       box-shadow: none !important;
     }
+
+    /* Professional homepage refinement */
+    :root { --navy:#14213d; --blue:#315efb; --blue-dark:#244bd0; --ink:#182338; --muted:#65718a; --line:#e5eaf3; --soft:#f6f8fc; --radius:18px; }
+    body { font-family: Inter, "Segoe UI", Arial, sans-serif; letter-spacing:-.01em; }
+    .hero { padding:88px 0 82px; background:linear-gradient(115deg,#f8faff 0%,#fff 55%,#f3f6ff 100%); }
+    .hero-grid { grid-template-columns:1.04fr .96fr; gap:64px; }
+    .hero h1 { max-width:650px; font-size:clamp(2.9rem,5.1vw,4.35rem); line-height:1.06; letter-spacing:-.055em; font-weight:820; }
+    .hero h1 em { color:#315efb; }
+    .hero-copy { max-width:560px; font-size:1.12rem; line-height:1.75; color:#596780; }
+    .eyebrow { background:#fff; border-color:#dce5ff; color:#3155c7; font-size:.76rem; letter-spacing:.045em; text-transform:uppercase; }
+    .hero-buttons { gap:13px; }
+    .hero-buttons .btn { min-height:50px; padding:13px 20px; border-radius:9px; }
+    .proof { font-size:.82rem; color:#7b879c; letter-spacing:.01em; }
+    .hero-visual { min-height:420px; }
+    .visual-orb { width:370px; height:370px; background:radial-gradient(circle at 45% 40%,#e9efff,#f6f8ff 70%); border-color:#e8edfa; }
+    .study-card { width:min(100%,410px); border-radius:15px; padding:27px; transform:none; box-shadow:0 24px 65px rgba(25,45,90,.13); }
+    .study-top { margin-bottom:25px; }
+    .study-label { font-size:.69rem; letter-spacing:.09em; color:#75819a; }
+    .question { font-size:1.08rem; line-height:1.55; }
+    .answer { padding:12px 14px; border-radius:8px; }
+    .answer.selected { background:#f0f4ff; border-color:#a8bcff; }
+    .answer.selected::after { display:none; animation:none; }
+    .floating-note { border-radius:10px; box-shadow:0 10px 30px rgba(24,43,84,.09); font-size:.78rem; }
+    .note-one { top:24px; right:-2px; }
+    .note-two { bottom:22px; left:-2px; }
+    .stats { background:#fff; }
+    .stats-grid { padding:27px 0; }
+    .stat strong { font-size:1.15rem; letter-spacing:-.02em; }
+    .stat span { font-size:.8rem; }
+    section { padding:88px 0; }
+    .section-heading { max-width:710px; margin-bottom:45px; }
+    .section-heading .kicker { font-size:.7rem; letter-spacing:.16em; }
+    .section-heading h2 { font-size:clamp(2rem,3.2vw,2.65rem); letter-spacing:-.045em; }
+    .section-heading p { font-size:.98rem; line-height:1.7; }
+    .feature-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .feature-card { min-height:260px; padding:25px; border-radius:13px; box-shadow:0 3px 14px rgba(26,43,78,.025); display:flex; flex-direction:column; align-items:flex-start; }
+    .feature-card:hover { transform:translateY(-3px); border-color:#cbd8ff; box-shadow:0 15px 35px rgba(26,43,78,.08); }
+    .feature-icon { width:46px; height:46px; border-radius:12px; margin-bottom:17px; color:#315efb; font-weight:800; font-size:1.12rem; }
+    .feature-tag { color:#7583a0; font-size:.64rem; font-weight:850; letter-spacing:.12em; margin-bottom:8px; }
+    .feature-card h3 { font-size:1.12rem; letter-spacing:-.025em; }
+    .feature-card p { font-size:.88rem; line-height:1.65; margin-bottom:20px; }
+    .feature-card .text-link { margin-top:auto; font-size:.82rem; }
+    .feature-card-coming { background:#fafbfe; border-style:dashed; }
+    .feature-card-coming .feature-icon { background:#f0f2f7; color:#8792a8; }
+    .how { background:#f6f8fc; border-top:1px solid #edf0f6; border-bottom:1px solid #edf0f6; }
+    .steps { gap:18px; }
+    .step { padding:27px; border-radius:13px; box-shadow:0 3px 14px rgba(26,43,78,.025); }
+    .step-number { width:39px; height:39px; border-radius:10px; font-size:.78rem; }
+    .step h3 { font-size:1.05rem; }
+    .step p { line-height:1.7; }
+    .cta { background:#f6f8fc; padding-bottom:88px; }
+    .cta-panel { padding:46px 50px; border-radius:15px; background:linear-gradient(115deg,#14213d,#2349ad); }
+    .cta-panel h2 { font-size:clamp(1.65rem,2.8vw,2.2rem); letter-spacing:-.04em; }
+    .cta-panel .btn { min-height:48px; border-radius:9px; padding:12px 19px; }
+    .site-footer { background:#fff; }
+    .brand-mark { border-radius:10px; }
+    .footer-column a:hover { text-decoration:underline; text-underline-offset:3px; }
+    .motion-ready .feature-card, .motion-ready .step, .motion-ready .section-heading, .motion-ready .cta-panel { transition:opacity .45s ease,transform .45s ease; }
+    @media(max-width:900px) {
+      .hero-grid { gap:30px; }
+      .hero { padding:70px 0 64px; }
+      .feature-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media(max-width:680px) {
+      .hero { padding:54px 0 48px; }
+      .hero h1 { font-size:clamp(2.45rem,11vw,3.25rem); letter-spacing:-.055em; }
+      .hero-copy { font-size:1rem; }
+      .hero-visual { min-height:320px; }
+      .visual-orb { width:275px; height:275px; }
+      .study-card { padding:20px; }
+      .note-one { right:-3px; top:12px; }
+      .note-two { left:-3px; bottom:10px; }
+      section { padding:62px 0; }
+      .feature-grid { grid-template-columns:1fr; }
+      .feature-card { min-height:0; }
+      .steps { grid-template-columns:1fr; }
+      .cta { padding-bottom:62px; }
+      .cta-panel { padding:29px 25px; }
+    }
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css?v=20261110-black-outline-2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -257,26 +336,26 @@
     <section class="hero" id="home">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow"><span class="dot"></span> Your GRE preparation workspace</div>
-          <h1>Build your GRE skills.<br><em>One question at a time.</em></h1>
-          <p class="hero-copy">Learn concepts, practise GRE-style questions, test your progress, and build a stronger vocabulary with tools designed for purposeful preparation.</p>
+          <div class="eyebrow"><span class="dot"></span> A smarter way to prepare for the GRE</div>
+          <h1>Prepare with purpose.<br><em>Progress with confidence.</em></h1>
+          <p class="hero-copy">Build strong quantitative skills through structured lessons, focused question practice, quizzes and mock tests. Strengthen your vocabulary with a dedicated learning experience.</p>
           <div class="hero-buttons">
-            <a class="btn btn-primary" href="#practice">Start practicing <span aria-hidden="true">→</span></a>
-            <a class="btn btn-outline" href="#vocab">Explore Vocab Mountain</a>
+            <a class="btn btn-primary" href="/quant/index.html">Explore Quant lessons <span aria-hidden="true">→</span></a>
+            <a class="btn btn-outline" href="/account.html">Create your account</a>
           </div>
-          <div class="proof"><span>Structured learning · Targeted practice · Progress-focused preparation</span></div>
+          <div class="proof"><span>Learn the concept. Practise the skill. Review your progress.</span></div>
         </div>
         <div class="hero-visual" aria-label="Sample GRE practice question preview">
           <span class="hero-symbol symbol-pi" aria-hidden="true">π</span><span class="hero-symbol symbol-sigma" aria-hidden="true">∑</span><span class="hero-symbol symbol-root" aria-hidden="true">√x</span>
           <div class="visual-orb"></div>
           <div class="study-card">
-            <div class="study-top"><span class="study-label">QUANT QUESTION BANK · SAMPLE</span><span class="pill">Practice preview</span></div>
+            <div class="study-top"><span class="study-label">INSIDE DRILLGRE · QUANT PRACTICE</span><span class="pill">Sample question</span></div>
             <div class="question">If 3x + 5 = 20, what is the value of x?</div>
             <div class="answer">A. 3</div>
             <div class="answer selected">B. 5 <span style="float:right">✓</span></div>
             <div class="answer">C. 6</div>
             <div class="answer">D. 8</div>
-            <div class="card-foot"><span>Algebra · Worked practice</span><span>Sample question</span></div>
+            <div class="card-foot"><span>Algebra</span><span>Review your solution</span></div>
           </div>
           <div class="floating-note note-one"><strong>Practice</strong>at your own pace</div>
           <div class="floating-note note-two"><strong>Build habits</strong>one drill at a time</div>
@@ -295,34 +374,52 @@
     <section id="practice">
       <div class="container">
         <div class="section-heading">
-          <div class="kicker">Explore DrillGRE</div>
-          <h2>Everything you need to practise with purpose</h2>
-          <p>Move from understanding a concept to solving questions and evaluating your performance.</p>
+          <div class="kicker">Your preparation toolkit</div>
+          <h2>A complete Quant practice pathway</h2>
+          <p>Build understanding, apply what you learn, and use practice results to guide your next study session.</p>
         </div>
         <div class="feature-grid">
           <article class="feature-card">
             <div class="feature-icon">∑</div>
-            <h3>Quantitative Reasoning</h3>
-            <p>Study structured lessons across key GRE Quant topics and strengthen your problem-solving methods.</p>
-            <a class="text-link" href="/quant/index.html">Browse Quant lessons →</a>
+            <span class="feature-tag">LEARN</span>
+            <h3>Quant Lessons</h3>
+            <p>Build a strong foundation across arithmetic, algebra, geometry, data analysis and other GRE Quant topics.</p>
+            <a class="text-link" href="/quant/index.html">Explore lessons <span aria-hidden="true">→</span></a>
           </article>
           <article class="feature-card">
-            <div class="feature-icon">✎</div>
-            <h3>Verbal Reasoning</h3>
-            <p>Verbal lessons and practice are being developed and will be introduced in a future release.</p>
-            <span class="text-link">Coming soon</span>
+            <div class="feature-icon">▦</div>
+            <span class="feature-tag">PRACTISE</span>
+            <h3>Question Bank</h3>
+            <p>Work through focused GRE-style questions and strengthen your understanding with answer explanations.</p>
+            <a class="text-link" href="/quant/question-bank.html">Open Question Bank <span aria-hidden="true">→</span></a>
           </article>
-          <article class="feature-card" id="vocab">
-            <div class="feature-icon">⛰</div>
-            <h3>Vocab Mountain</h3>
-            <p>Build vocabulary through word review, meanings, synonyms, and example sentences.</p>
-            <a class="text-link" href="/vocab.html">Explore Vocab Mountain →</a>
+          <article class="feature-card">
+            <div class="feature-icon">✓</div>
+            <span class="feature-tag">CHECK YOUR SKILLS</span>
+            <h3>Topic Quizzes</h3>
+            <p>Test your understanding topic by topic and identify concepts that deserve another look.</p>
+            <a class="text-link" href="/quant/quiz.html">Take a quiz <span aria-hidden="true">→</span></a>
           </article>
           <article class="feature-card" id="mocks">
             <div class="feature-icon">◷</div>
+            <span class="feature-tag">TEST YOURSELF</span>
             <h3>Mock Tests</h3>
-            <p>Put your preparation to the test with timed GRE Quant mock tests and review your results.</p>
-            <a class="text-link" href="/quant/mock.html">Explore mock tests →</a>
+            <p>Practise under timed conditions and review your performance after each completed mock.</p>
+            <a class="text-link" href="/quant/mock.html">Explore mock tests <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="feature-card" id="vocab">
+            <div class="feature-icon">Aa</div>
+            <span class="feature-tag">BUILD VOCABULARY</span>
+            <h3>Vocab Mountain</h3>
+            <p>Strengthen your word knowledge through meanings, synonyms, examples and regular review.</p>
+            <a class="text-link" href="/vocab.html">Explore Vocab Mountain <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="feature-card feature-card-coming">
+            <div class="feature-icon">文</div>
+            <span class="feature-tag">IN DEVELOPMENT</span>
+            <h3>Verbal Reasoning</h3>
+            <p>Dedicated lessons and practice for Text Completion, Sentence Equivalence and Reading Comprehension are in development.</p>
+            <span class="text-link">Coming soon</span>
           </article>
         </div>
         <p class="notice" id="featureNotice" role="status"></p>
@@ -332,14 +429,14 @@
     <section class="how" id="how">
       <div class="container">
         <div class="section-heading">
-          <div class="kicker">A simple routine</div>
-          <h2>Learn. Practice. Improve.</h2>
-          <p>Keep your preparation structured without making it complicated.</p>
+          <div class="kicker">A focused study cycle</div>
+          <h2>Turn practice into progress</h2>
+          <p>A simple, repeatable approach to making each study session count.</p>
         </div>
         <div class="steps">
-          <article class="step"><div class="step-number">1</div><h3>Choose a topic</h3><p>Start with a GRE topic or skill you want to strengthen.</p></article>
-          <article class="step"><div class="step-number">2</div><h3>Practice deliberately</h3><p>Work through GRE-style questions, check explanations, and learn from each attempt.</p></article>
-          <article class="step"><div class="step-number">3</div><h3>Track your progress</h3><p>Use quizzes and mock tests to check what you know and identify where to focus next.</p></article>
+          <article class="step"><div class="step-number">01</div><h3>Learn the method</h3><p>Start with a structured Quant lesson and understand the concepts behind each question type.</p></article>
+          <article class="step"><div class="step-number">02</div><h3>Apply your knowledge</h3><p>Practise with targeted questions and topic quizzes. Read explanations and revisit difficult ideas.</p></article>
+          <article class="step"><div class="step-number">03</div><h3>Evaluate and refine</h3><p>Take mock tests, review your results and decide what to work on next.</p></article>
         </div>
       </div>
     </section>
@@ -347,8 +444,8 @@
     <section class="cta">
       <div class="container">
         <div class="cta-panel">
-          <div><h2>Make your next study session count.</h2><p>Choose a topic, solve a question, and keep building your skills.</p></div>
-          <a class="btn" href="#practice">Start your first drill →</a>
+          <div><h2>Your GRE preparation starts with one focused session.</h2><p>Choose a Quant topic, practise deliberately and build momentum at your own pace.</p></div>
+          <a class="btn" href="/quant/index.html">Start learning <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
@@ -374,7 +471,7 @@
     </div>
     <div class="container footer-bottom">
       <span>© 2026 DrillGRE. All rights reserved.</span>
-      <span>GRE preparation, one question at a time.</span>
+      <span>Focused GRE preparation. Meaningful practice.</span>
     </div>
   </footer>
 
