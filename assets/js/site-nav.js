@@ -50,13 +50,20 @@
   else document.body.appendChild(sharedFooter);
 
   const links = document.querySelector("[data-site-nav-links]");
-  if (links && !links.querySelector('a[href="/pricing.html"]')) {
-    const pricingLink = document.createElement("a");
-    pricingLink.href = "/pricing.html";
-    pricingLink.textContent = "Pricing";
-    const contactLink = links.querySelector('a[href="/contact.html"]');
-    if (contactLink) links.insertBefore(pricingLink, contactLink);
-    else links.appendChild(pricingLink);
+  if (links) {
+    // Keep the same core navigation links on every page, including older
+    // pages whose static header predates the shared navigation.
+    const ensureNavLink = (href, label, beforeHref) => {
+      if (links.querySelector('a[href="' + href + '"]')) return;
+      const link = document.createElement("a");
+      link.href = href;
+      link.textContent = label;
+      const before = beforeHref ? links.querySelector('a[href="' + beforeHref + '"]') : null;
+      if (before) links.insertBefore(link, before);
+      else links.appendChild(link);
+    };
+    ensureNavLink("/pricing.html", "Pricing", "/contact.html");
+    ensureNavLink("/contact.html", "Contact Us");
   }
 
   // Convert the Vocab Mountain link into the shared Verbal dropdown.
