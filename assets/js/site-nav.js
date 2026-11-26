@@ -34,6 +34,7 @@
           <h3>More</h3>
           <a href="/vocab.html">Vocab Mountain</a>
           <a href="/leaderboard.html">Leaderboard</a>
+          <a href="/pricing.html">Pricing</a>
           <a href="/contact.html">Contact Us</a>
           <a href="/faq.html">FAQs</a>
           <a href="/privacy.html">Privacy Policy</a>
@@ -49,6 +50,14 @@
   else document.body.appendChild(sharedFooter);
 
   const links = document.querySelector("[data-site-nav-links]");
+  if (links && !links.querySelector('a[href="/pricing.html"]')) {
+    const pricingLink = document.createElement("a");
+    pricingLink.href = "/pricing.html";
+    pricingLink.textContent = "Pricing";
+    const contactLink = links.querySelector('a[href="/contact.html"]');
+    if (contactLink) links.insertBefore(pricingLink, contactLink);
+    else links.appendChild(pricingLink);
+  }
 
   // Convert the Vocab Mountain link into the shared Verbal dropdown.
   const vocabLink = document.querySelector('.drillgre-nav-links a[href="/vocab.html"]');
