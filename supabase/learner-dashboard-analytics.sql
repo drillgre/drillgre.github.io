@@ -102,14 +102,6 @@ begin
     group by 1
     order by 1
   ),
-  daily_activity as (
-    select occurred_at::date as activity_date,count(*)::integer as answered
-    from events
-    where occurred_at >= current_date - interval '364 days'
-      and occurred_at is not null
-    group by occurred_at::date
-    order by occurred_at::date
-  ),
   sources as (
     select source,count(*)::integer as answered,
       count(*) filter (where is_correct)::integer as correct,
@@ -142,7 +134,6 @@ begin
     'question_bank_first_accuracy',case when first_attempts.recorded > 0 then round(100.0*first_attempts.correct/first_attempts.recorded,1) else null end,
     'topics',coalesce((select jsonb_agg(to_jsonb(t) order by t.topic) from topics t),'[]'::jsonb),
     'weekly',coalesce((select jsonb_agg(to_jsonb(w) order by w.week_start) from trend w),'[]'::jsonb),
-    'daily_activity',coalesce((select jsonb_agg(to_jsonb(d) order by d.activity_date) from daily_activity d),'[]'::jsonb),
     'sources',coalesce((select jsonb_agg(to_jsonb(s) order by s.source) from sources s),'[]'::jsonb),
     'mock_scores',mocks.scores
   )
