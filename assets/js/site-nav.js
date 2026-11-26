@@ -231,6 +231,14 @@
     document.head.appendChild(tourScript);
   }
 
+  // Register the root-scoped service worker for the installable Android-ready PWA.
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
+        .catch(error => console.warn("DrillGRE offline support could not be enabled:", error));
+    }, { once: true });
+  }
+
   const accountLink = document.querySelector("[data-site-auth-link]");
   if (!accountLink) return;
 
