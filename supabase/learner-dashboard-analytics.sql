@@ -25,7 +25,9 @@ begin
       coalesce(q.difficulty, p.difficulty) as difficulty,
       coalesce(p.last_attempt_correct, p.status = 'done') as is_correct,
       p.completed_at as occurred_at,
-      'Question Bank'::text as source
+      'Question Bank'::text as source,
+      p.question_id::text as question_id,
+      coalesce(p.attempts_count,1)::integer as attempts_count
     from public.gre_question_bank_progress p
     left join public.questions q on q.id::text = p.question_id
     where p.learner_id = v_user_id
@@ -41,7 +43,9 @@ begin
       a.is_correct,
       coalesce(a.updated_at, qa.completed_at),
       case when '__superquiz__' = any(coalesce(qa.topic_keys,'{}'::text[]))
-        then 'Superquiz' else 'Topic quiz' end
+        then 'Superquiz' else 'Topic quiz' end,
+      aq.question_id::text,
+      1::integer
     from public.gre_topic_quiz_attempts qa
     join public.gre_topic_quiz_attempt_questions aq on aq.attempt_id = qa.id
     join public.gre_topic_quiz_attempt_answers a
@@ -60,13 +64,37 @@ begin
       nullif(mq.question_snapshot->>'difficulty','')::integer,
       ans.is_correct,
       coalesce(ma.completed_at, ma.created_at),
-      'Mock test'::text
+      'Mock test'::text,
+      mq.question_id::text,
+      1::integer
     from public.gre_mock_attempts ma
     join public.gre_mock_attempt_questions mq on mq.attempt_id = ma.id
     join public.gre_mock_attempt_answers ans
       on ans.attempt_id = mq.attempt_id and ans.question_id = mq.question_id
     where ma.learner_id = v_user_id
       and ma.status = 'completed'
+  ),
+  mistake_areas as (
+    select topic,subtopic,difficulty,
+      count(*) filter (where not is_correct)::integer as wrong_answers,
+      count(distinct question_id) filter (where not is_correct)::integer as questions_missed,
+      count(*)::integer as total_answers,
+      round(100.0 * count(*) filter (where is_correct) / nullif(count(*),0),1) as accuracy
+    from events
+    group by topic,subtopic,difficulty
+    having count(*) filter (where not is_correct) > 0
+  ),
+  mistake_summary as (
+    select
+      coalesce(sum(wrong_answers),0)::integer as wrong_answers,
+      coalesce(sum(repeat_misses),0)::integer as repeat_misses
+    from (
+      select
+        case when not is_correct then 1 else 0 end::integer as wrong_answers,
+        case when not is_correct and source = 'Question Bank'
+          and attempts_count > 1 then 1 else 0 end::integer as repeat_misses
+      from events
+    ) x
   ),
   totals as (
     select count(*)::integer as answered,
@@ -139,6 +167,14 @@ begin
     'question_bank_first_attempts',first_attempts.recorded,
     'question_bank_first_correct',first_attempts.correct,
     'question_bank_first_accuracy',case when first_attempts.recorded > 0 then round(100.0*first_attempts.correct/first_attempts.recorded,1) else null end,
+    'mistake_intelligence',jsonb_build_object(
+      'summary',(select to_jsonb(ms) from mistake_summary ms),
+      'areas',coalesce((select jsonb_agg(jsonb_build_object(
+        'topic',m.topic,'subtopic',m.subtopic,'difficulty',m.difficulty,
+        'wrong_answers',m.wrong_answers,'questions_missed',m.questions_missed,
+        'total_answers',m.total_answers,'accuracy',m.accuracy
+      ) order by m.wrong_answers desc,m.accuracy asc) from mistake_areas m),'[]'::jsonb)
+    ),
     'topics',coalesce((select jsonb_agg(to_jsonb(t) order by t.topic) from topics t),'[]'::jsonb),
     'weekly',coalesce((select jsonb_agg(to_jsonb(w) order by w.week_start) from trend w),'[]'::jsonb),
     'sources',coalesce((select jsonb_agg(to_jsonb(s) order by s.source) from sources s),'[]'::jsonb),
