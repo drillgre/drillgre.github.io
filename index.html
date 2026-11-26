@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="DrillGRE: focused GRE Quant, Verbal, vocabulary, and mock test practice." />
   <title>DrillGRE | GRE Preparation and Practice</title>
-  <link rel="canonical" href="https://drillgre.github.io/">
+  <link rel="canonical" href="https://drillgre.com/">
   <style>
     :root {
       --navy: #101b35;
@@ -123,25 +123,9 @@
 
     /* Homepage motion system */
     /* Typewriter headline: types, pauses, erases, and repeats. */
-    .hero h1.typing-headline {
-      min-height: 3.12em;
-      overflow: visible;
-    }
-    .hero h1 .typing-line {
-      display: block;
-      min-height: 1.04em;
-      white-space: nowrap;
-    }
-    .hero h1 .typing-line-accent {
-      color: var(--blue);
-    }
-    .hero-buttons .btn-primary {
-      animation: practice-button-pulse 2.8s ease-in-out infinite;
-    }
-    .hero-buttons .btn-primary span {
-      display: inline-block;
-      animation: practice-arrow-nudge 1.5s ease-in-out infinite;
-    }
+    .hero h1 { min-height: 0; }
+    
+    .hero-buttons .btn-primary span { display:inline-block; transition:transform .2s ease; }
     .hero-buttons .btn-primary:hover {
       animation-play-state: paused;
       box-shadow: 0 10px 24px rgba(53,109,243,.3);
@@ -155,19 +139,18 @@
       50% { transform: translateX(4px); }
     }
     .hero-visual { isolation: isolate; }
-    .visual-orb { animation: orb-breathe 7s ease-in-out infinite; }
+    .visual-orb { animation:none; }
     @keyframes orb-breathe { 0%,100% { transform: scale(.96); } 50% { transform: scale(1.04); } }
-    .study-card { animation: card-arrive .9s cubic-bezier(.2,.8,.2,1) .35s both, card-float 6s ease-in-out 1.3s infinite; }
+    .study-card { animation: card-arrive .65s cubic-bezier(.2,.8,.2,1) .12s both; }
     @keyframes card-arrive { from { opacity: 0; transform: translateY(28px) rotate(-5deg) scale(.96); } to { opacity: 1; transform: translateY(0) rotate(-2deg) scale(1); } }
     @keyframes card-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -9px; } }
     .answer.selected { position: relative; overflow: hidden; animation: answer-confirm .55s ease-out 1.45s both; }
     .answer.selected::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,.75) 48%, transparent 75%); transform: translateX(-120%); animation: answer-sweep 1.1s ease-out 1.8s; pointer-events: none; }
     @keyframes answer-confirm { 0% { box-shadow: 0 0 0 0 rgba(53,109,243,0); } 55% { box-shadow: 0 0 0 5px rgba(53,109,243,.12); } 100% { box-shadow: 0 0 0 0 rgba(53,109,243,0); } }
     @keyframes answer-sweep { to { transform: translateX(120%); } }
-    .floating-note { animation: note-drift 5s ease-in-out infinite; }
-    .note-two { animation-delay: -2.5s; }
+    .floating-note, .note-two { animation:none; }
     @keyframes note-drift { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
-    .hero-symbol { position: absolute; z-index: -1; color: #9bb5ff; font-weight: 800; opacity: .48; user-select: none; animation: symbol-drift 8s ease-in-out infinite; }
+    .hero-symbol { position: absolute; z-index: -1; color: #9bb5ff; font-weight: 800; opacity: .48; user-select: none; animation:none; }
     .symbol-pi { top: 8%; left: 8%; font-size: 2rem; }
     .symbol-sigma { right: 5%; bottom: 13%; font-size: 2.5rem; animation-delay: -3s; }
     .symbol-root { top: 19%; right: 14%; font-size: 1.8rem; animation-delay: -5s; }
@@ -182,7 +165,7 @@
     .step-number { transition: transform .3s ease, background .3s ease; }
     .step:hover .step-number { transform: rotate(8deg) scale(1.1); background: #dfe8ff; }
     .cta-panel { position: relative; overflow: hidden; }
-    .cta-panel::before { content: ""; position: absolute; top: -80%; left: -30%; width: 30%; height: 260%; background: rgba(255,255,255,.09); transform: rotate(25deg); animation: cta-glint 8s ease-in-out infinite; pointer-events: none; }
+    .cta-panel::before { content: ""; position: absolute; top: -80%; left: -30%; width: 30%; height: 260%; background: rgba(255,255,255,.09); transform: rotate(25deg); animation:none; pointer-events: none; }
     @keyframes cta-glint { 0%,65%,100% { left: -35%; } 85% { left: 115%; } }
     .btn-primary span, .cta-panel .btn { transition: transform .2s ease; }
     .btn-primary:hover span { transform: translateX(4px); }
@@ -274,29 +257,26 @@
     <section class="hero" id="home">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow"><span class="dot"></span> Focused GRE preparation</div>
-          <h1 class="typing-headline" aria-label="Make every practice question count"><span class="typing-line" id="heroTypingLine1" aria-hidden="true"></span><span class="typing-line" id="heroTypingLine2" aria-hidden="true"></span><span class="typing-line typing-line-accent" id="heroTypingLine3" aria-hidden="true"></span></h1>
-          <p class="hero-copy">Build confidence with focused GRE practice, vocabulary review, and mock tests designed to help you improve one question at a time.</p>
+          <div class="eyebrow"><span class="dot"></span> Your GRE preparation workspace</div>
+          <h1>Build your GRE skills.<br><em>One question at a time.</em></h1>
+          <p class="hero-copy">Learn concepts, practise GRE-style questions, test your progress, and build a stronger vocabulary with tools designed for purposeful preparation.</p>
           <div class="hero-buttons">
             <a class="btn btn-primary" href="#practice">Start practicing <span aria-hidden="true">→</span></a>
             <a class="btn btn-outline" href="#vocab">Explore Vocab Mountain</a>
           </div>
-          <div class="proof">
-            <div class="avatar-stack" aria-hidden="true"><span class="avatar">Q</span><span class="avatar">V</span><span class="avatar">G</span></div>
-            <span>Quant · Verbal · Vocabulary · Mock tests</span>
-          </div>
+          <div class="proof"><span>Structured learning · Targeted practice · Progress-focused preparation</span></div>
         </div>
         <div class="hero-visual" aria-label="Sample GRE practice question preview">
           <span class="hero-symbol symbol-pi" aria-hidden="true">π</span><span class="hero-symbol symbol-sigma" aria-hidden="true">∑</span><span class="hero-symbol symbol-root" aria-hidden="true">√x</span>
           <div class="visual-orb"></div>
           <div class="study-card">
-            <div class="study-top"><span class="study-label">QUANT PRACTICE · SAMPLE</span><span class="pill">Question 01</span></div>
+            <div class="study-top"><span class="study-label">QUANT QUESTION BANK · SAMPLE</span><span class="pill">Practice preview</span></div>
             <div class="question">If 3x + 5 = 20, what is the value of x?</div>
             <div class="answer">A. 3</div>
             <div class="answer selected">B. 5 <span style="float:right">✓</span></div>
             <div class="answer">C. 6</div>
             <div class="answer">D. 8</div>
-            <div class="card-foot"><span>Algebra · Easy</span><span>Preview only</span></div>
+            <div class="card-foot"><span>Algebra · Worked practice</span><span>Sample question</span></div>
           </div>
           <div class="floating-note note-one"><strong>Practice</strong>at your own pace</div>
           <div class="floating-note note-two"><strong>Build habits</strong>one drill at a time</div>
@@ -306,43 +286,43 @@
 
     <div class="stats">
       <div class="container stats-grid">
-        <div class="stat"><strong>Quant</strong><span>Master concepts and methods</span></div>
-        <div class="stat"><strong>Verbal</strong><span>Strengthen language skills</span></div>
-        <div class="stat"><strong>Vocabulary</strong><span>Learn words in context</span></div>
+        <div class="stat"><strong>Learn</strong><span>Build concepts with Quant lessons</span></div>
+        <div class="stat"><strong>Practise</strong><span>Questions, quizzes and mock tests</span></div>
+        <div class="stat"><strong>Remember</strong><span>Strengthen vocabulary every day</span></div>
       </div>
     </div>
 
     <section id="practice">
       <div class="container">
         <div class="section-heading">
-          <div class="kicker">Your practice toolkit</div>
-          <h2>Prepare with purpose</h2>
-          <p>Choose a learning path, focus on your weak areas, and make each study session productive.</p>
+          <div class="kicker">Explore DrillGRE</div>
+          <h2>Everything you need to practise with purpose</h2>
+          <p>Move from understanding a concept to solving questions and evaluating your performance.</p>
         </div>
         <div class="feature-grid">
           <article class="feature-card">
             <div class="feature-icon">∑</div>
             <h3>Quantitative Reasoning</h3>
-            <p>Practice arithmetic, algebra, geometry, data interpretation, and quantitative comparison.</p>
-            <a class="text-link" href="/quant/index.html">Explore Quant →</a>
+            <p>Study structured lessons across key GRE Quant topics and strengthen your problem-solving methods.</p>
+            <a class="text-link" href="/quant/index.html">Browse Quant lessons →</a>
           </article>
           <article class="feature-card">
             <div class="feature-icon">✎</div>
             <h3>Verbal Reasoning</h3>
-            <p>Work through text completion, sentence equivalence, and reading comprehension.</p>
-            <a class="text-link" href="#practice" data-notice="Verbal practice is coming next. We will build its question bank after the homepage.">Explore Verbal →</a>
+            <p>Verbal lessons and practice are being developed and will be introduced in a future release.</p>
+            <span class="text-link">Coming soon</span>
           </article>
           <article class="feature-card" id="vocab">
             <div class="feature-icon">⛰</div>
             <h3>Vocab Mountain</h3>
-            <p>Review words, multiple meanings, synonyms, and example sentences with flashcards.</p>
-            <a class="text-link" href="/vocab.html">Climb the mountain →</a>
+            <p>Build vocabulary through word review, meanings, synonyms, and example sentences.</p>
+            <a class="text-link" href="/vocab.html">Explore Vocab Mountain →</a>
           </article>
           <article class="feature-card" id="mocks">
             <div class="feature-icon">◷</div>
             <h3>Mock Tests</h3>
-            <p>Prepare for test day with timed practice and a structured exam experience.</p>
-            <a class="text-link" href="quant/mock.html">Take an adaptive mock →</a>
+            <p>Put your preparation to the test with timed GRE Quant mock tests and review your results.</p>
+            <a class="text-link" href="/quant/mock.html">Explore mock tests →</a>
           </article>
         </div>
         <p class="notice" id="featureNotice" role="status"></p>
@@ -358,8 +338,8 @@
         </div>
         <div class="steps">
           <article class="step"><div class="step-number">1</div><h3>Choose a topic</h3><p>Start with a GRE topic or skill you want to strengthen.</p></article>
-          <article class="step"><div class="step-number">2</div><h3>Practice deliberately</h3><p>Answer questions, review explanations, and understand your mistakes.</p></article>
-          <article class="step"><div class="step-number">3</div><h3>Track your progress</h3><p>Build consistency and return to difficult concepts until they become familiar.</p></article>
+          <article class="step"><div class="step-number">2</div><h3>Practice deliberately</h3><p>Work through GRE-style questions, check explanations, and learn from each attempt.</p></article>
+          <article class="step"><div class="step-number">3</div><h3>Track your progress</h3><p>Use quizzes and mock tests to check what you know and identify where to focus next.</p></article>
         </div>
       </div>
     </section>
@@ -367,7 +347,7 @@
     <section class="cta">
       <div class="container">
         <div class="cta-panel">
-          <div><h2>Your next GRE breakthrough starts here.</h2><p>Small, focused practice sessions can make a meaningful difference.</p></div>
+          <div><h2>Make your next study session count.</h2><p>Choose a topic, solve a question, and keep building your skills.</p></div>
           <a class="btn" href="#practice">Start your first drill →</a>
         </div>
       </div>
@@ -378,7 +358,7 @@
     <div class="container footer-main">
       <div class="footer-brand">
         <a class="brand" href="#home"><span class="brand-mark">D</span><span style="color:var(--navy)">Drill<span>GRE</span></span></a>
-        <p>Focused practice for a more confident GRE journey.</p>
+        <p>A focused workspace for GRE Quant practice and vocabulary building.</p>
       </div>
       <div class="footer-column">
         <h3>Explore</h3>
@@ -393,55 +373,12 @@
       </div>
     </div>
     <div class="container footer-bottom">
-      <span>Copyright © DrillGRE 2026.</span>
+      <span>© 2026 DrillGRE. All rights reserved.</span>
       <span>GRE preparation, one question at a time.</span>
     </div>
   </footer>
 
   <script>
-    // Typewriter headline: fixed three-line layout, typing and erasing in place.
-    (() => {
-      const lines = [
-        document.getElementById('heroTypingLine1'),
-        document.getElementById('heroTypingLine2'),
-        document.getElementById('heroTypingLine3')
-      ];
-      if (lines.some(line => !line)) return;
-      const words = ['Make every', 'practice question', 'count.'];
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const render = (position) => {
-        let remaining = position;
-        lines.forEach((line, index) => {
-          line.textContent = words[index].slice(0, Math.max(0, Math.min(words[index].length, remaining)));
-          remaining -= words[index].length;
-        });
-      };
-      const total = words.join('').length;
-      if (reduceMotion) {
-        lines.forEach((line, index) => { line.textContent = words[index]; });
-        return;
-      }
-      let position = 0;
-      let deleting = false;
-      const type = () => {
-        render(position);
-        if (!deleting && position < total) {
-          position += 1;
-          window.setTimeout(type, 78);
-        } else if (!deleting) {
-          deleting = true;
-          window.setTimeout(type, 1750);
-        } else if (position > 0) {
-          position -= 1;
-          window.setTimeout(type, 38);
-        } else {
-          deleting = false;
-          window.setTimeout(type, 520);
-        }
-      };
-      type();
-    })();
-
     // Reveal homepage sections as they enter the viewport.
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
       document.body.classList.add('motion-ready');
@@ -456,14 +393,6 @@
       }, { threshold: 0.14, rootMargin: '0px 0px -35px 0px' });
       revealItems.forEach(item => revealObserver.observe(item));
     }
-    document.querySelectorAll('[data-notice]').forEach(link => {
-      link.addEventListener('click', event => {
-        event.preventDefault();
-        const notice = document.getElementById('featureNotice');
-        notice.textContent = link.dataset.notice;
-        notice.style.display = 'block';
-      });
-    });
   </script>
 </body>
 </html>
