@@ -5,7 +5,7 @@
   const steps = [
     {path:"/",selector:"#home",title:"Welcome to DrillGRE",description:"Start here to understand the practice-led GRE platform, find the learning areas and see how DrillGRE helps you prepare."},
     {path:"/quant/index.html",selector:".hero",title:"Quant Academy",description:"Follow the structured Quant learning path. Browse lessons by topic and track your course progress."},
-    {path:"/quant/lesson.html",selector:"#lessonLayout",title:"Learn a Quant topic",description:"Open a lesson to study explanations, worked examples and practice questions. Use the course outline to move between lessons."},
+    {path:"/quant/lessons/arithmetic.html",selector:".hero",title:"Learn a Quant topic",description:"Open a lesson to study explanations, worked examples and practice questions. Use the course outline to move between lessons."},
     {path:"/quant/question-bank.html",selector:".bank-hero",title:"Question Bank",description:"Browse GRE-style Quant questions. Filter by topic, subtopic, question format and difficulty, then submit answers and review explanations."},
     {path:"/quant/quiz.html",selector:".quiz-hero",title:"Topic Quizzes",description:"Build a focused quiz by selecting topics, question count and timing. Review your results and revisit areas that need practice."},
     {path:"/quant/mock.html",selector:"#introPanel",title:"Adaptive Mock Tests",description:"Take a GRE-style Quant mock under timed or untimed conditions. Review your score and answers when you finish."},
