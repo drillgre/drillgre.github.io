@@ -11,6 +11,29 @@
     return;
   }
 
+  // Apply the primary wordmark and favicon consistently across the site.
+  const brandLogo = '<img class="drillgre-brand-logo-image" src="/assets/images/drillgre-logo.svg" alt="DrillGRE" width="560" height="132">';
+  document.querySelectorAll(".drillgre-brand, header .brand").forEach(brand => {
+    brand.innerHTML = brandLogo;
+    brand.setAttribute("aria-label", "DrillGRE home");
+  });
+  const iconHref = "/assets/images/drillgre-icon.svg";
+  let favicon = document.querySelector('link[rel="icon"]');
+  if (!favicon) {
+    favicon = document.createElement("link");
+    favicon.rel = "icon";
+    document.head.appendChild(favicon);
+  }
+  favicon.type = "image/svg+xml";
+  favicon.href = iconHref;
+  let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+  if (!appleIcon) {
+    appleIcon = document.createElement("link");
+    appleIcon.rel = "apple-touch-icon";
+    document.head.appendChild(appleIcon);
+  }
+  appleIcon.href = iconHref;
+
   const toggle = document.querySelector("[data-site-nav-toggle]");
   // Render one shared footer across the entire platform.
   const existingFooter = document.querySelector("footer");
@@ -20,7 +43,7 @@
     <div class="drillgre-footer-shell">
       <div class="drillgre-footer-main">
         <div class="drillgre-footer-brand">
-          <a class="drillgre-footer-logo" href="/" aria-label="DrillGRE home"><span class="drillgre-footer-mark">D</span><span>Drill<span>GRE</span></span></a>
+          <a class="drillgre-footer-logo" href="/" aria-label="DrillGRE home"><img src="/assets/images/drillgre-logo.svg" alt="DrillGRE" width="220" height="52"></a>
           <p>Learn with intention. Practise with purpose. Make every question count.</p>
         </div>
         <div class="drillgre-footer-column">
