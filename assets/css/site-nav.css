@@ -82,7 +82,7 @@ button:not(:disabled):hover,input[type=button]:not(:disabled):hover,input[type=s
   }
   .drillgre-nav-dropdown[open] > summary { color:var(--drillgre-blue)!important; }
   .drillgre-nav-submenu {
-    top:calc(100% + 5px)!important;
+    top:calc(100% + 21px)!important;
     left:-18px!important;
     width:232px!important;
     min-width:232px!important;
@@ -99,7 +99,7 @@ button:not(:disabled):hover,input[type=button]:not(:disabled):hover,input[type=s
   .drillgre-nav-dropdown::after {
     content:"";
     position:absolute;
-    top:100%;
+    top:calc(100% + 16px);
     left:-18px;
     width:232px;
     height:9px;
