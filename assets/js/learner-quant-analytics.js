@@ -57,6 +57,16 @@
     const weak = eligible.filter(t => Number(t.accuracy) < 65).sort((a,b) => a.accuracy-b.accuracy);
     const strong = eligible.filter(t => Number(t.accuracy) >= 85).sort((a,b) => b.accuracy-a.accuracy);
     const items = [];
+    const subtopicWeak = eligible.flatMap(t => (t.subtopics || [])
+      .filter(s => Number(s.answered) >= 5 && Number(s.accuracy) < 70)
+      .map(s => ({...s, topic:t.topic})))
+      .sort((x,y)=>Number(x.accuracy)-Number(y.accuracy));
+    subtopicWeak.slice(0,1).forEach(s => items.push({
+      title: "Target " + label(s.subtopic),
+      body: label(s.topic) + " subtopic accuracy is " + percent(s.accuracy) + " across " + number(s.answered) + " answers. Revisit the method and practise this specific skill.",
+      href: "/quant/quiz.html",
+      action: "Practise Quant topics"
+    }));
     weak.slice(0,2).forEach(t => items.push({
       title: "Prioritise " + label(t.topic),
       body: "Your current accuracy is " + percent(t.accuracy) + " across " + number(t.answered) + " recorded answers. Review the concepts, then complete a focused practice set.",
@@ -200,7 +210,7 @@
     start.setDate(start.getDate()-start.getDay());
     const days=[];
     for(let d=new Date(start);d<=today;d.setDate(d.getDate()+1)){
-      const key=d.toISOString().slice(0,10),count=counts.get(key)||0;
+      const key=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"),count=counts.get(key)||0;
       const level=count===0?0:count<5?1:count<15?2:count<30?3:4;
       days.push('<span class="heat-day heat-level level-'+level+'" title="'+key+': '+count+' answers" aria-label="'+key+': '+count+' answers"></span>');
     }
