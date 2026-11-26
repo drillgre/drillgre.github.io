@@ -180,6 +180,16 @@
     });
   }
 
+
+  // Load the site-wide guided tour on every public platform page.
+  if (!document.querySelector('script[data-site-tour]')) {
+    const tourScript = document.createElement("script");
+    tourScript.src = "/assets/js/site-tour.js?v=20261126-1";
+    tourScript.defer = true;
+    tourScript.dataset.siteTour = "true";
+    document.head.appendChild(tourScript);
+  }
+
   const accountLink = document.querySelector("[data-site-auth-link]");
   if (!accountLink) return;
 
