@@ -9,8 +9,9 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js"></script>
-  <script defer src="assets/js/learner-quant-analytics.js?v=20261126-readiness-heatmap"></script>
-  <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-error-types"></script>
+  <script defer src="assets/js/learner-dashboard-tour.js?v=20261126-1"></script>
+  <script defer src="assets/js/learner-quant-analytics.js?v=20261126-core"></script>
+  <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
   <style>
 
@@ -47,18 +48,7 @@
     .mistake-resolve.reopen{background:#fff4e5;color:#945c08}
     .mistake-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:12px;text-align:center}
     @media(max-width:600px){.mistake-heading{flex-direction:column}.mistake-toolbar{align-items:stretch;flex-direction:column}#mistakeSearch{max-width:none}}
-\n    .learner-readiness{display:grid;grid-template-columns:190px 1fr;gap:22px;align-items:center;padding:20px;margin:16px 0;border:1px solid var(--line);border-radius:14px;background:linear-gradient(120deg,#f8faff,#fff)}
-    .readiness-score{display:grid;gap:5px}.readiness-score strong{font-size:46px;line-height:1;color:var(--navy)}.readiness-score>span:last-child{font-size:12px;color:var(--muted)}
-    .readiness-detail h3{margin:0 0 5px;font-size:16px}.readiness-detail p{font-size:11px;color:var(--muted);margin:0 0 12px;line-height:1.5}
-    .readiness-target{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:11px}.readiness-target label{font-weight:800}.readiness-target input{width:72px;padding:7px;border:1px solid var(--line);border-radius:7px;font:inherit}
-    #targetGap{color:var(--blue);font-weight:700}
-    .activity-card{margin:14px 0}.study-heatmap{display:grid;grid-template-columns:repeat(53,minmax(5px,1fr));grid-auto-flow:column;grid-template-rows:repeat(7,10px);gap:3px;overflow-x:auto;padding:8px 0}
-    .heat-day{width:100%;min-width:5px;height:10px;border-radius:2px;background:#edf0f5}.heat-level.level-1{background:#d9e2ff}.heat-level.level-2{background:#aebfff}.heat-level.level-3{background:#7895ff}.heat-level.level-4{background:#4169ff}
-    .heatmap-legend{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:9px;color:var(--muted)}.heatmap-legend .heat-level{width:10px;height:10px;border-radius:2px}
-    .mistake-intelligence-note{font-size:11px;color:var(--muted);margin:12px 0}
-    .mistake-error-type{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}.mistake-error-type label{font-size:11px;font-weight:800}.mistake-error-type select{padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:11px}
-    @media(max-width:600px){.learner-readiness{grid-template-columns:1fr}.study-heatmap{grid-template-columns:repeat(53,8px)}}
-    .quant-insights{padding:24px}
+\n    .quant-insights{padding:24px}
     .insights-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:16px}
     .insights-heading h2{font-size:22px;margin:4px 0}
     .analytics-note,.insight-legend{font-size:11px;color:var(--muted);background:#f4f6fb;border-radius:99px;padding:7px 10px}
@@ -100,7 +90,25 @@
     .analytics-footnote{font-size:10px;line-height:1.6;color:var(--muted);margin:16px 0 0}
     @media(max-width:800px){.insight-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.insights-grid{grid-template-columns:1fr}.insights-heading{flex-direction:column}}
     @media(max-width:480px){.quant-insights{padding:16px}.insight-kpi strong{font-size:23px}}
-\n    .dash-shell{max-width:1120px;margin:0 auto;padding:28px 18px 60px}
+\n
+    .dashboard-tour[hidden]{display:none}
+    .dashboard-tour{position:fixed;inset:0;z-index:10000}
+    .dashboard-tour-backdrop{position:absolute;inset:0;background:rgba(12,22,45,.62)}
+    .dashboard-tour-card{position:fixed;right:28px;bottom:26px;width:min(420px,calc(100vw - 32px));background:#fff;border:1px solid #dfe5f0;border-radius:16px;padding:22px;box-shadow:0 18px 60px rgba(10,20,45,.28);z-index:10003}
+    .dashboard-tour-top{display:flex;align-items:center;justify-content:space-between}
+    .dashboard-tour-close{border:0;background:transparent;font-size:25px;color:#667085;cursor:pointer}
+    .dashboard-tour-progress{height:4px;background:#edf0f6;border-radius:9px;margin:14px 0 12px;overflow:hidden}
+    .dashboard-tour-progress span{display:block;height:100%;width:20%;background:var(--blue);transition:width .2s}
+    .dashboard-tour-step{font-size:10px;letter-spacing:1px;font-weight:800;color:var(--blue)}
+    .dashboard-tour-card h2{font-size:21px;margin:7px 0}
+    .dashboard-tour-card p{font-size:13px;line-height:1.65;color:var(--muted);margin:0 0 18px}
+    .dashboard-tour-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .dashboard-tour-actions button{cursor:pointer}
+    .dashboard-tour-actions .btn{border:1px solid var(--line);background:#fff;color:var(--navy);padding:9px 12px;border-radius:8px}
+    .dashboard-tour-actions .btn:disabled{opacity:.4;cursor:not-allowed}
+    .tour-target-active{position:relative!important;z-index:10001!important;box-shadow:0 0 0 4px #fff,0 0 0 7px #4169ff!important;border-radius:12px!important}
+    @media(max-width:600px){.dashboard-tour-card{right:12px;bottom:12px;width:calc(100vw - 24px);padding:18px}.dashboard-tour-actions{align-items:flex-end}}
+    .dash-shell{max-width:1120px;margin:0 auto;padding:28px 18px 60px}
     .account-muted{color:var(--muted);font-size:13px;line-height:1.6}
     .dash-hero{display:flex;justify-content:space-between;align-items:center;gap:22px;background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:18px;padding:26px}
     .dash-hero h1{font-size:32px;letter-spacing:-1.2px;margin:6px 0}
@@ -274,6 +282,7 @@
         <a class="dash-button" href="quant/mock.html">Create a new mock</a>
         <a class="btn" href="/quant/index.html">Continue learning</a>
         <a class="btn" href="/quant/question-bank.html">Question Bank</a>
+        <button id="dashboardTourStart" class="btn" type="button">Take a tour</button>
         <button id="signOut" class="btn" type="button">Sign out</button>
       </div>
     </div>
@@ -317,13 +326,6 @@
           <article class="insight-kpi"><span>Question Bank first try</span><strong id="qaFirstAccuracy">—</strong><small id="qaFirstCount">No first-attempt data yet</small></article>
           <article class="insight-kpi"><span>Topics practised</span><strong id="qaTopics">0</strong><small>With recorded answers</small></article>
         </div>
-        <section class="learner-readiness" aria-labelledby="readinessTitle">
-          <div class="readiness-score"><span class="eyebrow">GRE preparation index</span><strong id="readinessValue">—</strong><span id="readinessLabel">Building your baseline</span></div>
-          <div class="readiness-detail"><h3 id="readinessTitle">Your preparation readiness</h3><p id="readinessExplanation">This indicative index combines practice accuracy, mock performance and topic coverage. It is not an official GRE score prediction.</p>
-            <div class="readiness-target"><label for="targetQuantScore">My target Quant score</label><input id="targetQuantScore" type="number" min="130" max="170" step="1" value="160"><span id="targetGap">Set your target to track progress.</span></div>
-          </div>
-        </section>
-        <section class="insight-card activity-card"><div class="insight-card-heading"><div><h3>Study activity</h3><p>Your recorded practice activity over the last 12 months</p></div><span id="activitySummary" class="insight-legend">No activity yet</span></div><div id="studyHeatmap" class="study-heatmap" aria-label="Daily study activity calendar"></div><div class="heatmap-legend"><span>Less</span><i class="heat-level level-0"></i><i class="heat-level level-1"></i><i class="heat-level level-2"></i><i class="heat-level level-3"></i><i class="heat-level level-4"></i><span>More</span></div></section>
         <div class="insights-grid">
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Topic performance</h3><p>Accuracy by topic, with subtopic detail</p></div><span class="insight-legend">Minimum 5 answers for coaching signals</span></div><div id="topicPerformance" class="topic-performance"></div></section>
           <section class="insight-card"><div class="insight-card-heading"><div><h3>Your next practice priorities</h3><p>Suggested from your recorded performance</p></div></div><div id="practiceRecommendations" class="recommendations"></div></section>
@@ -348,7 +350,6 @@
         <input id="mistakeSearch" type="search" placeholder="Search questions or topics" aria-label="Search mistakes">
       </div>
       <div id="mistakeNotebookStatus" class="analytics-status">Loading your saved mistakes…</div>
-      <div class="mistake-intelligence-note">Classify each error to identify patterns in your learning.</div>
       <div id="mistakeNotebookList" class="mistake-list" hidden></div>
     </section>
     <div class="dash-grid">
@@ -428,6 +429,18 @@
         <p id="deleteAccountStatus" role="status" aria-live="polite"></p>
       </div>
     </section>
+
+    <div id="dashboardTour" class="dashboard-tour" hidden aria-modal="true" role="dialog" aria-labelledby="dashboardTourTitle">
+      <div class="dashboard-tour-backdrop" data-tour-close></div>
+      <section class="dashboard-tour-card">
+        <div class="dashboard-tour-top"><span class="eyebrow">DRILLGRE QUICK TOUR</span><button type="button" class="dashboard-tour-close" data-tour-close aria-label="Close tour">×</button></div>
+        <div class="dashboard-tour-progress"><span id="dashboardTourProgress"></span></div>
+        <div id="dashboardTourStep" class="dashboard-tour-step">STEP 1 OF 5</div>
+        <h2 id="dashboardTourTitle">Welcome to your dashboard</h2>
+        <p id="dashboardTourDescription"></p>
+        <div class="dashboard-tour-actions"><button type="button" id="dashboardTourSkip" class="btn">Skip tour</button><div><button type="button" id="dashboardTourBack" class="btn">Back</button> <button type="button" id="dashboardTourNext" class="dash-button">Next</button></div></div>
+      </section>
+    </div>
   </section>
 </main>
 <footer style="max-width:1120px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Learner dashboard</footer>
