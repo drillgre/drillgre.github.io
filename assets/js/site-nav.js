@@ -109,8 +109,65 @@
   });
 
   if (toggle && links) {
+    const header = document.querySelector(".drillgre-site-header");
+    const shell = document.querySelector(".drillgre-nav-shell");
+    const actions = document.querySelector(".drillgre-nav-actions");
+    const mobileNav = window.matchMedia("(max-width: 820px)");
+
+    function applyNavigationLayout() {
+      const mobile = mobileNav.matches;
+      if (mobile) {
+        header.style.position = "relative";
+        shell.style.cssText = "display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-areas:'brand toggle' 'actions actions' 'links links';gap:0 12px;width:calc(100% - 32px);min-height:0;padding:12px 0;margin:0 auto";
+        const brand = shell.querySelector(".drillgre-brand");
+        brand.style.gridArea = "brand";
+        toggle.style.cssText = "grid-area:toggle;display:grid;place-items:center;width:42px;height:42px;border:1px solid #dce3f0;border-radius:10px;background:#fff;color:#101a35;font-size:21px;cursor:pointer";
+        actions.style.cssText = "grid-area:actions;display:flex;justify-content:flex-start;flex-wrap:wrap;margin:10px 0 0;gap:9px";
+        links.style.cssText = "grid-area:links;display:none;width:100%;box-sizing:border-box;padding:10px 0 4px;margin:10px 0 0;border-top:1px solid #e7ebf3;flex-direction:column;align-items:stretch;gap:0;background:transparent";
+        links.querySelectorAll(":scope > a, :scope > details").forEach(item => {
+          item.style.display = "block";
+          item.style.width = "100%";
+          item.style.padding = "10px 5px";
+        });
+        links.querySelectorAll("details > summary").forEach(item => {
+          item.style.display = "flex";
+          item.style.justifyContent = "space-between";
+          item.style.padding = "8px 0";
+        });
+        toggle.hidden = false;
+        toggle.style.display = "grid";
+      } else {
+        header.style.removeProperty("position");
+        shell.removeAttribute("style");
+        actions.removeAttribute("style");
+        links.removeAttribute("style");
+        shell.querySelector(".drillgre-brand").removeAttribute("style");
+        toggle.removeAttribute("style");
+        toggle.hidden = true;
+        links.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open navigation");
+        toggle.textContent = "☰";
+      }
+    }
+
+    function closeMobileMenu() {
+      if (!mobileNav.matches) return;
+      links.style.display = "none";
+      links.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open navigation");
+      toggle.textContent = "☰";
+    }
+
+    applyNavigationLayout();
+    if (mobileNav.addEventListener) mobileNav.addEventListener("change", applyNavigationLayout);
+    else window.addEventListener("resize", applyNavigationLayout);
+
     toggle.addEventListener("click", () => {
-      const isOpen = links.classList.toggle("is-open");
+      const isOpen = toggle.getAttribute("aria-expanded") !== "true";
+      links.style.display = isOpen ? "flex" : "none";
+      links.classList.toggle("is-open", isOpen);
       toggle.setAttribute("aria-expanded", String(isOpen));
       toggle.setAttribute("aria-label", isOpen ? "Close navigation" : "Open navigation");
       toggle.textContent = isOpen ? "×" : "☰";
@@ -118,10 +175,7 @@
     links.querySelectorAll("a").forEach(link => {
       link.addEventListener("click", () => {
         closeDropdowns();
-        links.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "Open navigation");
-        toggle.textContent = "☰";
+        closeMobileMenu();
       });
     });
   }
