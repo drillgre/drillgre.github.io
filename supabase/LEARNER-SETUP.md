@@ -18,6 +18,8 @@ Run these scripts in the Supabase SQL Editor in this exact order:
 12. `question-bank-bookmarks-superquiz.sql`
 13. `word-archery.sql`
 14. `word-archery-leaderboard.sql`
+15. `learner-dashboard-analytics.sql`
+16. `learner-study-plan.sql`
 
 The first script creates the mock tables, topic classification, question-use field, shared Data Analysis stimuli, and the mock selection and scoring functions.
 
@@ -27,6 +29,9 @@ The third script configures learner read access, protects question answers from 
 
 These scripts are designed to be rerunnable. Run the full scripts in the stated order after code changes. The sixth script adds authenticated Question Bank progress, the learner dashboard count, and leaderboard participation counts. The seventh script distinguishes correctly answered questions from items that need review and adds first-attempt diagnostics. The eighth script creates the Vocab Mountain vocabulary table and admin-only content-management policies. The ninth script adds each learner's vocabulary classifications. The tenth script locks profile writes to trusted database functions and restricts question-figure uploads to admins, including a restrictive RLS layer that blocks broader legacy write policies for this bucket. The eleventh script exposes only the aggregate count of published practice questions to visitors. The twelfth script adds private learner bookmarks, aggregate question-attempt counts, and Superquiz support through the persistent quiz engine.
 The thirteenth script adds Word Archery scoring, account-level points, streak bonuses, answer attempts, and success-rate statistics. The fourteenth script adds the public Word Archery rankings using the existing learner leaderboard opt-in. Run it after the thirteenth script.
+
+
+The fifteenth script adds read-only learner Quant analytics, including topic and subtopic performance, weekly trends, mock-score progression, and daily activity data for the dashboard heatmap. The sixteenth script creates the persistent weekly study planner, daily Quant and vocabulary targets, and owner-scoped RPCs for scheduling, editing, rescheduling, and completing activities. Run both after the earlier learner and assessment setup scripts.
 
 ## Production security checklist
 
