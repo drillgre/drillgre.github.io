@@ -27,7 +27,8 @@ begin
       p.completed_at as occurred_at,
       'Question Bank'::text as source,
       p.question_id::text as question_id,
-      coalesce(p.attempts_count,1)::integer as attempts_count
+      coalesce(p.attempts_count,1)::integer as attempts_count,
+      (coalesce(p.attempts_count,1) > 1 and p.first_attempt_correct is false and p.last_attempt_correct is false) as repeat_mistake
     from public.gre_question_bank_progress p
     left join public.questions q on q.id::text = p.question_id
     where p.learner_id = v_user_id
@@ -45,7 +46,8 @@ begin
       case when '__superquiz__' = any(coalesce(qa.topic_keys,'{}'::text[]))
         then 'Superquiz' else 'Topic quiz' end,
       aq.question_id::text,
-      1::integer
+      1::integer,
+      false
     from public.gre_topic_quiz_attempts qa
     join public.gre_topic_quiz_attempt_questions aq on aq.attempt_id = qa.id
     join public.gre_topic_quiz_attempt_answers a
@@ -66,7 +68,8 @@ begin
       coalesce(ma.completed_at, ma.created_at),
       'Mock test'::text,
       mq.question_id::text,
-      1::integer
+      1::integer,
+      false
     from public.gre_mock_attempts ma
     join public.gre_mock_attempt_questions mq on mq.attempt_id = ma.id
     join public.gre_mock_attempt_answers ans
@@ -86,15 +89,9 @@ begin
   ),
   mistake_summary as (
     select
-      coalesce(sum(wrong_answers),0)::integer as wrong_answers,
-      coalesce(sum(repeat_misses),0)::integer as repeat_misses
-    from (
-      select
-        case when not is_correct then 1 else 0 end::integer as wrong_answers,
-        case when not is_correct and source = 'Question Bank'
-          and attempts_count > 1 then 1 else 0 end::integer as repeat_misses
-      from events
-    ) x
+      count(*) filter (where not is_correct)::integer as wrong_answers,
+      count(*) filter (where repeat_mistake)::integer as repeat_misses
+    from events
   ),
   totals as (
     select count(*)::integer as answered,
