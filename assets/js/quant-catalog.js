@@ -78,15 +78,30 @@
         </div>
         <div class="module-lessons">
           ${module.lessons.map((lesson, lessonIndex) => `
-            <a href="lesson.html?id=${encodeURIComponent(lesson.id)}">
+            <a href="lesson.html?id=${encodeURIComponent(lesson.id)}" data-progress-id="lesson-${esc(lesson.id)}">
               <span class="num">${String(lessonIndex + 1).padStart(2,"0")}</span>
-              <span>${esc(lesson.title)}</span>
+              <span class="lesson-link-title">${esc(lesson.title)}</span>
+              <span class="lesson-progress-check" aria-label="Lesson not completed"></span>
               <span class="go">→</span>
             </a>
           `).join("")}
         </div>
       </article>
     `).join("");
+
+    function updateLessonCompletion() {
+      grid.querySelectorAll("[data-progress-id]").forEach(link => {
+        const done = window.DrillGREProgress?.isDone(link.dataset.progressId) || false;
+        link.classList.toggle("completed", done);
+        const check = link.querySelector(".lesson-progress-check");
+        if (check) {
+          check.textContent = done ? "✓" : "";
+          check.setAttribute("aria-label", done ? "Lesson completed" : "Lesson not completed");
+        }
+      });
+    }
+    updateLessonCompletion();
+    document.addEventListener("drillgre:progress", updateLessonCompletion);
   }
 
   document.addEventListener("DOMContentLoaded", loadCatalog);
