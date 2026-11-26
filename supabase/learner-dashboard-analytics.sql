@@ -28,7 +28,8 @@ begin
       'Question Bank'::text as source,
       p.question_id::text as question_id,
       coalesce(p.attempts_count,1)::integer as attempts_count,
-      (coalesce(p.attempts_count,1) > 1 and p.first_attempt_correct is false and p.last_attempt_correct is false) as repeat_mistake
+      (coalesce(p.attempts_count,1) > 1 and p.first_attempt_correct is false and p.last_attempt_correct is false) as repeat_mistake,
+      0::integer as time_spent_seconds
     from public.gre_question_bank_progress p
     left join public.questions q on q.id::text = p.question_id
     where p.learner_id = v_user_id
@@ -47,7 +48,8 @@ begin
         then 'Superquiz' else 'Topic quiz' end,
       aq.question_id::text,
       1::integer,
-      false
+      false,
+      0::integer
     from public.gre_topic_quiz_attempts qa
     join public.gre_topic_quiz_attempt_questions aq on aq.attempt_id = qa.id
     join public.gre_topic_quiz_attempt_answers a
@@ -69,13 +71,30 @@ begin
       'Mock test'::text,
       mq.question_id::text,
       1::integer,
-      false
+      false,
+      coalesce(ans.time_spent_seconds,0)::integer
     from public.gre_mock_attempts ma
     join public.gre_mock_attempt_questions mq on mq.attempt_id = ma.id
     join public.gre_mock_attempt_answers ans
       on ans.attempt_id = mq.attempt_id and ans.question_id = mq.question_id
     where ma.learner_id = v_user_id
       and ma.status = 'completed'
+  ),
+  difficulty_accuracy as (
+    select difficulty,count(*)::integer as answered,
+      count(*) filter(where is_correct)::integer as correct,
+      count(*) filter(where not is_correct)::integer as wrong,
+      round(100.0*count(*) filter(where is_correct)/nullif(count(*),0),1) as accuracy
+    from events where difficulty between 1 and 5
+    group by difficulty order by difficulty
+  ),
+  speed_accuracy as (
+    select difficulty,count(*)::integer as answered,
+      round(avg(time_spent_seconds)::numeric,1) as avg_seconds,
+      round(100.0*count(*) filter(where is_correct)/nullif(count(*),0),1) as accuracy
+    from events
+    where source='Mock test' and difficulty between 1 and 5 and time_spent_seconds > 0
+    group by difficulty order by difficulty
   ),
   mistake_areas as (
     select topic,subtopic,difficulty,
@@ -173,6 +192,8 @@ begin
       ) order by m.wrong_answers desc,m.accuracy asc) from mistake_areas m),'[]'::jsonb)
     ),
     'topics',coalesce((select jsonb_agg(to_jsonb(t) order by t.topic) from topics t),'[]'::jsonb),
+    'difficulty_accuracy',coalesce((select jsonb_agg(to_jsonb(d) order by d.difficulty) from difficulty_accuracy d),'[]'::jsonb),
+    'speed_accuracy',coalesce((select jsonb_agg(to_jsonb(s) order by s.difficulty) from speed_accuracy s),'[]'::jsonb),
     'weekly',coalesce((select jsonb_agg(to_jsonb(w) order by w.week_start) from trend w),'[]'::jsonb),
     'sources',coalesce((select jsonb_agg(to_jsonb(s) order by s.source) from sources s),'[]'::jsonb),
     'mock_scores',mocks.scores,
