@@ -118,6 +118,66 @@
     }).join("");
   }
 
+  function renderDifficulty(rows) {
+    const host = $("difficultyAccuracy");
+    if (!host) return;
+    if (!rows?.length) { host.innerHTML = empty("No difficulty-tagged answers have been recorded yet."); return; }
+    host.innerHTML = rows.map(row => {
+      const accuracy = Number(row.accuracy || 0);
+      return '<div class="difficulty-row"><span>Level ' + safe(row.difficulty) + '</span><div class="topic-meter"><span style="width:' + Math.max(0,Math.min(100,accuracy)) + '%"></span></div><strong>' + percent(row.accuracy) + '</strong><small>' + number(row.answered) + ' answers · ' + number(row.wrong) + ' incorrect</small></div>';
+    }).join("");
+  }
+
+  function renderMastery(topics) {
+    const host = $("topicMasteryMap");
+    if (!host) return;
+    if (!topics?.length) { host.innerHTML = empty("Complete practice to build your topic mastery map."); return; }
+    host.innerHTML = topics.map(topic => {
+      const accuracy = Number(topic.accuracy || 0);
+      const status = Number(topic.answered) < 5 ? "Building evidence" : accuracy >= 85 ? "Strong" : accuracy >= 70 ? "Developing" : "Needs attention";
+      return '<article class="mastery-tile"><strong>' + safe(label(topic.topic)) + '</strong><span>' + percent(topic.accuracy) + '</span><small>' + number(topic.answered) + ' answers · ' + status + '</small><div class="topic-meter"><span style="width:' + Math.max(0,Math.min(100,accuracy)) + '%"></span></div></article>';
+    }).join("");
+  }
+
+  function renderTargetScore(scores, userId) {
+    const input = $("targetQuantScore"), host = $("targetScoreProgress");
+    if (!input || !host) return;
+    const key = "drillgre_target_quant_score_" + userId;
+    input.value = Math.max(130, Math.min(170, Number(localStorage.getItem(key) || 165)));
+    const latest = [...(scores || [])].filter(x => x?.score != null).sort((a,b) => new Date(b.date || 0)-new Date(a.date || 0))[0];
+    const render = () => {
+      const target = Math.max(130,Math.min(170,Number(input.value || 165)));
+      if (!latest) { host.innerHTML = empty("Complete your first mock to measure progress towards your target."); return; }
+      const current = Number(latest.score), progress = target <= 130 ? 100 : Math.max(0,Math.min(100,(current-130)/(target-130)*100));
+      host.innerHTML = '<div class="target-meta"><span>Latest mock: <strong>' + number(current) + '</strong></span><span>Target: <strong>' + number(target) + '</strong></span></div><div class="target-progress"><span style="width:' + progress + '%"></span></div><div class="target-meta"><span>' + (current >= target ? "Target achieved" : (target-current) + " points to target") + '</span><span>' + progress.toFixed(0) + '% of target range</span></div>';
+    };
+    $("saveTargetQuantScore").onclick = () => {
+      const value = Math.round(Number(input.value));
+      if (!Number.isFinite(value) || value < 130 || value > 170) { input.setCustomValidity("Enter a score from 130 to 170."); input.reportValidity(); return; }
+      input.setCustomValidity(""); localStorage.setItem(key,String(value)); render();
+    };
+    render();
+  }
+
+  function renderSpeedAccuracy(rows) {
+    const host = $("speedAccuracy");
+    if (!host) return;
+    const valid = (rows || []).filter(x => Number(x.answered) > 0 && Number(x.avg_seconds) > 0);
+    if (!valid.length) { host.innerHTML = empty("No recorded per-question timing is available yet. Complete a timed adaptive mock to activate this analysis."); return; }
+    const total = valid.reduce((sum,x)=>sum+Number(x.answered),0);
+    const avg = valid.reduce((sum,x)=>sum+Number(x.avg_seconds)*Number(x.answered),0)/total;
+    host.innerHTML = '<div class="speed-summary"><div><strong>' + avg.toFixed(1) + 's</strong><span>Average time per question</span></div><div><strong>' + number(total) + '</strong><span>Timed answers analysed</span></div></div>' + valid.map(row => '<div class="difficulty-row"><span>Level ' + safe(row.difficulty) + '</span><div class="topic-meter"><span style="width:' + Math.max(0,Math.min(100,Number(row.accuracy||0))) + '%"></span></div><strong>' + percent(row.accuracy) + '</strong><small>' + Number(row.avg_seconds).toFixed(1) + ' sec average · ' + number(row.answered) + ' questions</small></div>').join("");
+  }
+
+  function renderNextAction(topics, difficultyRows) {
+    const host = $("nextBestAction");
+    if (!host) return;
+    const eligible = (topics || []).filter(t=>Number(t.answered)>=5).sort((a,b)=>Number(a.accuracy)-Number(b.accuracy));
+    const weak = eligible[0], hardWeak = (difficultyRows || []).filter(x=>Number(x.answered)>=3).sort((a,b)=>Number(a.accuracy)-Number(b.accuracy))[0];
+    if (!weak) { host.innerHTML = '<div class="next-action"><strong>Build your baseline</strong><p>Complete a short Quant quiz or Question Bank set. Recommendations become more reliable after at least five answers in a topic.</p><a href="/quant/quiz.html">Create a topic quiz →</a></div>'; return; }
+    const difficultyText = hardWeak ? ' Your weakest difficulty band is Level ' + hardWeak.difficulty + ' (' + percent(hardWeak.accuracy) + ' accuracy).' : '';
+    host.innerHTML = '<div class="next-action"><strong>Focus on ' + safe(label(weak.topic)) + '</strong><p>Current accuracy is ' + percent(weak.accuracy) + ' across ' + number(weak.answered) + ' answers.' + safe(difficultyText) + ' Review one lesson, then complete a focused practice set.</p><a href="/quant/quiz.html">Practise this topic →</a></div>';
+  }
   function renderTrend(rows) {
     const host = $("weeklyTrend");
     if (!rows.length) {
@@ -232,6 +292,11 @@
     $("qaFirstCount").textContent = number(data.question_bank_first_attempts) + " Question Bank first attempts";
     $("qaTopics").textContent = number(topics.length);
     renderTopics(topics);
+    renderDifficulty(data.difficulty_accuracy || []);
+    renderMastery(topics);
+    renderTargetScore(data.mock_scores || [], sessionData.session.user.id);
+    renderSpeedAccuracy(data.speed_accuracy || []);
+    renderNextAction(topics, data.difficulty_accuracy || []);
     renderMistakeIntelligence(data.mistake_intelligence || {});
     renderRecommendations(topics);
     renderTrend(data.weekly || []);
