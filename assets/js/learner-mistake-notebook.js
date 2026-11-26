@@ -53,11 +53,14 @@
       const explanation = q.explanation ? '<div class="mistake-answer"><strong>Explanation</strong>\n' + safe(q.explanation) + '</div>' : "";
       const status = item.status === "mastered" ? "mastered" : "review";
       const action = status === "mastered" ? "Move back to review" : "Mark as mastered";
+      const errorTypes = [["unclassified","Not classified"],["conceptual","Conceptual misunderstanding"],["calculation","Calculation error"],["misread","Misread the question"],["strategy","Incorrect strategy"],["time_pressure","Time pressure"]];
+      const errorOptions = errorTypes.map(([value,label]) => '<option value="' + value + '" ' + ((item.error_type || "unclassified") === value ? "selected" : "") + '>' + label + '</option>').join("");
       return '<article class="mistake-card" data-question-id="' + safe(item.question_id) + '">' +
         '<div class="mistake-card-top"><div class="mistake-meta">' + safe(topic) + ' · ' + safe(subtopic) + ' · ' + safe(item.source) + ' · ' + safe(dateText(item.occurred_at)) + '</div><span class="mistake-status ' + status + '">' + (status === "mastered" ? "Mastered" : "To review") + '</span></div>' +
         (item.stimulus ? '<div class="mistake-stimulus">' + safe(item.stimulus) + '</div>' : '') +
         '<div class="mistake-question">' + safe(q.question_text || "Question text is unavailable in this saved record.") + '</div>' +
         '<details class="mistake-details"><summary>Reveal correct answer and explanation</summary>' + options + answer + explanation + '</details>' +
+        '<div class="mistake-error-type"><label for="mistake-error-' + safe(item.question_id) + '">Error type</label><select id="mistake-error-' + safe(item.question_id) + '" class="mistake-error-select">' + errorOptions + '</select></div>' +
         '<label class="mistake-note-label" for="mistake-note-' + safe(item.question_id) + '">My notes</label>' +
         '<textarea class="mistake-note" id="mistake-note-' + safe(item.question_id) + '" placeholder="What went wrong? Which concept or method should you remember?">' + safe(item.note || "") + '</textarea>' +
         '<div class="mistake-actions"><button type="button" class="mistake-save" data-action="save">Save note</button><button type="button" class="mistake-resolve ' + (status === "mastered" ? "reopen" : "") + '" data-action="toggle">' + action + '</button></div>' +
@@ -74,12 +77,14 @@
       question_id: questionId,
       note: patch.note ?? current.note ?? "",
       status: patch.status ?? current.status ?? "review",
+      error_type: patch.error_type ?? current.error_type ?? "unclassified",
       updated_at: new Date().toISOString()
     };
     const { error } = await db.from("gre_learner_mistake_notes").upsert(payload,{onConflict:"learner_id,question_id"});
     if (error) throw error;
     current.note = payload.note;
     current.status = payload.status;
+    current.error_type = payload.error_type;
     current.updated_at = payload.updated_at;
     render();
   }
@@ -122,7 +127,8 @@
       try {
         if (button.dataset.action === "save") {
           const note = card.querySelector(".mistake-note").value;
-          await saveMistake(questionId,{note});
+          const error_type = card.querySelector(".mistake-error-select")?.value || "unclassified";
+          await saveMistake(questionId,{note,error_type});
           const status = $("mistakeNotebookStatus");
           status.hidden = false;
           status.classList.remove("error");
