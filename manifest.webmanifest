@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "DrillGRE | GRE Preparation",
+  "short_name": "DrillGRE",
+  "description": "GRE Quant practice, lessons, mock tests and vocabulary learning.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#102b59",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/images/drillgre-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
