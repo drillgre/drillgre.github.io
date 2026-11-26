@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 132" role="img" aria-labelledby="title desc">
+<title id="title">DrillGRE</title><desc id="desc">DrillGRE logo with an ascending progress arrow.</desc>
+<defs><linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1687ff"/><stop offset="1" stop-color="#3158e8"/></linearGradient></defs>
+<g transform="translate(4 7)">
+<path d="M12 12h45c42 0 66 22 66 56s-24 56-66 56H12V12zm32 25v62h13c22 0 34-11 34-31S79 37 57 37H44z" fill="#10264b"/>
+<rect x="28" y="79" width="12" height="27" rx="2" fill="#10264b"/><rect x="47" y="66" width="12" height="40" rx="2" fill="#10264b"/><rect x="66" y="52" width="12" height="54" rx="2" fill="#10264b"/>
+<path d="M18 111C48 102 73 87 95 61" fill="none" stroke="url(#blue)" stroke-width="8" stroke-linecap="round"/><path d="M84 57l22-12-4 25z" fill="#ff941f"/>
+</g>
+<text x="145" y="94" font-family="Inter,Arial,sans-serif" font-size="78" font-weight="850" letter-spacing="-4" fill="#10264b">Drill<tspan fill="#3158e8">GRE</tspan></text>
+</svg>
