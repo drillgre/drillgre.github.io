@@ -1,5 +1,7 @@
 (() => {
   "use strict";
+  if (window.__drillgreSiteTourLoaded) return;
+  window.__drillgreSiteTourLoaded = true;
 
   const TOUR_GAP = 30 * 24 * 60 * 60 * 1000;
   const steps = [
