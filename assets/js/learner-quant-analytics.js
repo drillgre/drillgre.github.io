@@ -173,52 +173,6 @@
     });
   }
 
-  function renderReadiness(data) {
-    const accuracy = data.accuracy == null ? null : Number(data.accuracy);
-    const scores = (data.mock_scores || []).filter(x => x.score != null).sort((x,y)=>new Date(y.date||0)-new Date(x.date||0));
-    const latestScore = scores.length ? Number(scores[0].score) : null;
-    const topics = (data.topics || []).filter(x=>Number(x.answered)>=5);
-    const coverage = Math.min(100, topics.length / 8 * 100);
-    const components = [];
-    if (accuracy != null) components.push({value:accuracy,weight:.5});
-    if (latestScore != null) components.push({value:Math.max(0,Math.min(100,(latestScore-130)/40*100)),weight:.3});
-    if (topics.length) components.push({value:coverage,weight:.2});
-    const totalWeight=components.reduce((n,x)=>n+x.weight,0);
-    const index=components.length?Math.round(components.reduce((n,x)=>n+x.value*x.weight,0)/totalWeight):null;
-    $("readinessValue").textContent=index==null?"—":index;
-    $("readinessLabel").textContent=index==null?"Complete practice to establish a baseline":index>=80?"Strong preparation signals":index>=65?"Building a solid foundation":index>=45?"Developing consistency":"Early preparation stage";
-    $("readinessExplanation").textContent=index==null?"Complete questions and a mock test to establish your preparation baseline. This is an indicative learning index, not an official GRE score prediction.":"Indicative index based on available accuracy, latest mock score and breadth of practised topics. It is not an official GRE score prediction.";
-    const input=$("targetQuantScore");
-    const key="drillgre_target_quant_score";
-    const saved=Number(localStorage.getItem(key));
-    if(saved>=130&&saved<=170)input.value=String(saved);
-    const updateTarget=()=>{
-      const target=Math.max(130,Math.min(170,Number(input.value)||160));
-      localStorage.setItem(key,String(target));
-      $("targetGap").textContent=latestScore==null?"Complete a mock to compare with your target.":latestScore>=target?"Your latest mock has reached your target.":(target-latestScore)+" points to your target.";
-    };
-    input.addEventListener("change",updateTarget);
-    updateTarget();
-  }
-
-  function renderHeatmap(rows) {
-    const host=$("studyHeatmap");
-    if(!host)return;
-    const counts=new Map((rows||[]).map(x=>[x.activity_date,Number(x.answered||0)]));
-    const today=new Date();today.setHours(0,0,0,0);
-    const start=new Date(today);start.setDate(start.getDate()-363);
-    start.setDate(start.getDate()-start.getDay());
-    const days=[];
-    for(let d=new Date(start);d<=today;d.setDate(d.getDate()+1)){
-      const key=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"),count=counts.get(key)||0;
-      const level=count===0?0:count<5?1:count<15?2:count<30?3:4;
-      days.push('<span class="heat-day heat-level level-'+level+'" title="'+key+': '+count+' answers" aria-label="'+key+': '+count+' answers"></span>');
-    }
-    host.innerHTML=days.join("");
-    const active=[...counts.values()].filter(x=>x>0).length;
-    $("activitySummary").textContent=active+" active days in the last year";
-  }
-
   async function load() {
     renderCompass([]);
     const status = $("analyticsStatus");
@@ -243,8 +197,6 @@
     renderSources(data.sources || []);
     renderMockScores(data.mock_scores || []);
     renderCompass(data.mock_scores || []);
-    renderReadiness(data);
-    renderHeatmap(data.daily_activity || []);
     $("quantAnalytics").hidden = false;
     status.hidden = true;
   }
