@@ -10,7 +10,7 @@ let plan={items:[],targets:[]},quant={};
 function status(message,error=false){const el=$("studyPlanStatus");el.textContent=message;el.classList.toggle("error",error)}
 async function load(){
  const {data:session}=await db.auth.getSession();if(!session?.session)return;
- $("studyActivityDate").value=today();
+ $("studyActivityDate").value=today();\n const weekStart=monday(),weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+6);\n $("studyActivityDate").min=key(weekStart);$("studyActivityDate").max=key(weekEnd);
  const start=key(monday());
  const [p,a]=await Promise.all([db.rpc("get_gre_study_plan",{p_week_start:start}),db.rpc("get_learner_quant_analytics")]);
  if(p.error){status("Run supabase/learner-study-plan.sql in Supabase to activate the planner. "+p.error.message,true);return}
@@ -35,8 +35,10 @@ function render(){
  status("Your weekly plan is saved to your account.");
 }
 $("saveStudyTargets").addEventListener("click",async()=>{
- const r=await db.rpc("set_gre_study_plan_target",{p_target_date:today(),p_quant_target:Number($("studyQuantTarget").value),p_vocab_target:Number($("studyVocabTarget").value),p_vocab_completed:Number($("studyVocabDone").value)});
- if(r.error){status(r.error.message,true);return}await load();
+ const start=monday(),quantTarget=Number($("studyQuantTarget").value),vocabTarget=Number($("studyVocabTarget").value),vocabDone=Number($("studyVocabDone").value);
+ const requests=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);const date=key(d),existing=(plan.targets||[]).find(x=>x.target_date===date);return db.rpc("set_gre_study_plan_target",{p_target_date:date,p_quant_target:quantTarget,p_vocab_target:vocabTarget,p_vocab_completed:date===today()?vocabDone:Number(existing?.vocab_completed||0)})});
+ const results=await Promise.all(requests),failed=results.find(x=>x.error);
+ if(failed){status(failed.error.message,true);return}await load();
 });
 $("studyPlanForm").addEventListener("submit",async e=>{
  e.preventDefault();
