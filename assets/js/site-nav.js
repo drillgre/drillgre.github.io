@@ -12,6 +12,40 @@
   }
 
   const toggle = document.querySelector("[data-site-nav-toggle]");
+  // Render one shared footer across the entire platform.
+  const existingFooter = document.querySelector("footer");
+  const sharedFooter = document.createElement("footer");
+  sharedFooter.className = "drillgre-site-footer";
+  sharedFooter.innerHTML = `
+    <div class="drillgre-footer-shell">
+      <div class="drillgre-footer-main">
+        <div class="drillgre-footer-brand">
+          <a class="drillgre-footer-logo" href="/" aria-label="DrillGRE home"><span class="drillgre-footer-mark">D</span><span>Drill<span>GRE</span></span></a>
+          <p>Learn with intention. Practise with purpose. Make every question count.</p>
+        </div>
+        <div class="drillgre-footer-column">
+          <h3>Explore</h3>
+          <a href="/quant/index.html">Quant Lessons</a>
+          <a href="/quant/question-bank.html">Question Bank</a>
+          <a href="/quant/quiz.html">Topic Quizzes</a>
+          <a href="/quant/mock.html">Mock Tests</a>
+        </div>
+        <div class="drillgre-footer-column">
+          <h3>More</h3>
+          <a href="/vocab.html">Vocab Mountain</a>
+          <a href="/leaderboard.html">Leaderboard</a>
+          <a href="/contact.html">Contact Us</a>
+          <a href="/account.html">Learner Account</a>
+        </div>
+      </div>
+      <div class="drillgre-footer-bottom">
+        <span>© ${new Date().getFullYear()} DrillGRE. All rights reserved.</span>
+        <span>Focused GRE preparation. Meaningful practice.</span>
+      </div>
+    </div>`;
+  if (existingFooter) existingFooter.replaceWith(sharedFooter);
+  else document.body.appendChild(sharedFooter);
+
   const links = document.querySelector("[data-site-nav-links]");
 
   // Convert the Vocab Mountain link into the shared Verbal dropdown.
