@@ -336,11 +336,6 @@
     .floating-note strong{color:var(--lime);font-size:1.15rem}
     .note-one{animation:floatNote 6s ease-in-out infinite}
     .note-two{animation:floatNote 7s ease-in-out -3s infinite}
-    .brand-marquee{overflow:hidden;background:var(--lime);color:var(--night);padding:17px 0;white-space:nowrap;border-bottom:1px solid rgba(16,26,53,.08)}
-    .marquee-track{display:flex;align-items:center;gap:32px;width:max-content;animation:marquee 34s linear infinite}
-    .marquee-track span{font-size:.72rem;font-weight:900;letter-spacing:.16em}
-    .marquee-track i{font-style:normal;font-size:1.1rem}
-    .brand-marquee:hover .marquee-track{animation-play-state:paused}
     .stats{background:var(--paper);border:0}
     .stats-grid{padding:36px 0}
     .stat{border-color:#dedfd7}
@@ -385,14 +380,13 @@
     .footer-bottom{border-color:rgba(255,255,255,.13);color:#7785a6}
     .motion-ready .feature-card,.motion-ready .step,.motion-ready .section-heading,.motion-ready .cta-panel{opacity:0;transform:translateY(28px)}
     .motion-ready .feature-card.is-visible,.motion-ready .step.is-visible,.motion-ready .section-heading.is-visible,.motion-ready .cta-panel.is-visible{opacity:1;transform:translateY(0)}
-    @keyframes marquee{to{transform:translateX(-50%)}}
     @keyframes orbitPulse{0%,100%{transform:scale(.96);opacity:.85}50%{transform:scale(1.04);opacity:1}}
     @keyframes floatMath{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-18px) rotate(8deg)}}
     @keyframes cardFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-11px) rotate(-1deg)}}
     @keyframes floatNote{0%,100%{translate:0 0}50%{translate:0 -9px}}
     @media(max-width:900px){.hero-grid{gap:20px}.hero h1{font-size:clamp(3.1rem,7vw,4.5rem)}.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:680px){.hero{padding:60px 0 52px}.hero-grid{grid-template-columns:1fr}.hero h1{font-size:clamp(3rem,13vw,4rem)}.hero-visual{min-height:350px;margin-top:8px}.visual-orb{width:290px;height:290px}.study-card{padding:21px}.feature-grid{grid-template-columns:1fr}.feature-card{min-height:0}.cta-panel{padding:32px 25px}section{padding:66px 0}}
-    @media(prefers-reduced-motion:reduce){.marquee-track,.visual-orb,.hero-symbol,.study-card,.floating-note{animation:none!important}.motion-ready .feature-card,.motion-ready .step,.motion-ready .section-heading,.motion-ready .cta-panel{opacity:1;transform:none}}
+    @media(prefers-reduced-motion:reduce){.visual-orb,.hero-symbol,.study-card,.floating-note{animation:none!important}.motion-ready .feature-card,.motion-ready .step,.motion-ready .section-heading,.motion-ready .cta-panel{opacity:1;transform:none}}
   </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css?v=20261126-restored">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -460,12 +454,6 @@
       </div>
     </section>
 
-    <div class="brand-marquee" aria-label="Learn. Practise. Improve.">
-      <div class="marquee-track">
-        <span>LEARN WITH INTENTION</span><i>✳</i><span>PRACTISE WITH PURPOSE</span><i>✳</i><span>THINK BEYOND THE FORMULA</span><i>✳</i><span>MAKE EVERY QUESTION COUNT</span><i>✳</i>
-        <span aria-hidden="true">LEARN WITH INTENTION</span><i aria-hidden="true">✳</i><span aria-hidden="true">PRACTISE WITH PURPOSE</span><i aria-hidden="true">✳</i><span aria-hidden="true">THINK BEYOND THE FORMULA</span><i aria-hidden="true">✳</i><span aria-hidden="true">MAKE EVERY QUESTION COUNT</span><i aria-hidden="true">✳</i>
-      </div>
-    </div>
     <div class="stats">
       <div class="container stats-grid">
         <div class="stat"><strong>Learn</strong><span>Build concepts with Quant lessons</span></div>
