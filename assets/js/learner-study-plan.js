@@ -10,7 +10,9 @@ let plan={items:[],targets:[]},quant={};
 function status(message,error=false){const el=$("studyPlanStatus");el.textContent=message;el.classList.toggle("error",error)}
 async function load(){
  const {data:session}=await db.auth.getSession();if(!session?.session)return;
- $("studyActivityDate").value=today();\n const weekStart=monday(),weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+6);\n $("studyActivityDate").min=key(weekStart);$("studyActivityDate").max=key(weekEnd);
+ $("studyActivityDate").value=today();
+ const weekStart=monday(),weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+6);
+ $("studyActivityDate").min=key(weekStart);$("studyActivityDate").max=key(weekEnd);
  const start=key(monday());
  const [p,a]=await Promise.all([db.rpc("get_gre_study_plan",{p_week_start:start}),db.rpc("get_learner_quant_analytics")]);
  if(p.error){status("Run supabase/learner-study-plan.sql in Supabase to activate the planner. "+p.error.message,true);return}
