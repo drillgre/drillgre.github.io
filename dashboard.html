@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js"></script>
-  <script defer src="assets/js/learner-quant-analytics.js?v=20261126-advanced"></script>
+  <script defer src="assets/js/learner-quant-analytics.js?v=20261126-speed-diagnostic"></script>
   <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
   <script defer src="assets/js/learner-study-plan.js?v=20261126-1"></script>
@@ -27,6 +27,13 @@
 .target-score-form{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0}.target-score-form label{font-size:10px;color:var(--muted);font-weight:700}.target-score-form input{display:block;width:110px;margin-top:5px;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit}.target-score-form button{border:0;border-radius:8px;background:var(--blue);color:white;padding:10px 12px;font-size:11px;font-weight:800;cursor:pointer}
 .target-progress{height:10px;background:#edf0f6;border-radius:99px;overflow:hidden;margin:12px 0 7px}.target-progress span{display:block;height:100%;background:#5276d8}.target-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted)}
 .speed-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.speed-summary>div{background:#f7f9fd;border-radius:9px;padding:10px}.speed-summary strong{display:block;font-size:19px;color:var(--navy)}.speed-summary span{font-size:10px;color:var(--muted)}
+    .speed-benchmark{font-size:10px;color:var(--muted);margin:10px 0}
+    .speed-quadrants{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+    .speed-quadrant{background:#f7f9fd;border:1px solid var(--line);border-radius:9px;padding:10px;min-width:0}
+    .speed-quadrant strong{display:block;font-size:18px;color:var(--navy)}
+    .speed-quadrant span{display:block;font-size:10px;font-weight:800;color:var(--ink);margin:3px 0}
+    .speed-quadrant small{display:block;font-size:9px;color:var(--muted);min-height:24px}
+    @media(max-width:650px){.speed-quadrants{grid-template-columns:1fr 1fr}}
 .next-action{border-left:3px solid #5276d8;padding:10px 12px;background:#f7f9fd;border-radius:0 9px 9px 0;margin:8px 0}.next-action strong{font-size:12px;display:block}.next-action p{font-size:11px;color:var(--muted);line-height:1.5;margin:5px 0}.next-action a{font-size:11px;font-weight:800;color:var(--blue);text-decoration:none}
 [id^="dash-"],#quantInsightsTitle{scroll-margin-top:24px}
 @media(max-width:1100px){.dashboard-jump-nav{position:static;width:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;margin:12px 0;padding:8px}.dashboard-jump-nav strong{white-space:nowrap;margin:0 5px}.dashboard-jump-nav a{white-space:nowrap}.dash-shell{width:calc(100% - 30px);margin:0 auto}}
