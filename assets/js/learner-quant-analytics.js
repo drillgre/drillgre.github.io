@@ -159,14 +159,26 @@
     render();
   }
 
-  function renderSpeedAccuracy(rows) {
+  function renderSpeedAccuracy(rows, summary) {
     const host = $("speedAccuracy");
     if (!host) return;
-    const valid = (rows || []).filter(x => Number(x.answered) > 0 && Number(x.avg_seconds) > 0);
-    if (!valid.length) { host.innerHTML = empty("No recorded per-question timing is available yet. Complete a timed adaptive mock to activate this analysis."); return; }
-    const total = valid.reduce((sum,x)=>sum+Number(x.answered),0);
-    const avg = valid.reduce((sum,x)=>sum+Number(x.avg_seconds)*Number(x.answered),0)/total;
-    host.innerHTML = '<div class="speed-summary"><div><strong>' + avg.toFixed(1) + 's</strong><span>Average time per question</span></div><div><strong>' + number(total) + '</strong><span>Timed answers analysed</span></div></div>' + valid.map(row => '<div class="difficulty-row"><span>Level ' + safe(row.difficulty) + '</span><div class="topic-meter"><span style="width:' + Math.max(0,Math.min(100,Number(row.accuracy||0))) + '%"></span></div><strong>' + percent(row.accuracy) + '</strong><small>' + Number(row.avg_seconds).toFixed(1) + ' sec average · ' + number(row.answered) + ' questions</small></div>').join("");
+    const timed = Number(summary?.timed_answers || 0);
+    if (!timed) {
+      host.innerHTML = '<p class="account-muted">No timed question data is available yet. Complete a timed adaptive mock after the dashboard analytics update has been applied. Your mock review already records time spent on each question.</p>';
+      return;
+    }
+    const avg = Number(summary.avg_seconds || 0);
+    const accuracy = summary.accuracy == null ? "—" : percent(summary.accuracy);
+    const groups = [
+      ["Fast and correct",summary.fast_correct,"Good pace and accuracy"],
+      ["Fast but incorrect",summary.fast_incorrect,"Prioritise careful reading and checking"],
+      ["Slow but correct",summary.slow_correct,"Look for more efficient solution methods"],
+      ["Slow and incorrect",summary.slow_incorrect,"Review the underlying concept and approach"]
+    ];
+    const total = groups.reduce((sum,item)=>sum+Number(item[1]||0),0) || 1;
+    const cards = groups.map(item => '<div class="speed-quadrant"><strong>' + number(item[1]) + '</strong><span>' + item[0] + '</span><small>' + item[2] + '</small><div class="topic-meter"><span style="width:' + (Number(item[1]||0)/total*100).toFixed(1) + '%"></span></div></div>').join("");
+    const byDifficulty = (rows || []).map(row => '<div class="difficulty-row"><span>Level ' + safe(row.difficulty) + '</span><div class="topic-meter"><span style="width:' + Math.max(0,Math.min(100,Number(row.accuracy||0))) + '%"></span></div><strong>' + percent(row.accuracy) + '</strong><small>' + Number(row.avg_seconds).toFixed(1) + ' sec average · ' + number(row.answered) + ' questions</small></div>').join("");
+    host.innerHTML = '<div class="speed-summary"><div><strong>' + avg.toFixed(1) + 's</strong><span>Average time per question</span></div><div><strong>' + accuracy + '</strong><span>Accuracy on timed questions</span></div></div><p class="speed-benchmark">Reference pace: about 105 seconds per question, based on standard GRE Quant section timing. Fast means at or below this pace.</p><div class="speed-quadrants">' + cards + '</div><p class="speed-benchmark">Performance by question difficulty</p>' + (byDifficulty || '<p class="account-muted">Not enough difficulty-tagged timed questions yet.</p>');
   }
 
   function renderNextAction(topics, difficultyRows) {
@@ -295,7 +307,7 @@
     renderDifficulty(data.difficulty_accuracy || []);
     renderMastery(topics);
     renderTargetScore(data.mock_scores || [], sessionData.session.user.id);
-    renderSpeedAccuracy(data.speed_accuracy || []);
+    renderSpeedAccuracy(data.speed_accuracy || [], data.speed_summary || {});
     renderNextAction(topics, data.difficulty_accuracy || []);
     renderMistakeIntelligence(data.mistake_intelligence || {});
     renderRecommendations(topics);
