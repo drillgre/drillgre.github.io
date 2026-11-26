@@ -11,7 +11,7 @@
   <script defer src="assets/js/learner-dashboard.js"></script>
   <script defer src="assets/js/learner-quant-analytics.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
-  <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
+  <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>\n  <script defer src="assets/js/learner-study-plan.js?v=20261126-1"></script>
   <style>
 
     #archeryPanel,#profilePanel{display:none}\n
@@ -216,7 +216,7 @@
     @media(max-width:760px){.dashboard-focus-grid{grid-template-columns:1fr}.dash-columns{grid-template-columns:1fr}.score-compass-wrap{justify-content:flex-start}}
     @media(max-width:560px){.dash-shell{padding:16px 12px 34px}.dash-hero{padding:17px}.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.score-compass{width:132px;height:132px;flex-basis:132px}.score-compass-wrap{gap:12px}.compass-score strong{font-size:26px}}
 
-  </style>
+  .study-plan{padding:20px}.study-plan-heading{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.study-plan-heading h2{margin:4px 0;font-size:20px}.study-plan-rate{min-width:88px;text-align:center;background:#f7f9fd;border:1px solid var(--line);border-radius:11px;padding:9px}.study-plan-rate strong,.study-plan-rate span{display:block}.study-plan-rate strong{font-size:24px;color:var(--navy)}.study-plan-rate span{font-size:9px;color:var(--muted)}.study-plan-targets,.study-plan-form{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:17px 0}.study-plan-targets label,.study-plan-form label{display:grid;gap:5px;font-size:10px;font-weight:750;color:var(--muted);flex:1;min-width:130px}.study-plan-targets input,.study-plan-form input,.study-plan-form select{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;font-size:12px;background:#fff}.study-plan-progress{display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#f8faff;border:1px solid #edf0f6;border-radius:11px;padding:12px}.study-plan-progress>div>span{display:block;font-size:10px;color:var(--muted)}.study-plan-progress strong{font-size:13px}.study-plan-progress .progress-track{height:7px;margin:7px 0 0}.study-plan-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-top:15px}.study-plan-day{min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px}.study-plan-day.today{border-color:#9db5ff;background:#f8faff}.study-plan-day-head{font-size:10px;font-weight:850;margin-bottom:8px}.study-plan-day-head span{display:block;font-size:9px;color:var(--muted);font-weight:500}.study-plan-item{border-top:1px solid #edf0f5;padding:7px 0;font-size:10px;line-height:1.4;overflow-wrap:anywhere}.study-plan-item.done strong{text-decoration:line-through;color:#73809a}.study-plan-item small{display:block;color:var(--muted);font-size:9px}.study-plan-item-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}.study-plan-item-actions button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 6px;font-size:9px;cursor:pointer;color:#315efb}.study-plan-empty{font-size:10px;color:var(--muted);padding:4px 0}@media(max-width:850px){.study-plan-week{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:560px){.study-plan-heading{flex-direction:column}.study-plan-targets,.study-plan-form{align-items:stretch;flex-direction:column}.study-plan-week{grid-template-columns:repeat(2,minmax(0,1fr))}.study-plan-progress{grid-template-columns:1fr}}\n  </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css">
   <script defer src="/assets/js/site-nav.js"></script>
   <script src="/assets/js/database-loader.js"></script>
@@ -317,7 +317,24 @@
         <p class="analytics-footnote">Accuracy combines the latest saved Question Bank result for each question with submitted answers from completed quizzes, Superquizzes and mocks. Question Bank first-attempt accuracy is reported separately. Topic guidance is withheld until at least five answers are recorded. DrillGRE mock scores are practice estimates, not official ETS scores.</p>
       </div>
     </section>
-    <section class="mistake-notebook" aria-labelledby="mistakeNotebookTitle">
+    <section class="dash-panel study-plan" id="myStudyPlan">
+  <div class="study-plan-heading"><div><div class="eyebrow">Plan your week</div><h2>My Study Plan</h2><p class="account-muted">Schedule lessons, quizzes, mock tests and vocabulary practice. Set daily question goals and track progress.</p></div><div class="study-plan-rate"><strong id="studyPlanCompletion">0%</strong><span>Weekly completion</span></div></div>
+  <div class="study-plan-targets">
+    <label>Daily Quant questions<input id="studyQuantTarget" type="number" min="0" max="500" value="20"></label>
+    <label>Daily vocabulary target<input id="studyVocabTarget" type="number" min="0" max="200" value="10"></label>
+    <label>Vocabulary completed today<input id="studyVocabDone" type="number" min="0" max="200" value="0"></label>
+    <button id="saveStudyTargets" class="dash-button" type="button">Save targets</button>
+  </div>
+  <div class="study-plan-progress"><div><span>Quant today</span><strong id="studyQuantProgress">0 / 20</strong><div class="progress-track"><span id="studyQuantBar"></span></div></div><div><span>Vocabulary today</span><strong id="studyVocabProgress">0 / 10</strong><div class="progress-track"><span id="studyVocabBar"></span></div></div></div>
+  <form id="studyPlanForm" class="study-plan-form">
+    <label>Activity<select id="studyActivityType"><option value="lesson">Lesson</option><option value="quiz">Topic quiz</option><option value="mock">Mock test</option><option value="vocabulary">Vocabulary practice</option></select></label>
+    <label>Day<input id="studyActivityDate" type="date" required></label>
+    <label>Title<input id="studyActivityTitle" type="text" maxlength="120" placeholder="e.g. Ratios and proportions" required></label>
+    <button class="dash-button" type="submit">Add activity</button>
+  </form>
+  <div id="studyPlanStatus" class="analytics-status" role="status">Loading your weekly plan…</div><div id="studyPlanWeek" class="study-plan-week"></div>
+  <p class="analytics-footnote">Quant progress uses recorded answers. Vocabulary progress is entered by you. Scheduled activities are marked complete when confirmed.</p>
+</section>\n    <section class="mistake-notebook" aria-labelledby="mistakeNotebookTitle">
       <div class="mistake-heading">
         <div><div class="eyebrow">Learn from every attempt</div><h2 id="mistakeNotebookTitle">Mistake Notebook</h2><p class="account-muted">Review questions you missed, write down what you learned, and mark concepts you have mastered.</p></div>
         <div class="mistake-total"><strong id="mistakeTotal">0</strong><span>questions to revisit</span></div>
