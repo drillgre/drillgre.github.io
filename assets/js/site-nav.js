@@ -12,12 +12,12 @@
   }
 
   // Apply the primary wordmark and favicon consistently across the site.
-  const brandLogo = '<img class="drillgre-brand-logo-image" src="/assets/images/drillgre-logo.svg" alt="DrillGRE" width="560" height="132">';
+  const brandLogo = '<img class="drillgre-brand-logo-image" src="/assets/images/drillgre-logo.svg?v=20261127-option2" alt="DrillGRE" width="560" height="132">';
   document.querySelectorAll(".drillgre-brand, header .brand").forEach(brand => {
     brand.innerHTML = brandLogo;
     brand.setAttribute("aria-label", "DrillGRE home");
   });
-  const iconHref = "/assets/images/drillgre-icon.svg";
+  const iconHref = "/assets/images/drillgre-icon.svg?v=20261127-option2";
   let favicon = document.querySelector('link[rel="icon"]');
   if (!favicon) {
     favicon = document.createElement("link");
@@ -43,7 +43,7 @@
     <div class="drillgre-footer-shell">
       <div class="drillgre-footer-main">
         <div class="drillgre-footer-brand">
-          <a class="drillgre-footer-logo" href="/" aria-label="DrillGRE home"><img src="/assets/images/drillgre-logo.svg" alt="DrillGRE" width="220" height="52"></a>
+          <a class="drillgre-footer-logo" href="/" aria-label="DrillGRE home"><img src="/assets/images/drillgre-logo.svg?v=20261127-option2" alt="DrillGRE" width="220" height="52"></a>
           <p>Learn with intention. Practise with purpose. Make every question count.</p>
         </div>
         <div class="drillgre-footer-column">
