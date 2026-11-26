@@ -114,6 +114,21 @@
     host.innerHTML=rows.map(row=>{const count=Number(row.answered||0),width=Math.max(0,Math.min(100,count/max*100));return '<article class="source-row"><span class="source-name">'+safe(row.source)+'</span><span class="source-count">'+number(count)+' answers</span><div class="source-meter"><span style="width:'+width+'%"></span></div><span class="source-accuracy">'+percent(row.accuracy)+' accuracy</span></article>'}).join("");
   }
 
+  function renderStudyHeatmap(rows) {
+    const host = $("studyActivityHeatmap");
+    if (!host) return;
+    const byDate = new Map((rows || []).map(row => [row.activity_date, Number(row.answered || 0)]));
+    const end = new Date(); end.setHours(0,0,0,0);
+    const start = new Date(end); start.setDate(start.getDate()-363); start.setDate(start.getDate()-start.getDay());
+    const cells=[];
+    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      const key=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+      const count=byDate.get(key)||0,level=count===0?0:count<5?1:count<15?2:count<30?3:4;
+      cells.push('<span class="study-heatmap-cell" data-level="'+level+'" title="'+key+': '+count+' answers"></span>');
+    }
+    host.innerHTML=cells.join("");
+  }
+
   function renderMockScores(scores) {
     const host = $("mockScoreProgression");
     const ordered = [...scores].reverse();
@@ -195,7 +210,7 @@
     renderRecommendations(topics);
     renderTrend(data.weekly || []);
     renderSources(data.sources || []);
-    renderMockScores(data.mock_scores || []);
+    renderMockScores(data.mock_scores || []);\n    renderStudyHeatmap(data.daily_activity || []);
     renderCompass(data.mock_scores || []);
     $("quantAnalytics").hidden = false;
     status.hidden = true;
