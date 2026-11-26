@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js"></script>
-  <script defer src="assets/js/learner-dashboard-tour.js?v=20261126-1"></script>
   <script defer src="assets/js/learner-quant-analytics.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
@@ -91,23 +90,6 @@
     @media(max-width:800px){.insight-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.insights-grid{grid-template-columns:1fr}.insights-heading{flex-direction:column}}
     @media(max-width:480px){.quant-insights{padding:16px}.insight-kpi strong{font-size:23px}}
 \n
-    .dashboard-tour[hidden]{display:none}
-    .dashboard-tour{position:fixed;inset:0;z-index:10000}
-    .dashboard-tour-backdrop{position:absolute;inset:0;background:rgba(12,22,45,.62)}
-    .dashboard-tour-card{position:fixed;right:28px;bottom:26px;width:min(420px,calc(100vw - 32px));background:#fff;border:1px solid #dfe5f0;border-radius:16px;padding:22px;box-shadow:0 18px 60px rgba(10,20,45,.28);z-index:10003}
-    .dashboard-tour-top{display:flex;align-items:center;justify-content:space-between}
-    .dashboard-tour-close{border:0;background:transparent;font-size:25px;color:#667085;cursor:pointer}
-    .dashboard-tour-progress{height:4px;background:#edf0f6;border-radius:9px;margin:14px 0 12px;overflow:hidden}
-    .dashboard-tour-progress span{display:block;height:100%;width:20%;background:var(--blue);transition:width .2s}
-    .dashboard-tour-step{font-size:10px;letter-spacing:1px;font-weight:800;color:var(--blue)}
-    .dashboard-tour-card h2{font-size:21px;margin:7px 0}
-    .dashboard-tour-card p{font-size:13px;line-height:1.65;color:var(--muted);margin:0 0 18px}
-    .dashboard-tour-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .dashboard-tour-actions button{cursor:pointer}
-    .dashboard-tour-actions .btn{border:1px solid var(--line);background:#fff;color:var(--navy);padding:9px 12px;border-radius:8px}
-    .dashboard-tour-actions .btn:disabled{opacity:.4;cursor:not-allowed}
-    .tour-target-active{position:relative!important;z-index:10001!important;box-shadow:0 0 0 4px #fff,0 0 0 7px #4169ff!important;border-radius:12px!important}
-    @media(max-width:600px){.dashboard-tour-card{right:12px;bottom:12px;width:calc(100vw - 24px);padding:18px}.dashboard-tour-actions{align-items:flex-end}}
     .dash-shell{max-width:1120px;margin:0 auto;padding:28px 18px 60px}
     .account-muted{color:var(--muted);font-size:13px;line-height:1.6}
     .dash-hero{display:flex;justify-content:space-between;align-items:center;gap:22px;background:linear-gradient(125deg,#fff 20%,#edf2ff);border:1px solid var(--line);border-radius:18px;padding:26px}
@@ -282,7 +264,6 @@
         <a class="dash-button" href="quant/mock.html">Create a new mock</a>
         <a class="btn" href="/quant/index.html">Continue learning</a>
         <a class="btn" href="/quant/question-bank.html">Question Bank</a>
-        <button id="dashboardTourStart" class="btn" type="button">Take a tour</button>
         <button id="signOut" class="btn" type="button">Sign out</button>
       </div>
     </div>
@@ -430,18 +411,7 @@
       </div>
     </section>
 
-    <div id="dashboardTour" class="dashboard-tour" hidden aria-modal="true" role="dialog" aria-labelledby="dashboardTourTitle">
-      <div class="dashboard-tour-backdrop" data-tour-close></div>
-      <section class="dashboard-tour-card">
-        <div class="dashboard-tour-top"><span class="eyebrow">DRILLGRE QUICK TOUR</span><button type="button" class="dashboard-tour-close" data-tour-close aria-label="Close tour">×</button></div>
-        <div class="dashboard-tour-progress"><span id="dashboardTourProgress"></span></div>
-        <div id="dashboardTourStep" class="dashboard-tour-step">STEP 1 OF 5</div>
-        <h2 id="dashboardTourTitle">Welcome to your dashboard</h2>
-        <p id="dashboardTourDescription"></p>
-        <div class="dashboard-tour-actions"><button type="button" id="dashboardTourSkip" class="btn">Skip tour</button><div><button type="button" id="dashboardTourBack" class="btn">Back</button> <button type="button" id="dashboardTourNext" class="dash-button">Next</button></div></div>
-      </section>
-    </div>
-  </section>
+ </section>
 </main>
 <footer style="max-width:1120px;margin:auto;padding:22px 18px;color:#69758b;font-size:12px">DrillGRE · Learner dashboard</footer>
 </body>
