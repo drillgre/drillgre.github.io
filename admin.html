@@ -36,6 +36,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/database-loader.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="/assets/js/math-renderer.js?v=20261127-math"></script>
 </head>
 
 <body>
@@ -501,6 +504,7 @@
             id="qText"
             rows="5"
             required></textarea>
+          <p class="field-note">Math formatting is supported. Wrap inline expressions in \\( ... \\), for example \\(13\\frac{1}{2}\\). Use \\[ ... \\] for a centred display equation. The same syntax works in answer options, Quantities A and B, shared stimulus text, and explanations.</p>
         </label>
 
 
