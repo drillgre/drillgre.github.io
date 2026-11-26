@@ -93,6 +93,31 @@
     host.innerHTML = items.map(item => '<article class="recommendation"><strong>' + safe(item.title) + '</strong><p>' + safe(item.body) + '</p><a href="' + item.href + '">' + safe(item.action) + ' →</a></article>').join("");
   }
 
+  function renderMistakeIntelligence(data) {
+    const host = $("mistakeIntelligence");
+    if (!host) return;
+    const summary = data?.summary || {};
+    const areas = data?.areas || [];
+    const wrong = Number(summary.wrong_answers || 0);
+    const repeat = Number(summary.repeat_misses || 0);
+    const weak = areas.slice(0,5);
+    const stats = '<div class="mistake-summary">' +
+      '<div class="mistake-stat"><strong>' + number(wrong) + '</strong><span>Incorrect answers</span></div>' +
+      '<div class="mistake-stat"><strong>' + number(repeat) + '</strong><span>Repeat misses (minimum)</span></div>' +
+      '<div class="mistake-stat"><strong>' + number(areas.length) + '</strong><span>Areas assessed</span></div></div>';
+    if (!wrong) {
+      host.innerHTML = stats + '<p class="mistake-empty">No incorrect answers are recorded yet. As you complete Question Bank practice, topic quizzes and mocks, recurring weak areas will appear here.</p>';
+      return;
+    }
+    const max = Math.max(1, ...weak.map(x => Number(x.wrong_answers || 0)));
+    host.innerHTML = stats + weak.map(area => {
+      const misses = Number(area.wrong_answers || 0);
+      const width = Math.max(0, Math.min(100, misses / max * 100));
+      const difficulty = area.difficulty == null ? "All difficulty levels" : "Difficulty " + area.difficulty;
+      return '<article class="mistake-row"><strong>' + safe(label(area.topic)) + ' · ' + safe(label(area.subtopic)) + '</strong><strong>' + number(misses) + ' misses</strong><small>' + safe(difficulty) + ' · ' + number(area.questions_missed) + ' questions · ' + percent(area.accuracy) + ' accuracy</small><div class="mistake-meter"><span style="width:' + width + '%"></span></div></article>';
+    }).join("");
+  }
+
   function renderTrend(rows) {
     const host = $("weeklyTrend");
     if (!rows.length) {
@@ -207,6 +232,7 @@
     $("qaFirstCount").textContent = number(data.question_bank_first_attempts) + " Question Bank first attempts";
     $("qaTopics").textContent = number(topics.length);
     renderTopics(topics);
+    renderMistakeIntelligence(data.mistake_intelligence || {});
     renderRecommendations(topics);
     renderTrend(data.weekly || []);
     renderSources(data.sources || []);
