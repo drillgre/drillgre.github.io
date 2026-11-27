@@ -184,13 +184,19 @@
             </option>
           </select>
 
-          <select id="levelFilter">
+          <select id="levelFilter" aria-label="Filter by difficulty">
             <option value="">All levels</option>
             <option>1</option>
             <option>2</option>
             <option>3</option>
             <option>4</option>
             <option>5</option>
+          </select>
+
+          <select id="statusFilter" aria-label="Filter by publication status">
+            <option value="">All statuses</option>
+            <option value="published">Published</option>
+            <option value="unpublished">Unpublished</option>
           </select>
 
         </div>
@@ -751,7 +757,7 @@
 
   <!-- Admin JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script type="module" src="assets/js/admin.js?v=20261127-subcategory-filter"></script>
+  <script type="module" src="assets/js/admin.js?v=20261127-status-filter"></script>
 
 </body>
 </html>
