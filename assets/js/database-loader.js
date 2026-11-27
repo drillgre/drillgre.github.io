@@ -36,23 +36,71 @@
     }
   }
 
+  function injectLoaderStyles() {
+    if (document.getElementById("drillgre-database-loader-styles")) return;
+    const style = document.createElement("style");
+    style.id = "drillgre-database-loader-styles";
+    style.textContent = `
+      .drillgre-page-loader {
+        position: fixed;
+        z-index: 99999;
+        top: max(16px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%) translateY(0);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 11px 17px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 999px;
+        background: rgba(18,31,57,.96);
+        color: #fff;
+        box-shadow: 0 10px 32px rgba(10,20,42,.22);
+        font: 650 13px/1.2 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+        letter-spacing: .01em;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .drillgre-page-loader.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateX(-50%) translateY(-8px);
+      }
+      .drillgre-loader-ring {
+        width: 17px;
+        height: 17px;
+        flex: 0 0 17px;
+        border: 2px solid rgba(229,243,107,.28);
+        border-top-color: #e5f36b;
+        border-right-color: #e5f36b;
+        border-radius: 50%;
+        animation: drillgre-database-spin .72s linear infinite;
+      }
+      @keyframes drillgre-database-spin { to { transform: rotate(360deg); } }
+      @media(prefers-reduced-motion:reduce) {
+        .drillgre-loader-ring { animation-duration: 1.8s; }
+      }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
   function createLoader() {
     if (loader && loader.isConnected) return loader;
+    injectLoaderStyles();
 
     loader = document.createElement("div");
     loader.className = "drillgre-page-loader";
     loader.setAttribute("data-database-loader", "");
     loader.setAttribute("role", "status");
     loader.setAttribute("aria-live", "polite");
-    loader.setAttribute("aria-label", "Loading");
+    loader.setAttribute("aria-label", "Connecting to database");
 
     loader.innerHTML = `
-      <div class="drillgre-loader-content">
-        <div class="drillgre-loader-mark" aria-hidden="true">
-          <div class="drillgre-loader-ring"></div>
-        </div>
-
-      </div>`;
+      <div class="drillgre-loader-ring" aria-hidden="true"></div>
+      <span>Connecting to database...</span>`;
 
     (document.body || document.documentElement).appendChild(loader);
     return loader;
