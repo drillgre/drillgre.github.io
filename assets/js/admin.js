@@ -2054,7 +2054,7 @@ function parseQuestionCsvText(source) {
   let row = [];
   let field = "";
   let quoted = false;
-  const input = String(source || "").replace(/^\\uFEFF/, "");
+  const input = String(source || "").replace(/^\uFEFF/, "");
 
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
@@ -2072,8 +2072,8 @@ function parseQuestionCsvText(source) {
     } else if (char === ",") {
       row.push(field);
       field = "";
-    } else if (char === "\\n" || char === "\\r") {
-      if (char === "\\r" && input[i + 1] === "\\n") i++;
+    } else if (char === "\n" || char === "\r") {
+      if (char === "\r" && input[i + 1] === "\n") i++;
       row.push(field);
       if (row.some(value => value.trim() !== "")) rows.push(row);
       row = [];
