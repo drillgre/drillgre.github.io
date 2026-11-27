@@ -43,26 +43,27 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Decode release signing key
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      - name: Build signed release APK and Play Store AAB when signing secrets are configured
+        id: release
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/drillgre-release.jks"
-
-      - name: Build signed release APK and Play Store AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
-        working-directory: android
-        env:
-          KEYSTORE_PATH: ${{ runner.temp }}/drillgre-release.jks
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: android
         run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured. Debug APK is available for testing."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/drillgre-release.jks"
+          export KEYSTORE_PATH="$RUNNER_TEMP/drillgre-release.jks"
           gradle --no-daemon assembleRelease bundleRelease
+          echo "built=true" >> "$GITHUB_OUTPUT"
 
-      - name: Upload signed release files
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      - name: Upload signed release APK and AAB
+        if: steps.release.outputs.built == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: drillgre-release-apk-and-aab
