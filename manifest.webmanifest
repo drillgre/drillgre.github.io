@@ -9,13 +9,16 @@
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#102b59",
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
-      "src": "/assets/images/drillgre-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/android/app/src/main/res/drawable-nodpi/ic_launcher.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
