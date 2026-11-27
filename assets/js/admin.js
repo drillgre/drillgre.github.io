@@ -1186,6 +1186,20 @@ function updateQuestionBulkControls() {
   $("publishCategoryQuestions").textContent = "[Un]Publish category";
 }
 
+function populateSubtopicFilter(reset = false) {
+  const select = $("subtopicFilter");
+  if (!select) return;
+  const category = $("categoryFilter").value;
+  const previous = reset ? "" : select.value;
+  const entries = category
+    ? (categorySubtopics[category] || [])
+    : Object.values(categorySubtopics).flat();
+  const unique = [...new Map(entries.map(([id, label]) => [id, label])).entries()];
+  select.innerHTML = '<option value="">All subcategories</option>' +
+    unique.map(([id, label]) => '<option value="' + esc(id) + '">' + esc(label) + '</option>').join("");
+  if (unique.some(([id]) => id === previous)) select.value = previous;
+}
+
 async function loadQuestions() {
   const { data, error } = await db
     .from("questions")
@@ -1199,11 +1213,13 @@ async function loadQuestions() {
 
   const search = $("search").value.toLowerCase();
   const category = $("categoryFilter").value;
+  const subtopic = $("subtopicFilter").value;
   const type = $("typeFilter").value;
   const level = $("levelFilter").value;
 
   const rows = (data || []).filter(x =>
     (!category || x.topic_category === category) &&
+    (!subtopic || x.subtopic === subtopic) &&
     (!search ||
       (x.topic + " " + x.question_text)
         .toLowerCase()
@@ -1368,11 +1384,16 @@ $("deleteCategoryQuestions").addEventListener("click", async () => {
   await Promise.all([loadQuestions(), loadStimulusGroups()]);
 });
 
-["search", "categoryFilter", "typeFilter", "levelFilter"].forEach(id => {
+populateSubtopicFilter(true);
+["search", "subtopicFilter", "typeFilter", "levelFilter"].forEach(id => {
   $(id).addEventListener(
     id === "search" ? "input" : "change",
     loadQuestions
   );
+});
+$("categoryFilter").addEventListener("change", () => {
+  populateSubtopicFilter(true);
+  loadQuestions();
 });
 
 // ============================================================
