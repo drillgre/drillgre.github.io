@@ -12,8 +12,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
   <script defer src="/assets/js/math-renderer.js?v=20261127-math"></script>
   <script defer src="/assets/js/site-nav.js?v=20261127-brand"></script>
-  <script defer src="/assets/js/question-bank.js?v=20261127-timer-db"></script>
-  <script defer src="/assets/js/question-bank-timer.js?v=20261127-timer-db"></script>
+  <script defer src="/assets/js/question-bank.js?v=20261127-likes"></script>
+  <script defer src="/assets/js/question-bank-timer.js?v=20261127-likes"></script>
   <style>
     .bank-hero{display:flex;justify-content:space-between;align-items:center;gap:24px}
     .bank-hero p{max-width:760px}
@@ -67,6 +67,9 @@
     .bank-bookmark{border:1px solid #d4dce9;border-radius:8px;background:#fff;color:#344158;padding:8px 11px;font-weight:800;font-size:12px;cursor:pointer}
     .bank-bookmark[aria-pressed="true"]{border-color:#f0c66d;background:#fff8e7;color:#80530d}
     .bank-bookmark:disabled{opacity:.55;cursor:wait}
+    .bank-like{border:1px solid #f1c8d0;border-radius:8px;background:#fff;color:#9f2948;padding:8px 11px;font-weight:800;font-size:12px;cursor:pointer}
+    .bank-like[aria-pressed="true"]{border-color:#e7a0b1;background:#fff0f3;color:#a51f45}
+    .bank-like:disabled{opacity:.55;cursor:wait}
     .bank-attempt-count{display:inline-flex;align-items:center;gap:5px;color:#6a7589;font-size:11px;font-weight:750}
     .bank-superquiz-link{display:block;text-decoration:none;margin:10px auto 0;width:max-content;max-width:100%}
     .bank-done{display:inline-flex;align-items:center;border:1px solid #b9e2c8;border-radius:99px;background:#f0fbf4;color:#187447;padding:5px 9px;font-size:11px;font-weight:800}
