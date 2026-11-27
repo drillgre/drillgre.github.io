@@ -2,7 +2,7 @@
 -- Run this once in the Supabase SQL Editor.
 
 create table if not exists public.gre_question_bank_likes (
-  learner_id uuid not null references auth.users(id) on delete cascade,
+  learner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   question_id text not null,
   created_at timestamptz not null default now(),
   constraint gre_question_bank_likes_pkey primary key (learner_id, question_id)
