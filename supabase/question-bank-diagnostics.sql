@@ -398,3 +398,155 @@ grant execute on function public.get_learner_dashboard() to authenticated;
 grant execute on function public.get_public_leaderboard(integer) to anon,authenticated;
 
 notify pgrst, 'reload schema';
+
+
+-- Question Bank optional timer persistence and time-based diagnostics.
+alter table public.gre_question_bank_progress
+  add column if not exists total_time_spent_seconds integer not null default 0;
+
+alter table public.gre_question_bank_progress
+  drop constraint if exists gre_question_bank_progress_time_check;
+alter table public.gre_question_bank_progress
+  add constraint gre_question_bank_progress_time_check
+  check (total_time_spent_seconds >= 0);
+
+drop function if exists public.grade_gre_question_bank_item(text,jsonb);
+create or replace function public.grade_gre_question_bank_item(
+  p_question_id text,
+  p_response jsonb,
+  p_time_spent_seconds integer default 0
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_grade jsonb;
+  v_correct boolean;
+  v_difficulty integer;
+  v_status text;
+  v_attempt_count integer;
+  v_time integer := greatest(0,least(coalesce(p_time_spent_seconds,0),86400));
+begin
+  if v_user_id is null then
+    raise exception 'Sign in to practise questions in the Question Bank.';
+  end if;
+
+  v_grade := public.grade_gre_quiz_question(p_question_id, p_response);
+  if v_grade is null or v_grade ? 'error' then
+    return coalesce(v_grade, jsonb_build_object('error','Question could not be graded.'));
+  end if;
+  if not (v_grade ? 'correct') then
+    return jsonb_build_object('error','The grading service did not return a correctness result.');
+  end if;
+
+  v_correct := coalesce((v_grade->>'correct')::boolean,false);
+  v_status := case when v_correct then 'done' else 'review' end;
+
+  select q.difficulty into v_difficulty
+  from public.questions q where q.id::text = p_question_id;
+
+  insert into public.gre_question_bank_progress as saved_progress(
+    learner_id,question_id,completed_at,status,difficulty,attempts_count,
+    first_attempt_correct,last_attempt_correct,total_time_spent_seconds
+  )
+  values (
+    v_user_id,p_question_id,now(),v_status,v_difficulty,1,
+    v_correct,v_correct,v_time
+  )
+  on conflict (learner_id,question_id) do update
+  set completed_at = excluded.completed_at,
+      status = excluded.status,
+      difficulty = coalesce(saved_progress.difficulty,excluded.difficulty),
+      attempts_count = saved_progress.attempts_count + 1,
+      last_attempt_correct = excluded.last_attempt_correct,
+      total_time_spent_seconds = saved_progress.total_time_spent_seconds + excluded.total_time_spent_seconds
+  returning status,attempts_count into v_status,v_attempt_count;
+
+  return v_grade || jsonb_build_object(
+    'completed',v_status = 'done',
+    'status',v_status,
+    'attempt_count',v_attempt_count,
+    'time_spent_seconds',v_time
+  );
+end;
+$$;
+
+create or replace function public.get_gre_question_bank_diagnostics()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_total_attempted integer;
+  v_total_completed integer;
+  v_first_attempts integer;
+  v_first_correct integer;
+  v_overall_rate numeric;
+  v_total_seconds bigint;
+  v_by_difficulty jsonb;
+begin
+  if v_user_id is null then
+    raise exception 'Sign in to view your Question Bank diagnostics.';
+  end if;
+
+  select count(*)::integer,
+    count(*) filter (where status = 'done')::integer,
+    count(first_attempt_correct)::integer,
+    count(*) filter (where first_attempt_correct is true)::integer,
+    coalesce(sum(total_time_spent_seconds),0)::bigint
+  into v_total_attempted,v_total_completed,v_first_attempts,v_first_correct,v_total_seconds
+  from public.gre_question_bank_progress where learner_id = v_user_id;
+
+  v_overall_rate := case when coalesce(v_first_attempts,0)>0
+    then round(100.0*v_first_correct/v_first_attempts,1) else null end;
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'difficulty',x.difficulty,
+    'questions_attempted',x.questions_attempted,
+    'first_attempts_recorded',x.first_attempts_recorded,
+    'first_attempt_correct',x.first_attempt_correct,
+    'first_attempt_success_rate',case when x.first_attempts_recorded>0
+      then round(100.0*x.first_attempt_correct/x.first_attempts_recorded,1) else null end,
+    'total_time_spent_seconds',x.total_time_spent_seconds,
+    'average_time_spent_seconds',x.average_time_spent_seconds
+  ) order by x.difficulty),'[]'::jsonb)
+  into v_by_difficulty
+  from (
+    select levels.difficulty,
+      count(p.question_id)::integer as questions_attempted,
+      count(p.first_attempt_correct)::integer as first_attempts_recorded,
+      count(*) filter(where p.first_attempt_correct is true)::integer as first_attempt_correct,
+      coalesce(sum(p.total_time_spent_seconds),0)::bigint as total_time_spent_seconds,
+      coalesce(round(avg(p.total_time_spent_seconds) filter(where p.total_time_spent_seconds>0)),0)::integer as average_time_spent_seconds
+    from generate_series(1,5) as levels(difficulty)
+    left join public.gre_question_bank_progress p
+      on p.learner_id=v_user_id and p.difficulty=levels.difficulty
+    group by levels.difficulty
+  ) x;
+
+  return jsonb_build_object(
+    'total_attempted',coalesce(v_total_attempted,0),
+    'total_completed',coalesce(v_total_completed,0),
+    'total_first_attempts_recorded',coalesce(v_first_attempts,0),
+    'total_first_attempt_correct',coalesce(v_first_correct,0),
+    'total_first_attempt_success_rate',v_overall_rate,
+    'total_time_spent_seconds',v_total_seconds,
+    'average_time_per_attempt_seconds',case when v_total_attempted>0
+      then round(v_total_seconds::numeric/v_total_attempted)::integer else 0 end,
+    'by_difficulty',v_by_difficulty
+  );
+end;
+$$;
+
+revoke all on function public.grade_gre_question_bank_item(text,jsonb,integer) from public;
+revoke all on function public.get_gre_question_bank_diagnostics() from public;
+grant execute on function public.grade_gre_question_bank_item(text,jsonb,integer) to authenticated;
+grant execute on function public.get_gre_question_bank_diagnostics() to authenticated;
+
+notify pgrst, 'reload schema';
