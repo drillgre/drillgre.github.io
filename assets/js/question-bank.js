@@ -580,7 +580,7 @@
         '<div class="bank-diagnostic-stat"><span>Questions attempted</span><strong>' + totalAttempted.toLocaleString() + '</strong></div>' +
         '<div class="bank-diagnostic-stat"><span>Correctly answered</span><strong>' + totalCompleted.toLocaleString() + '</strong></div>' +
         '<div class="bank-diagnostic-stat"><span>First-attempt success</span><strong>' + rateLabel + '</strong><small>' + Number(data?.total_first_attempts_recorded || 0).toLocaleString() + ' first attempts recorded</small></div>' +
-        '<div class="bank-diagnostic-stat"><span>Total timed practice</span><strong>' + formatDuration(totalSeconds) + '</strong><small>' + formatDuration(avgSeconds) + ' average per submitted attempt</small></div>' +
+        '<div class="bank-diagnostic-stat"><span>Total timed practice</span><strong>' + formatDuration(totalSeconds) + '</strong><small>' + formatDuration(avgSeconds) + ' average per question</small></div>' +
       '</div>' +
       '<h3 class="bank-diagnostics-subtitle">Performance by difficulty</h3>' +
       '<div class="bank-diagnostics-table-wrap"><table class="bank-diagnostics-table">' +
