@@ -5,6 +5,26 @@
   const SUPABASE_KEY = "sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const $ = id => document.getElementById(id);
+  const setText = (id, value) => {
+    const element = $(id);
+    if (element) element.textContent = value;
+    else console.warn("Learner dashboard element not found:", id);
+  };
+  const setWidth = (id, value) => {
+    const element = $(id);
+    if (element) element.style.width = value;
+    else console.warn("Learner dashboard element not found:", id);
+  };
+  function showArcheryUnavailable(message) {
+    setText("archeryAttempts", "—");
+    setText("archeryCorrect", "—");
+    setText("archeryPoints", "—");
+    setText("archeryStreak", "—");
+    setText("archeryAccuracy", "—");
+    setText("archeryAccuracyText", "Unavailable");
+    setWidth("archeryAccuracyBar", "0%");
+    setText("archeryProgressNote", message);
+  }
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -114,14 +134,9 @@
     }
 
     if (archeryResult.error || !archeryResult.data) {
-      $("archeryAttempts").textContent = "—";
-      $("archeryCorrect").textContent = "—";
-      $("archeryPoints").textContent = "—";
-      $("archeryStreak").textContent = "—";
-      $("archeryAccuracy").textContent = "—";
-      $("archeryAccuracyText").textContent = "Unavailable";
-      $("archeryAccuracyBar").style.width = "0%";
-      $("archeryProgressNote").textContent = "Word Archery statistics could not be loaded. Check that the Word Archery database setup has been applied.";
+      const detail = archeryResult.error?.message || "The statistics function returned no data.";
+      console.error("Word Archery statistics RPC failed:", archeryResult.error || archeryResult);
+      showArcheryUnavailable("Word Archery statistics could not be loaded: " + detail);
       return;
     }
 
@@ -231,15 +246,10 @@
     setStatus("");
     loadVocabularyAndArchery().catch(error => {
       console.error("Unable to load learner Word Archery statistics:", error);
-      $("archeryAttempts").textContent = "—";
-      $("archeryCorrect").textContent = "—";
-      $("archeryPoints").textContent = "—";
-      $("archeryStreak").textContent = "—";
-      $("archeryAccuracy").textContent = "—";
-      $("archeryAccuracyText").textContent = "Unavailable";
-      $("archeryAccuracyBar").style.width = "0%";
-      $("archeryProgressNote").textContent =
-        "Word Archery statistics could not be displayed: " + (error?.message || "unexpected loading error");
+      showArcheryUnavailable(
+        "Word Archery statistics could not be displayed: " +
+        (error?.message || "unexpected loading error")
+      );
     });
   }
 
