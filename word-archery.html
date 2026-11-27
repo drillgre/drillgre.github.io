@@ -276,7 +276,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
         <h2>How to win</h2>
         <ul>
           <li>A word challenge appears and the 20-second clock starts.</li>
-          <li>Choose one of the four options. Your selection triggers the opponent's arrow.</li>
+          <li>Choose one of the four options, then press Fire selected answer to confirm. The opponent fires only after confirmation.</li>
           <li>Fire your answer. A correct shot meets the opponent's arrow in a bright collision burst, then the next word appears automatically.</li>
           <li>A wrong answer, or a timeout, lets the opponent's arrow hit your shield. You lose one life.</li>
           <li>Earn <b>10 points</b> per bullseye and <b>5 bonus points</b> for every third consecutive hit.</li>
@@ -309,7 +309,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
         <g fill="#d6e3ff" opacity=".6"><circle cx="375" cy="42" r="2"/><circle cx="426" cy="88" r="1.5"/><circle cx="600" cy="33" r="2"/><circle cx="668" cy="82" r="1.5"/><circle cx="520" cy="18" r="1.5"/></g>
         <path d="M0 236 Q130 190 250 232 T500 225 T750 228 T1000 214 V300 H0Z" fill="#152b40" opacity=".78"/>
         <path d="M0 260 Q180 230 350 258 T680 256 T1000 242" fill="none" stroke="#66809a" stroke-opacity=".32" stroke-width="2"/>
-        <g id="opponentBow" class="battle-bow enemy-bow">
+        <g id="opponentBow" class="battle-bow enemy-bow" transform="translate(34 0) scale(.78 1)">
           <path d="M150 38 C238 58 312 108 312 150 C312 192 238 242 150 262" fill="none" stroke="#060d1b" stroke-width="30" stroke-linecap="round" opacity=".78"/>
           <path class="bow-limb" d="M150 38 C238 58 312 108 312 150 C312 192 238 242 150 262" fill="none" stroke="url(#enemyMetal)" stroke-width="19" stroke-linecap="round"/>
           <path d="M155 44 C232 66 302 111 302 150 C302 189 232 234 155 256" fill="none" stroke="#ffc7aa" stroke-width="4" stroke-linecap="round" opacity=".9"/>
@@ -323,7 +323,7 @@ html.wa-pseudo-fullscreen #gamePanel .fullscreen-btn{position:absolute;top:12px;
           <circle cx="150" cy="262" r="7" fill="#ffe2b2" stroke="#963d50" stroke-width="3"/>
           <path d="M260 119 Q288 150 260 181" fill="none" stroke="#ffb29d" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/>
         </g>
-        <g id="playerBow" class="battle-bow player-bow">
+        <g id="playerBow" class="battle-bow player-bow" transform="translate(187 0) scale(.78 1)">
           <path d="M850 38 C762 58 688 108 688 150 C688 192 762 242 850 262" fill="none" stroke="#060d1b" stroke-width="30" stroke-linecap="round" opacity=".78"/>
           <path class="bow-limb" d="M850 38 C762 58 688 108 688 150 C688 192 762 242 850 262" fill="none" stroke="url(#playerMetal)" stroke-width="19" stroke-linecap="round"/>
           <path d="M845 44 C768 66 698 111 698 150 C698 189 768 234 845 256" fill="none" stroke="#fff1b7" stroke-width="4" stroke-linecap="round" opacity=".95"/>
@@ -493,8 +493,7 @@ function renderAnswerOptions(){
       G.selectedAnswer=G.options[Number(button.dataset.answerOption)]||"";
       host.querySelectorAll("[data-answer-option]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
       $("fireBtn").disabled=!G.selectedAnswer;
-      fireOpponentArrow();
-      setFeedback("The Red Fletch has fired! Lock in your answer.");
+      setFeedback("Answer selected. Press Fire selected answer to confirm your shot.");
     });
   });
 }
@@ -704,7 +703,7 @@ function nextRound(){
   }
   G.opponentLaunched=false;
   resetScene();
-  setFeedback("Choose an option. The opponent fires when you make your selection.");
+  setFeedback("Choose an option, then press Fire selected answer to confirm.");
   updateGameHud();
   startTimer();
 }
@@ -716,6 +715,7 @@ async function resolveAnswer(answer,timedOut=false){
   }
   G.locked=true;
   clearTimer();
+  if(!timedOut)fireOpponentArrow();
   $("answerOptions").querySelectorAll("button").forEach(button=>button.disabled=true);
   $("fireBtn").disabled=true;
   let result;
