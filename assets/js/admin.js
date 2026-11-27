@@ -1216,6 +1216,7 @@ async function loadQuestions() {
   const subtopic = $("subtopicFilter").value;
   const type = $("typeFilter").value;
   const level = $("levelFilter").value;
+  const status = $("statusFilter").value;
 
   const rows = (data || []).filter(x =>
     (!category || x.topic_category === category) &&
@@ -1225,7 +1226,8 @@ async function loadQuestions() {
         .toLowerCase()
         .includes(search)) &&
     (!type || x.question_type === type) &&
-    (!level || String(x.difficulty) === level)
+    (!level || String(x.difficulty) === level) &&
+    (!status || (status === "published" ? x.published === true : x.published !== true))
   );
 
   const visibleIds = new Set(rows.map(x => String(x.id)));
@@ -1385,7 +1387,7 @@ $("deleteCategoryQuestions").addEventListener("click", async () => {
 });
 
 populateSubtopicFilter(true);
-["search", "subtopicFilter", "typeFilter", "levelFilter"].forEach(id => {
+["search", "subtopicFilter", "typeFilter", "levelFilter", "statusFilter"].forEach(id => {
   $(id).addEventListener(
     id === "search" ? "input" : "change",
     loadQuestions
