@@ -148,7 +148,7 @@
             id="search"
             placeholder="Search topic or question">
 
-          <select id="categoryFilter">
+          <select id="categoryFilter" aria-label="Filter by category">
             <option value="">All categories</option>
             <option value="arithmetic">Arithmetic</option>
             <option value="algebra">Algebra</option>
@@ -156,8 +156,12 @@
             <option value="data_analysis">Data Analysis</option>
           </select>
 
-          <select id="typeFilter">
-            <option value="">All types</option>
+          <select id="subtopicFilter" aria-label="Filter by subcategory">
+            <option value="">All subcategories</option>
+          </select>
+
+          <select id="typeFilter" aria-label="Filter by question type">
+            <option value="">All question types</option>
 
             <option value="quantitative_comparison">
               Quantitative Comparison
@@ -747,7 +751,7 @@
 
   <!-- Admin JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script type="module" src="assets/js/admin.js?v=20261122-html-only"></script>
+  <script type="module" src="assets/js/admin.js?v=20261127-subcategory-filter"></script>
 
 </body>
 </html>
