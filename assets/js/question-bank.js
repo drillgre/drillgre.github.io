@@ -436,7 +436,8 @@
     try {
       const {data:grade,error} = await db.rpc("grade_gre_question_bank_item", {
         p_question_id:String(currentQuestion.id),
-        p_response:response
+        p_response:response,
+        p_time_spent_seconds:window.DrillGREQuestionBankTimer?.getElapsedSeconds?.() ?? 0
       });
       if (error) throw error;
       if (grade?.error) throw new Error(grade.error);
@@ -565,16 +566,25 @@
       ? "—"
       : Number(totalRate).toFixed(1) + "%";
     const rows = Array.isArray(data?.by_difficulty) ? data.by_difficulty : [];
+    const totalSeconds = Number(data?.total_time_spent_seconds || 0);
+    const avgSeconds = Number(data?.average_time_per_attempt_seconds || 0);
+    const formatDuration = seconds => {
+      const value = Math.max(0,Math.round(Number(seconds)||0));
+      const minutes = Math.floor(value/60);
+      const remainder = value%60;
+      return minutes ? minutes + "m " + remainder + "s" : remainder + "s";
+    };
 
     body.innerHTML =
       '<div class="bank-diagnostics-summary">' +
         '<div class="bank-diagnostic-stat"><span>Questions attempted</span><strong>' + totalAttempted.toLocaleString() + '</strong></div>' +
         '<div class="bank-diagnostic-stat"><span>Correctly answered</span><strong>' + totalCompleted.toLocaleString() + '</strong></div>' +
         '<div class="bank-diagnostic-stat"><span>First-attempt success</span><strong>' + rateLabel + '</strong><small>' + Number(data?.total_first_attempts_recorded || 0).toLocaleString() + ' first attempts recorded</small></div>' +
+        '<div class="bank-diagnostic-stat"><span>Total timed practice</span><strong>' + formatDuration(totalSeconds) + '</strong><small>' + formatDuration(avgSeconds) + ' average per submitted attempt</small></div>' +
       '</div>' +
       '<h3 class="bank-diagnostics-subtitle">Performance by difficulty</h3>' +
       '<div class="bank-diagnostics-table-wrap"><table class="bank-diagnostics-table">' +
-        '<thead><tr><th>Difficulty</th><th>Questions attempted</th><th>First attempts recorded</th><th>Correct first attempts</th><th>Success rate</th></tr></thead>' +
+        '<thead><tr><th>Difficulty</th><th>Questions attempted</th><th>First attempts recorded</th><th>Correct first attempts</th><th>Success rate</th><th>Avg. time</th><th>Total time</th></tr></thead>' +
         '<tbody>' + rows.map(row => {
           const rate = row.first_attempt_success_rate;
           const rateText = rate === null || rate === undefined ? "—" : Number(rate).toFixed(1) + "%";
@@ -582,7 +592,9 @@
             '<td>' + Number(row.questions_attempted || 0).toLocaleString() + '</td>' +
             '<td>' + Number(row.first_attempts_recorded || 0).toLocaleString() + '</td>' +
             '<td>' + Number(row.first_attempt_correct || 0).toLocaleString() + '</td>' +
-            '<td><strong>' + rateText + '</strong></td></tr>';
+            '<td><strong>' + rateText + '</strong></td>' +
+            '<td>' + formatDuration(row.average_time_spent_seconds || 0) + '</td>' +
+            '<td>' + formatDuration(row.total_time_spent_seconds || 0) + '</td></tr>';
         }).join("") + '</tbody>' +
       '</table></div>' +
       '<p class="bank-diagnostics-note">First-attempt success is calculated from recorded first submissions. Questions attempted before this diagnostics update remain in the attempted counts, but their first-answer correctness is unknown and is excluded from the success-rate calculation.</p>';
