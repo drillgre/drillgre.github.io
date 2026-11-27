@@ -26,8 +26,11 @@
   let progressById = new Map();
   let bookmarkedIds = new Set();
   let attemptCounts = new Map();
+  let likeCounts = new Map();
+  let likedIds = new Set();
   let bookmarkFeatureAvailable = true;
   let attemptCountsAvailable = true;
+  let likeFeatureAvailable = true;
   let currentQuestion = null;
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -183,6 +186,74 @@
       (saved ? '★ Saved' : '☆ Bookmark') + '</button>';
   }
 
+  function likeButtonMarkup(id) {
+    const key = String(id);
+    const liked = likedIds.has(key);
+    const count = Number(likeCounts.get(key) || 0);
+    return '<button type="button" class="bank-like" data-like-question="' + esc(key) +
+      '" aria-pressed="' + String(liked) + '"' +
+      (likeFeatureAvailable ? '' : ' disabled title="Run the Question Bank likes migration to enable likes"') +
+      '>' + (liked ? '♥ Liked' : '♡ Like') + ' · ' + count.toLocaleString() + '</button>';
+  }
+
+  function updateLikeUI() {
+    document.querySelectorAll("[data-like-question]").forEach(button => {
+      const key = String(button.dataset.likeQuestion);
+      const liked = likedIds.has(key);
+      const count = Number(likeCounts.get(key) || 0);
+      button.setAttribute("aria-pressed",String(liked));
+      button.disabled = !likeFeatureAvailable;
+      button.textContent = (liked ? "♥ Liked" : "♡ Like") + " · " + count.toLocaleString();
+    });
+  }
+
+  async function fetchLikes(questions) {
+    likeFeatureAvailable = true;
+    likeCounts = new Map();
+    likedIds = new Set();
+    const ids = questions.map(question => String(question.id));
+    for (let index = 0; index < ids.length; index += 200) {
+      const {data,error} = await db.rpc("get_gre_question_bank_likes",{p_question_ids:ids.slice(index,index+200)});
+      if (error) {
+        likeFeatureAvailable = false;
+        likeCounts = new Map();
+        likedIds = new Set();
+        console.warn("Question likes unavailable:",error);
+        updateLikeUI();
+        return;
+      }
+      Object.entries(data || {}).forEach(([id,item]) => {
+        const key = String(id);
+        likeCounts.set(key,Number(item?.like_count || 0));
+        if (item?.liked) likedIds.add(key);
+      });
+    }
+    updateLikeUI();
+  }
+
+  async function toggleLike(id,button) {
+    if (!likeFeatureAvailable) return;
+    const key = String(id);
+    const wasLiked = likedIds.has(key);
+    if (button) { button.disabled = true; button.textContent = "Saving…"; }
+    try {
+      const result = wasLiked
+        ? await db.from("gre_question_bank_likes").delete().eq("question_id",key)
+        : await db.from("gre_question_bank_likes").insert({question_id:key});
+      if (result.error) throw result.error;
+      likedIds[wasLiked ? "delete" : "add"](key);
+      likeCounts.set(key,Math.max(0,Number(likeCounts.get(key) || 0) + (wasLiked ? -1 : 1)));
+      updateLikeUI();
+      $("bankStatus").hidden = true;
+    } catch(error) {
+      if (button) button.disabled = false;
+      updateLikeUI();
+      $("bankStatus").hidden = false;
+      $("bankStatus").classList.add("error");
+      $("bankStatus").textContent = "Could not update this like. " + (error.message || "");
+    }
+  }
+
   function updateBookmarkUI() {
     const count = bookmarkedIds.size;
     $("bankBookmarkSummary").textContent = count.toLocaleString() + (count === 1 ? " question saved for Superquiz" : " questions saved for Superquiz");
@@ -308,6 +379,7 @@
         '<div class="bank-card-actions">' +
           '<button class="bank-open" type="button" data-open-question="' + esc(id) + '">Open full question</button>' +
           bookmarkButtonMarkup(id) +
+          likeButtonMarkup(id) +
           (question.stimulus_id ? '<span class="attempt-meta">Includes shared Data Analysis material</span>' : '') +
         '</div>' +
       '</div>' +
@@ -332,6 +404,9 @@
     });
     host.querySelectorAll("[data-bookmark-question]").forEach(button => {
       button.addEventListener("click", () => toggleBookmark(button.dataset.bookmarkQuestion,button));
+    });
+    host.querySelectorAll("[data-like-question]").forEach(button => {
+      button.addEventListener("click", () => toggleLike(button.dataset.likeQuestion,button));
     });
   }
 
@@ -359,6 +434,7 @@
       '<div class="bank-options">' + optionMarkup(question) + '</div>' +
       '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">' +
         bookmarkButtonMarkup(id) +
+        likeButtonMarkup(id) +
         '<button class="bank-check" id="checkQuestionBankAnswer" type="button">Check answer</button>' +
       '</div>' +
       '<div class="bank-feedback" id="questionBankFeedback" hidden></div>' +
@@ -369,6 +445,9 @@
     attachImageFallback(body);
     body.querySelectorAll("[data-bookmark-question]").forEach(button => {
       button.addEventListener("click", () => toggleBookmark(button.dataset.bookmarkQuestion,button));
+    });
+    body.querySelectorAll("[data-like-question]").forEach(button => {
+      button.addEventListener("click", () => toggleLike(button.dataset.likeQuestion,button));
     });
     $("checkQuestionBankAnswer").addEventListener("click",checkCurrentAnswer);
     if (!dialog.open) dialog.showModal();
@@ -697,13 +776,16 @@
       allQuestions = await fetchAllQuestions();
       await fetchBookmarks();
       await fetchAttemptCounts(allQuestions);
+      await fetchLikes(allQuestions);
       $("bankTotal").textContent = allQuestions.length.toLocaleString();
-      $("bankStatus").hidden = bookmarkFeatureAvailable && attemptCountsAvailable;
-      if (!bookmarkFeatureAvailable || !attemptCountsAvailable) {
+      $("bankStatus").hidden = bookmarkFeatureAvailable && attemptCountsAvailable && likeFeatureAvailable;
+      if (!bookmarkFeatureAvailable || !attemptCountsAvailable || !likeFeatureAvailable) {
         $("bankStatus").classList.toggle("error",!bookmarkFeatureAvailable || !attemptCountsAvailable);
         $("bankStatus").textContent = !bookmarkFeatureAvailable
           ? "Bookmark and Superquiz features require supabase/question-bank-bookmarks-superquiz.sql. Question browsing remains available."
-          : "Total attempt counts require supabase/question-bank-bookmarks-superquiz.sql. Question practice remains available.";
+          : !attemptCountsAvailable
+            ? "Total attempt counts require supabase/question-bank-bookmarks-superquiz.sql. Question practice remains available."
+            : "Question likes require supabase/question-bank-likes.sql. Question browsing remains available.";
       }
       if (!allQuestions.length) {
         $("bankStatus").hidden = false;
@@ -719,6 +801,7 @@
       window.addEventListener("focus",async () => {
         await fetchBookmarks();
         await fetchAttemptCounts(allQuestions);
+        await fetchLikes(allQuestions);
         applyFilters();
       });
     } catch (error) {
