@@ -115,23 +115,10 @@
   }
 
   async function loadVocabularyAndArchery() {
-    const [nailedResult, vocabularyResult, archeryResult] = await Promise.all([
-      db.from("vocab_word_progress")
-        .select("vocab_word_id", { count: "exact", head: true })
-        .eq("status", "know"),
-      db.from("vocab_words")
-        .select("id", { count: "exact", head: true })
-        .eq("is_published", true),
-      db.rpc("get_word_archery_stats")
-    ]);
-
-    const nailedCount = Number(nailedResult.count || 0);
-    $("wordsNailed").textContent = nailedResult.error ? "—" : nailedCount.toLocaleString();
-    if (vocabularyResult.error || vocabularyResult.count == null) {
-      $("wordsNailed").title = "Words classified as Nailed It in Vocab Mountain";
-    } else {
-      $("wordsNailed").title = nailedCount.toLocaleString() + " of " + Number(vocabularyResult.count).toLocaleString() + " published words";
-    }
+    // Vocabulary progress is handled independently by learner-vocabulary-progress.js.
+    // Keep this loader focused on Word Archery so obsolete vocabulary element IDs
+    // cannot interrupt the statistics display.
+    const archeryResult = await db.rpc("get_word_archery_stats");
 
     if (archeryResult.error || !archeryResult.data) {
       const detail = archeryResult.error?.message || "The statistics function returned no data.";
@@ -140,8 +127,6 @@
       return;
     }
 
-    // Supabase normally returns JSONB as an object. Normalize alternate
-    // response shapes as well, so the dashboard does not silently show zeros.
     let stats = archeryResult.data;
     if (typeof stats === "string") {
       try { stats = JSON.parse(stats); } catch (_) {}
@@ -152,8 +137,7 @@
     if (!stats || typeof stats !== "object" ||
         !("total_attempts" in stats) || !("total_points" in stats)) {
       console.error("Unexpected Word Archery stats response:", archeryResult);
-      $("archeryProgressNote").textContent =
-        "Word Archery data was received in an unexpected format. Please refresh the dashboard; if the issue continues, contact support.";
+      showArcheryUnavailable("Word Archery data was received in an unexpected format.");
       return;
     }
 
@@ -163,16 +147,16 @@
     const streak = Number(stats.streak ?? 0);
     const accuracy = Math.max(0, Math.min(100, Number(stats.success_rate ?? 0)));
 
-    $("archeryAttempts").textContent = attempts.toLocaleString();
-    $("archeryCorrect").textContent = correct.toLocaleString();
-    $("archeryPoints").textContent = points.toLocaleString();
-    $("archeryStreak").textContent = streak.toLocaleString();
-    $("archeryAccuracy").textContent = accuracy.toFixed(1) + "%";
-    $("archeryAccuracyText").textContent = accuracy.toFixed(1) + "%";
-    $("archeryAccuracyBar").style.width = accuracy + "%";
-    $("archeryProgressNote").textContent = attempts
+    setText("archeryAttempts", attempts.toLocaleString());
+    setText("archeryCorrect", correct.toLocaleString());
+    setText("archeryPoints", points.toLocaleString());
+    setText("archeryStreak", streak.toLocaleString());
+    setText("archeryAccuracy", accuracy.toFixed(1) + "%");
+    setText("archeryAccuracyText", accuracy.toFixed(1) + "%");
+    setWidth("archeryAccuracyBar", accuracy + "%");
+    setText("archeryProgressNote", attempts
       ? "You have answered " + attempts.toLocaleString() + " questions, with " + correct.toLocaleString() + " correct answers."
-      : "Play your first round to start building your Word Archery record.";
+      : "Play your first round to start building your Word Archery record.");
   }
 
   async function loadDashboard() {
