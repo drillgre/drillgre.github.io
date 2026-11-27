@@ -44,40 +44,35 @@
       .drillgre-page-loader {
         position: fixed;
         z-index: 99999;
-        top: max(16px, env(safe-area-inset-top));
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%) translateY(0);
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        padding: 11px 17px;
-        border: 1px solid rgba(255,255,255,.14);
-        border-radius: 999px;
-        background: rgba(18,31,57,.96);
-        color: #fff;
-        box-shadow: 0 10px 32px rgba(10,20,42,.22);
-        font: 650 13px/1.2 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
-        letter-spacing: .01em;
+        width: 54px;
+        height: 54px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(18,31,57,.88);
+        box-shadow: 0 8px 28px rgba(10,20,42,.2), 0 0 0 7px rgba(255,255,255,.2);
         opacity: 1;
         visibility: visible;
-        transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
+        transform: translate(-50%,-50%) scale(1);
+        transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
         pointer-events: none;
-        white-space: nowrap;
       }
       .drillgre-page-loader.is-hidden {
         opacity: 0;
         visibility: hidden;
-        transform: translateX(-50%) translateY(-8px);
+        transform: translate(-50%,-50%) scale(.88);
       }
       .drillgre-loader-ring {
-        width: 17px;
-        height: 17px;
-        flex: 0 0 17px;
-        border: 2px solid rgba(229,243,107,.28);
+        width: 29px;
+        height: 29px;
+        border: 3px solid rgba(229,243,107,.22);
         border-top-color: #e5f36b;
         border-right-color: #e5f36b;
         border-radius: 50%;
-        animation: drillgre-database-spin .72s linear infinite;
+        filter: drop-shadow(0 0 4px rgba(229,243,107,.25));
+        animation: drillgre-database-spin .78s cubic-bezier(.55,.1,.35,.9) infinite;
       }
       @keyframes drillgre-database-spin { to { transform: rotate(360deg); } }
       @media(prefers-reduced-motion:reduce) {
@@ -96,11 +91,9 @@
     loader.setAttribute("data-database-loader", "");
     loader.setAttribute("role", "status");
     loader.setAttribute("aria-live", "polite");
-    loader.setAttribute("aria-label", "Connecting to database");
+    loader.setAttribute("aria-label", "Loading");
 
-    loader.innerHTML = `
-      <div class="drillgre-loader-ring" aria-hidden="true"></div>
-      <span>Connecting to database...</span>`;
+    loader.innerHTML = `<div class="drillgre-loader-ring" aria-hidden="true"></div>`;
 
     (document.body || document.documentElement).appendChild(loader);
     return loader;
