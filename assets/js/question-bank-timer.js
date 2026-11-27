@@ -48,6 +48,10 @@
     renderTime();
   }
 
+  function getElapsedSeconds() { return Math.floor(elapsed() / 1000); }
+
+  window.DrillGREQuestionBankTimer = { getElapsedSeconds, stop: stopTimer };
+
   function mountTimer() {
     const nextTitle = title.textContent.trim();
     if (!nextTitle || nextTitle === currentTitle || !body.querySelector(".bank-options")) return;
