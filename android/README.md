@@ -59,3 +59,8 @@ The Android app and website must use the same package ID and certificate fingerp
 - A TWA requires a compatible browser such as Chrome on Android.
 - Without a valid Digital Asset Links association, Android may show browser UI rather than a fully trusted full-screen experience.
 - Live login, Supabase data, quizzes, and analytics require connectivity. The website's PWA service worker provides only the basic offline shell.
+
+
+## Branding
+
+The Android launcher icon uses the leading D mark extracted from the logo image supplied by the DrillGRE owner on 27 November 2026. The same icon is referenced by the PWA manifest and Android launcher. The full wordmark is retained as the brand reference; the square launcher format uses the D symbol for legibility at small sizes.
