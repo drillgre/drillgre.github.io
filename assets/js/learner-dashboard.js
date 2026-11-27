@@ -125,12 +125,28 @@
       return;
     }
 
-    const stats = archeryResult.data;
-    const attempts = Number(stats.total_attempts || 0);
-    const correct = Number(stats.correct_attempts || 0);
-    const points = Number(stats.total_points || 0);
-    const streak = Number(stats.streak || 0);
-    const accuracy = Math.max(0, Math.min(100, Number(stats.success_rate || 0)));
+    // Supabase normally returns JSONB as an object. Normalize alternate
+    // response shapes as well, so the dashboard does not silently show zeros.
+    let stats = archeryResult.data;
+    if (typeof stats === "string") {
+      try { stats = JSON.parse(stats); } catch (_) {}
+    }
+    if (Array.isArray(stats)) stats = stats[0];
+    if (stats && stats.get_word_archery_stats) stats = stats.get_word_archery_stats;
+
+    if (!stats || typeof stats !== "object" ||
+        !("total_attempts" in stats) || !("total_points" in stats)) {
+      console.error("Unexpected Word Archery stats response:", archeryResult);
+      $("archeryProgressNote").textContent =
+        "Word Archery data was received in an unexpected format. Please refresh the dashboard; if the issue continues, contact support.";
+      return;
+    }
+
+    const attempts = Number(stats.total_attempts ?? 0);
+    const correct = Number(stats.correct_attempts ?? 0);
+    const points = Number(stats.total_points ?? 0);
+    const streak = Number(stats.streak ?? 0);
+    const accuracy = Math.max(0, Math.min(100, Number(stats.success_rate ?? 0)));
 
     $("archeryAttempts").textContent = attempts.toLocaleString();
     $("archeryCorrect").textContent = correct.toLocaleString();
@@ -213,7 +229,18 @@
 
     $("dashboardContent").hidden = false;
     setStatus("");
-    loadVocabularyAndArchery().catch(() => {});
+    loadVocabularyAndArchery().catch(error => {
+      console.error("Unable to load learner Word Archery statistics:", error);
+      $("archeryAttempts").textContent = "—";
+      $("archeryCorrect").textContent = "—";
+      $("archeryPoints").textContent = "—";
+      $("archeryStreak").textContent = "—";
+      $("archeryAccuracy").textContent = "—";
+      $("archeryAccuracyText").textContent = "Unavailable";
+      $("archeryAccuracyBar").style.width = "0%";
+      $("archeryProgressNote").textContent =
+        "Word Archery statistics could not be displayed: " + (error?.message || "unexpected loading error");
+    });
   }
 
   $("signOut").addEventListener("click", async () => {
