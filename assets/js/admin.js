@@ -2047,12 +2047,65 @@ function downloadQuestionCsvExample() {
   downloadCsvFile("drillgre-question-import-example.csv", [questionCsvHeaders, ...examples]);
 }
 
+function parseQuestionCsvText(source) {
+  // CSV answer choices must remain literal text. Do not pass CSV through a
+  // spreadsheet date parser, which can turn values such as 21/8 into dates.
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+  const input = String(source || "").replace(/^\\uFEFF/, "");
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+    if (quoted) {
+      if (char === '"' && input[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        field += char;
+      }
+    } else if (char === '"' && field === "") {
+      quoted = true;
+    } else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\\n" || char === "\\r") {
+      if (char === "\\r" && input[i + 1] === "\\n") i++;
+      row.push(field);
+      if (row.some(value => value.trim() !== "")) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+  row.push(field);
+  if (row.some(value => value.trim() !== "")) rows.push(row);
+  if (!rows.length) return [];
+
+  const headers = rows.shift().map(value => value.trim());
+  return rows.map(values => {
+    const record = {};
+    headers.forEach((header, index) => {
+      if (header) record[header] = values[index] ?? "";
+    });
+    return record;
+  });
+}
+
 async function readQuestionImportFile(file) {
   const name = file.name.toLowerCase();
   if (name.endsWith(".json")) {
     const parsed = JSON.parse(await file.text());
     if (!Array.isArray(parsed)) throw new Error("JSON import must be an array of question records.");
     return parsed;
+  }
+
+  if (name.endsWith(".csv")) {
+    return parseQuestionCsvText(await file.text());
   }
 
   if (!window.XLSX) throw new Error("The spreadsheet reader could not load. Refresh the admin page and try again.");
@@ -2063,8 +2116,6 @@ async function readQuestionImportFile(file) {
   });
   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
   if (!firstSheet) throw new Error("The workbook does not contain a worksheet.");
-  // Preserve values such as "1/6" as text. Date auto-detection corrupts
-  // fraction answer choices when importing CSV files.
   return window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: true });
 }
 
