@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js?v=20261127-archery-fix2"></script>
   <script defer src="assets/js/learner-peer-benchmarks.js?v=20261128-peer1"></script>
+  <script defer src="assets/js/learner-lessons.js?v=20261128-lesson1"></script>
   <script defer src="assets/js/learner-quant-analytics.js?v=20261126-ets-percentiles-layout2"></script>
   <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
@@ -275,7 +276,21 @@ html{scroll-behavior:smooth}
   
     .peer-benchmark-panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:20px;margin:14px 0}
     .peer-benchmark-panel h2{font-size:18px;margin:0 0 5px}.peer-kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.peer-kpi{background:#f7f9fd;border:1px solid var(--line);border-radius:10px;padding:12px}.peer-kpi span,.peer-kpi small{display:block;color:var(--muted);font-size:11px}.peer-kpi strong{display:block;font-size:23px;color:var(--navy);margin:4px 0}.peer-rows{display:grid;gap:8px}.peer-row{display:grid;grid-template-columns:1.1fr 1fr .7fr;gap:6px 12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px}.peer-row strong{font-size:12px}.peer-row small{grid-column:1/-1;color:var(--muted);font-size:10px;line-height:1.5}.peer-row span:nth-child(3){font-weight:800;color:#3154c5;text-align:right}@media(max-width:560px){.peer-row{grid-template-columns:1fr 1fr}.peer-row span:nth-child(3){text-align:right}}
-</style>
+
+    .learner-lessons-panel{margin-top:18px}
+    .lesson-resume{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px;background:#f4f7ff;border:1px solid #dce5fb;border-radius:12px;margin:14px 0}
+    .lesson-resume-copy{display:grid;gap:4px}.lesson-resume-copy strong{font-size:15px;color:var(--navy)}.lesson-resume-copy small,.lesson-resume-label{font-size:10px;color:var(--muted)}.lesson-resume-label{font-weight:850;letter-spacing:.06em}
+    .lesson-learning-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+    .lesson-learning-stats>div{padding:13px;border:1px solid var(--line);border-radius:10px;background:#fbfcff}
+    .lesson-learning-stats strong,.lesson-learning-stats span{display:block}.lesson-learning-stats strong{font-size:21px;color:var(--navy)}.lesson-learning-stats span{font-size:10px;color:var(--muted)}
+    .all-learner-lessons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .learner-lesson-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:9px;text-decoration:none;color:var(--ink);min-width:0}
+    .learner-lesson-row>span:first-child{display:grid;gap:4px;min-width:0}.learner-lesson-row strong{font-size:11px;overflow-wrap:anywhere}.learner-lesson-row small{font-size:9px;color:var(--muted)}
+    .learner-lesson-action{font-size:10px;font-weight:800;color:var(--blue);white-space:nowrap}
+    .learner-lesson-row.completed{background:#f5faf6;border-color:#d9ecdf}.learner-lesson-row.in_progress{background:#f7f9ff;border-color:#dce5fb}
+    @media(max-width:650px){.all-learner-lessons{grid-template-columns:1fr}.lesson-resume{align-items:flex-start;flex-direction:column}.lesson-learning-stats strong{font-size:18px}}
+
+  </style>
   <link rel="stylesheet" href="/assets/css/site-nav.css?v=20261127-option2">
   <script defer src="/assets/js/site-nav.js?v=20261127-final"></script>
   <script src="/assets/js/database-loader.js"></script>
@@ -451,6 +466,23 @@ html{scroll-behavior:smooth}
         <h3 style="font-size:14px;margin:0 0 9px">Lessons completed</h3>
         <div id="completedLessonList" class="completed-lesson-list"></div>
       </div>
+    </section>
+    <section class="dash-panel learner-lessons-panel">
+      <div class="archery-heading">
+        <div><h2>My learning journey</h2><p class="account-muted" style="margin:0">Published lessons are added automatically. Your activity is saved as you study.</p></div>
+        <span id="lessonCatalogueCount" class="account-muted">Loading published lessons…</span>
+      </div>
+      <div id="continueLearning" class="lesson-resume"><div class="lesson-resume-copy"><strong>Finding your next lesson…</strong></div></div>
+      <div class="lesson-learning-stats">
+        <div><strong id="lessonCompletionPercent">0%</strong><span>Course completion</span></div>
+        <div><strong id="lessonStudyHours">0 min</strong><span>Recorded lesson study</span></div>
+        <div><strong id="lessonLearningStreak">0 days</strong><span>Learning streak</span></div>
+      </div>
+      <div class="progress-head"><strong>Published lesson completion</strong><span id="lessonCompletionSummary">Loading…</span></div>
+      <div class="progress-track"><span id="lessonCompletionBar"></span></div>
+      <h3 style="font-size:14px;margin:20px 0 8px">All lessons</h3>
+      <div id="allLearnerLessons" class="all-learner-lessons"><p class="account-muted">Loading the published lesson catalogue…</p></div>
+      <p class="analytics-footnote">Study time counts visible lesson reading while the page is recently active. The activity timer pauses when the page is hidden or idle. Mark a lesson complete when you finish it.</p>
     </section>
     <section class="dash-panel">
       <div class="archery-heading">
