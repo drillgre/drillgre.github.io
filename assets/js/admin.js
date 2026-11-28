@@ -492,6 +492,7 @@ async function loadLessons() {
                 </span>
               </label>
               <div class="buttons">
+                <button type="button" data-view="${l.id}">View</button>
                 <button type="button" data-edit="${l.id}">Edit</button>
                 <button type="button" data-pub="${l.id}">
                   ${l.published ? "Unpublish" : "Publish"}
@@ -532,6 +533,12 @@ async function loadLessons() {
   bulkDeleteLessons.addEventListener("click", deleteSelectedLessons);
   refreshLessonSelection();
 
+  $("lessonList").querySelectorAll("[data-view]").forEach(button => {
+    button.onclick = () => {
+      const lesson = lessonsCache.find(item => String(item.id) === String(button.dataset.view));
+      if (lesson) window.open("/quant/lesson.html?slug=" + encodeURIComponent(lesson.slug), "_blank", "noopener");
+    };
+  });
   $("lessonList").querySelectorAll("[data-edit]").forEach(button => {
     button.onclick = () => editLesson(button.dataset.edit);
   });
