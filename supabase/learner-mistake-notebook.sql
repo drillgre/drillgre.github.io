@@ -75,9 +75,11 @@ begin
       on a.attempt_id = aq.attempt_id and a.question_id = aq.question_id
     where qa.learner_id = v_user_id
       and qa.status = 'completed'
-      and a.is_correct = false
-      and a.response is not null
-      and a.response not in ('null'::jsonb, '""'::jsonb, '[]'::jsonb)
+      and (
+        a.is_correct = false
+        or a.response is null
+        or a.response in ('null'::jsonb, '""'::jsonb, '[]'::jsonb)
+      )
 
     union all
 
@@ -95,9 +97,11 @@ begin
       on ans.attempt_id = mq.attempt_id and ans.question_id = mq.question_id
     where ma.learner_id = v_user_id
       and ma.status = 'completed'
-      and ans.is_correct = false
-      and ans.response is not null
-      and ans.response not in ('null'::jsonb, '""'::jsonb, '[]'::jsonb)
+      and (
+        ans.is_correct = false
+        or ans.response is null
+        or ans.response in ('null'::jsonb, '""'::jsonb, '[]'::jsonb)
+      )
   ),
   latest_mistakes as (
     select distinct on (question_id)
