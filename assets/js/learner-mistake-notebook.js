@@ -133,7 +133,7 @@
     const body = $("mistakeQuestionDialogBody");
     const figure = q.figure_url || item.stimulus_figure_url || "";
     const choices = parseChoices(q.options);
-    const options = choices.length ? '<section class="mistake-dialog-options"><h3>Answer options</h3><div>'+choices.map((choice,index)=>'<div class="mistake-dialog-option"><strong>'+safe(choice.label || String.fromCharCode(65+index))+'</strong><span>'+safe(choice.text ?? choice.value ?? choice)'+'</span></div>').join("")+'</div></section>' : "";
+    const options = choices.length ? '<section class="mistake-dialog-options"><h3>Answer options</h3><div>'+choices.map((choice,index)=>'<div class="mistake-dialog-option"><strong>'+safe(choice.label || String.fromCharCode(65+index))+'</strong><span>'+safe(choice.text ?? choice.value ?? choice)+'</span></div>').join("")+'</div></section>' : "";
     const stimulus = item.stimulus ? '<section><h3>Data / stimulus</h3><p>'+safe(item.stimulus)+'</p></section>' : "";
     body.innerHTML = '<div class="mistake-dialog-meta">'+safe(pretty(q.topic_category || q.topic))+' · '+safe(pretty(q.subtopic))+'</div>' +
       stimulus + (figure ? '<img class="mistake-dialog-figure" src="'+safe(figure)+'" alt="Question figure">' : '') +
