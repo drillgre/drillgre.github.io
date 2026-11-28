@@ -508,7 +508,10 @@ async function loadLessons() {
           <section class="lesson-topic-group" data-topic-group="${esc(groupId)}" style="margin:0 0 26px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:10px;background:#eef3ff;border:1px solid #dbe5ff;border-radius:12px">
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                <strong style="font-size:16px;color:#173b78">${esc(group.title)}</strong>
+                <label style="display:flex;align-items:center;gap:9px;margin:0;cursor:pointer">
+                  <input type="checkbox" class="topic-select" data-topic-select="${esc(groupId)}" aria-label="Select all lessons in ${esc(group.title)}" style="width:18px;height:18px;flex:0 0 auto">
+                  <strong style="font-size:16px;color:#173b78">${esc(group.title)}</strong>
+                </label>
                 ${groupId !== "unassigned" ? `<button type="button" class="secondary" data-rename-module="${esc(groupId)}">Rename topic</button>` : ""}
               </div>
               <span class="meta">${group.lessons.length} lessons · ${publishedCount} published · ${draftCount} drafts</span>
@@ -520,6 +523,7 @@ async function loadLessons() {
     : "<p>No lessons yet. Create your first lesson.</p>";
 
   const lessonSelectBoxes = [...$("lessonList").querySelectorAll("[data-lesson-select]")];
+  const topicSelectBoxes = [...$("lessonList").querySelectorAll("[data-topic-select]")];
   const selectAllLessons = $("selectAllLessons");
   const bulkDeleteLessons = $("bulkDeleteLessons");
   const selectedLessonCount = $("selectedLessonCount");
@@ -531,8 +535,25 @@ async function loadLessons() {
     $("bulkUnpublishLessons").disabled = selected === 0;
     selectAllLessons.checked = selected > 0 && selected === lessonSelectBoxes.length;
     selectAllLessons.indeterminate = selected > 0 && selected < lessonSelectBoxes.length;
+
+    topicSelectBoxes.forEach(topicBox => {
+      const group = topicBox.closest("[data-topic-group]");
+      const groupLessons = [...group.querySelectorAll("[data-lesson-select]")];
+      const groupSelected = groupLessons.filter(box => box.checked).length;
+      topicBox.checked = groupLessons.length > 0 && groupSelected === groupLessons.length;
+      topicBox.indeterminate = groupSelected > 0 && groupSelected < groupLessons.length;
+    });
   };
   lessonSelectBoxes.forEach(box => box.addEventListener("change", refreshLessonSelection));
+  topicSelectBoxes.forEach(topicBox => {
+    topicBox.addEventListener("change", () => {
+      const group = topicBox.closest("[data-topic-group]");
+      group.querySelectorAll("[data-lesson-select]").forEach(box => {
+        box.checked = topicBox.checked;
+      });
+      refreshLessonSelection();
+    });
+  });
   selectAllLessons.addEventListener("change", () => {
     lessonSelectBoxes.forEach(box => { box.checked = selectAllLessons.checked; });
     refreshLessonSelection();
