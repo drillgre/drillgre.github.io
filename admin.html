@@ -781,6 +781,20 @@
     </div>
   </dialog>
 
+  <dialog id="adminConfirmDialog" style="width:min(480px,calc(100% - 24px));max-width:480px">
+    <div class="dialoghead">
+      <div>
+        <h2 id="adminConfirmTitle">Confirm action</h2>
+        <p id="adminConfirmMessage" class="field-note">Please confirm this action.</p>
+      </div>
+      <button type="button" class="x" id="adminConfirmClose" aria-label="Close">×</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px">
+      <button type="button" class="secondary" id="adminConfirmCancel">Cancel</button>
+      <button type="button" id="adminConfirmAccept">Confirm</button>
+    </div>
+  </dialog>
+
   <!-- Admin JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module" src="assets/js/admin.js?v=20261128-course-package-import"></script>
