@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="assets/css/lms.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="assets/js/learner-dashboard.js?v=20261127-archery-fix2"></script>
+  <script defer src="assets/js/learner-peer-benchmarks.js?v=20261128-peer1"></script>
   <script defer src="assets/js/learner-quant-analytics.js?v=20261126-ets-percentiles-layout2"></script>
   <script defer src="assets/js/learner-mistake-notebook.js?v=20261126-core"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
@@ -271,7 +272,10 @@ html{scroll-behavior:smooth}
     .dash-shell{width:min(1536px,calc(100% - 48px))!important;max-width:1536px!important;margin:0 auto!important;padding-left:0!important;padding-right:0!important}
     @media(max-width:900px){.dash-shell{width:calc(100% - 30px)!important;max-width:100%!important;margin:0 auto!important;padding:16px 12px 34px!important}}
 
-  </style>
+  
+    .peer-benchmark-panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:20px;margin:14px 0}
+    .peer-benchmark-panel h2{font-size:18px;margin:0 0 5px}.peer-kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.peer-kpi{background:#f7f9fd;border:1px solid var(--line);border-radius:10px;padding:12px}.peer-kpi span,.peer-kpi small{display:block;color:var(--muted);font-size:11px}.peer-kpi strong{display:block;font-size:23px;color:var(--navy);margin:4px 0}.peer-rows{display:grid;gap:8px}.peer-row{display:grid;grid-template-columns:1.1fr 1fr .7fr;gap:6px 12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px}.peer-row strong{font-size:12px}.peer-row small{grid-column:1/-1;color:var(--muted);font-size:10px;line-height:1.5}.peer-row span:nth-child(3){font-weight:800;color:#3154c5;text-align:right}@media(max-width:560px){.peer-row{grid-template-columns:1fr 1fr}.peer-row span:nth-child(3){text-align:right}}
+</style>
   <link rel="stylesheet" href="/assets/css/site-nav.css?v=20261127-option2">
   <script defer src="/assets/js/site-nav.js?v=20261127-final"></script>
   <script src="/assets/js/database-loader.js"></script>
@@ -380,6 +384,14 @@ html{scroll-behavior:smooth}
 </div>
         <p class="analytics-footnote">Accuracy combines the latest saved Question Bank result for each question with submitted answers from completed quizzes, Superquizzes and mocks. Question Bank first-attempt accuracy is reported separately. Topic guidance is withheld until at least five answers are recorded. DrillGRE mock scores are practice estimates, not official ETS scores.</p>
       </div>
+    </section>
+    
+    <section id="peerBenchmarkPanel" class="peer-benchmark-panel" aria-labelledby="peerBenchmarkTitle">
+      <div class="insights-heading"><div><div class="eyebrow">Anonymous peer comparison</div><h2 id="peerBenchmarkTitle">How you compare with other learners</h2><p class="account-muted">Compare your accuracy, speed, mock score and recorded study time with active DrillGRE learners.</p></div></div>
+      <div class="peer-kpi-grid"><article class="peer-kpi"><span>Total registered learners</span><strong id="peerRegistered">—</strong><small>All learner accounts</small></article><article class="peer-kpi"><span>Active comparison group</span><strong id="peerActive">—</strong><small>Learners meeting the activity threshold</small></article></div>
+      <div id="peerBenchmarkStatus" class="analytics-status" role="status">Loading anonymous peer benchmarks…</div>
+      <div id="peerBenchmarkContent" hidden><p class="account-muted">Your scored answers in the comparison data: <strong id="peerActivityCount">0</strong></p><div id="peerBenchmarkRows" class="peer-rows"></div></div>
+      <p class="analytics-footnote">The 50th percentile is the median. The 75th percentile is the value at or above 75% of the comparison group. Your percentile indicates the share of learners at or below your result. Speed is measured as timed mock questions per minute. Recorded study time includes only time stored by timed activities, not all time spent on the website. Individual learner records are not disclosed.</p>
     </section>
     <section class="dash-panel study-plan" id="myStudyPlan">
   <div class="study-plan-heading"><div><div class="eyebrow">Plan your week</div><h2>My Study Plan</h2><p class="account-muted">Schedule lessons, quizzes, mock tests and vocabulary practice. Set daily question goals and track progress.</p></div><div class="study-plan-rate"><strong id="studyPlanCompletion">0%</strong><span>Weekly completion</span></div></div>
