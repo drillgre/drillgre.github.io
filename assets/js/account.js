@@ -179,12 +179,12 @@
       host.replaceChildren();
       window.google.accounts.id.renderButton(host, {
         type: "standard",
-        theme: "filled_blue",
+        theme: "outline",
         size: "large",
         text: "continue_with",
-        shape: "pill",
+        shape: "rectangular",
         logo_alignment: "left",
-        width: Math.min(Math.max(host.clientWidth || 360, 200), 400)
+        width: Math.min(Math.max(host.clientWidth || 440, 200), 440)
       });
     } catch (error) {
       host.textContent = "Google sign-in is temporarily unavailable.";
