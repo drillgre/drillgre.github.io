@@ -21,6 +21,7 @@
   };
 
   let allQuestions = [];
+  let visibleQuestions = [];
   let stimulusById = new Map();
   let completedIds = new Set();
   let progressById = new Map();
@@ -394,6 +395,7 @@
       return;
     }
 
+    visibleQuestions = questions.slice();
     host.innerHTML = questions.map(renderCard).join("");
     attachImageFallback(host);
     host.querySelectorAll("[data-open-question]").forEach(button => {
@@ -440,8 +442,20 @@
       '<div class="bank-feedback" id="questionBankFeedback" hidden></div>' +
       '<p class="attempt-meta" id="questionStatusHelp" style="margin-top:12px">A correct answer is marked Done. An incorrect answer is marked Review until you answer correctly.</p>';
 
-    const displayNumber = allQuestions.findIndex(item => String(item.id) === id) + 1;
-    $("dialogQuestionTitle").textContent = "Question " + (displayNumber || "details");
+    const displayIndex = visibleQuestions.findIndex(item => String(item.id) === id);
+    const displayNumber = displayIndex + 1;
+    $("dialogQuestionTitle").textContent = "Question " + (displayNumber || "details") + (visibleQuestions.length ? " of " + visibleQuestions.length : "");
+    const previousDisabled = displayIndex <= 0;
+    const nextDisabled = displayIndex < 0 || displayIndex >= visibleQuestions.length - 1;
+    const navigation = '<nav class="bank-modal-navigation" aria-label="Question navigation">' +
+      '<button type="button" class="bank-modal-nav-button" data-question-nav="previous"' + (previousDisabled ? ' disabled' : '') + '>← Previous</button>' +
+      '<span>' + (displayNumber || "—") + ' / ' + visibleQuestions.length + '</span>' +
+      '<button type="button" class="bank-modal-nav-button primary" data-question-nav="next"' + (nextDisabled ? ' disabled' : '') + '>Next →</button>' +
+      '</nav>';
+    body.insertAdjacentHTML("beforeend", navigation);
+    body.querySelectorAll("[data-question-nav]").forEach(button => {
+      button.addEventListener("click", () => navigateQuestion(button.dataset.questionNav));
+    });
     attachImageFallback(body);
     body.querySelectorAll("[data-bookmark-question]").forEach(button => {
       button.addEventListener("click", () => toggleBookmark(button.dataset.bookmarkQuestion,button));
@@ -451,6 +465,15 @@
     });
     $("checkQuestionBankAnswer").addEventListener("click",checkCurrentAnswer);
     if (!dialog.open) dialog.showModal();
+  }
+
+  function navigateQuestion(direction) {
+    if (!currentQuestion) return;
+    const index = visibleQuestions.findIndex(item => String(item.id) === String(currentQuestion.id));
+    const nextIndex = direction === "next" ? index + 1 : index - 1;
+    if (nextIndex < 0 || nextIndex >= visibleQuestions.length) return;
+    openQuestion(visibleQuestions[nextIndex]);
+    $("questionDialogBody").scrollTop = 0;
   }
 
   function getResponse(question) {
