@@ -100,6 +100,40 @@ const esc = s =>
     "'": "&#39;"
   }[c]));
 
+function showAdminConfirm({ title = "Confirm action", message = "Are you sure you want to continue?", confirmText = "Confirm" } = {}) {
+  const dialog = $("adminConfirmDialog");
+  if (!dialog) return Promise.resolve(window.confirm(message));
+  $("adminConfirmTitle").textContent = title;
+  $("adminConfirmMessage").textContent = message;
+  $("adminConfirmAccept").textContent = confirmText;
+
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      $("adminConfirmAccept").removeEventListener("click", accept);
+      $("adminConfirmCancel").removeEventListener("click", cancel);
+      $("adminConfirmClose").removeEventListener("click", cancel);
+      dialog.removeEventListener("cancel", onCancel);
+      dialog.removeEventListener("close", onClose);
+      if (dialog.open) dialog.close();
+      resolve(value);
+    };
+    const accept = () => finish(true);
+    const cancel = () => finish(false);
+    const onCancel = event => { event.preventDefault(); finish(false); };
+    const onClose = () => finish(false);
+
+    $("adminConfirmAccept").addEventListener("click", accept);
+    $("adminConfirmCancel").addEventListener("click", cancel);
+    $("adminConfirmClose").addEventListener("click", cancel);
+    dialog.addEventListener("cancel", onCancel);
+    dialog.addEventListener("close", onClose);
+    dialog.showModal();
+  });
+}
+
 const FIGURE_EXTENSIONS = Object.freeze({
   "image/png": "png",
   "image/jpeg": "jpg",
@@ -1337,7 +1371,11 @@ $("selectAllQuestions").addEventListener("change", event => {
 $("publishSelectedQuestions").addEventListener("click", async () => {
   const ids = [...selectedQuestionIds];
   if (!ids.length) return;
-  if (!confirm("Toggle the published/draft status of " + ids.length + " selected question(s)?")) return;
+  if (!await showAdminConfirm({
+    title: "Update selected questions",
+    message: "You are about to switch the publication status of " + ids.length + " selected questions. Published questions will become drafts, and draft questions will be published.",
+    confirmText: "Update status"
+  })) return;
   const button = $("publishSelectedQuestions");
   button.disabled = true;
   button.textContent = "Updating…";
@@ -1360,7 +1398,11 @@ $("publishCategoryQuestions").addEventListener("click", async () => {
   const category = $("categoryFilter").value;
   if (!category) return;
   const label = categoryLabels[category] || category.replaceAll("_", " ");
-  if (!confirm("Toggle the published/draft status of every question in " + label + "?")) return;
+  if (!await showAdminConfirm({
+    title: "Update topic question status",
+    message: "You are about to switch the publication status of every question in " + label + ". Published questions will become drafts, and draft questions will be published.",
+    confirmText: "Update status"
+  })) return;
   const button = $("publishCategoryQuestions");
   button.disabled = true;
   button.textContent = "Updating…";
