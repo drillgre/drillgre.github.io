@@ -14,7 +14,7 @@
 </head>
 <body>
 <main class="layout-wrap">
-<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px"><a href="/admin.html" style="font-weight:800;text-decoration:none;color:inherit">← Admin workspace</a><a href="/dashboard.html" target="_blank" rel="noopener">Preview learner dashboard ↗</a></div>
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px"><a href="/admin.html" style="font-weight:800;text-decoration:none;color:inherit">← Admin workspace</a><a href="/dashboard.html?admin_preview=1" target="_blank" rel="noopener">Preview learner dashboard ↗</a></div>
 <section id="layoutLoading" class="layout-panel"><h1>Dashboard layout</h1><p>Checking administrator access…</p></section>
 <section id="layoutLogin" class="layout-panel"><h1>Administrator access required</h1><p>Please sign in with your administrator account in the Admin workspace, then reopen this page.</p><a href="/admin.html">Open Admin workspace</a></section>
 <section id="layoutEditor" class="layout-panel" hidden>
@@ -22,7 +22,7 @@
 <h1>Arrange dashboard sections</h1>
 <p class="layout-help">Drag the sections into the order you want. This saved arrangement will apply to every learner across devices. Learners cannot change the global order.</p>
 <div id="layoutList" class="layout-list"></div>
-<div class="layout-actions"><button id="saveLayout">Save layout for all learners</button><button id="resetLayout" class="secondary">Reset to default</button><a href="/dashboard.html" target="_blank" rel="noopener" class="secondary">Preview dashboard</a></div>
+<div class="layout-actions"><button id="saveLayout">Save layout for all learners</button><button id="resetLayout" class="secondary">Reset to default</button><a href="/dashboard.html?admin_preview=1" target="_blank" rel="noopener" class="secondary">Preview dashboard</a></div>
 <p id="layoutStatus" class="layout-status" role="status" aria-live="polite"></p>
 </section>
 </main>
