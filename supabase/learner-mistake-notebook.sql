@@ -6,12 +6,17 @@ create table if not exists public.gre_learner_mistake_notes (
   learner_id uuid not null references auth.users(id) on delete cascade,
   question_id text not null,
   note text not null default '',
+  reason text check (reason in ('conceptual_misunderstanding','calculation_error','misread_question','time_management','incorrect_strategy','careless_error','other')),
   status text not null default 'review'
     check (status in ('review','mastered')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (learner_id, question_id)
 );
+
+alter table public.gre_learner_mistake_notes
+  add column if not exists reason text
+  check (reason in ('conceptual_misunderstanding','calculation_error','misread_question','time_management','incorrect_strategy','careless_error','other'));
 
 alter table public.gre_learner_mistake_notes enable row level security;
 revoke all on public.gre_learner_mistake_notes from public, anon, authenticated;
@@ -108,6 +113,7 @@ begin
     'question',m.snapshot,
     'stimulus',s.stimulus_text,
     'note',coalesce(n.note,''),
+    'reason',n.reason,
     'status',coalesce(n.status,'review'),
     'updated_at',n.updated_at
   ) order by m.occurred_at desc),'[]'::jsonb)
