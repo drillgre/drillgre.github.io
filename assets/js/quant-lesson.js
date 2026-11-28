@@ -341,13 +341,34 @@
       return;
     }
 
-    let lessonQuery = db
-      .from("lessons")
-      .select("id,title,slug,module_id,sort_order,published,content,modules(id,title,slug)")
-      .eq("published",true);
-    // Use readable lesson slugs for new links. Keep UUID support for older bookmarks.
-    lessonQuery = lessonSlug ? lessonQuery.eq("slug",lessonSlug) : lessonQuery.eq("id",legacyId);
-    const {data:lesson,error} = await lessonQuery.single();
+    const lessonSelect = "id,title,slug,module_id,sort_order,published,content,modules(id,title,slug)";
+    const lookupLesson = async (includeDrafts = false) => {
+      let query = db.from("lessons").select(lessonSelect);
+      if (!includeDrafts) query = query.eq("published", true);
+      query = lessonSlug ? query.eq("slug", lessonSlug) : query.eq("id", legacyId);
+      return query.maybeSingle();
+    };
+
+    // Public visitors can only read published lessons. An authenticated
+    // DrillGRE administrator may explicitly open draft lessons from Admin.
+    let { data: lesson, error } = await lookupLesson(false);
+    const wantsAdminView = params.get("admin") === "1";
+    if ((!lesson || error) && wantsAdminView) {
+      const { data: authData } = await db.auth.getUser();
+      const currentUser = authData?.user;
+      if (currentUser) {
+        const { data: profile } = await db
+          .from("profiles")
+          .select("role")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+        if (profile?.role === "admin") {
+          const adminResult = await lookupLesson(true);
+          lesson = adminResult.data;
+          error = adminResult.error;
+        }
+      }
+    }
 
     // Convert legacy UUID links to the readable slug URL after resolving the lesson.
     if (legacyId && lesson?.slug) {
