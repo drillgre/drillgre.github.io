@@ -2576,7 +2576,7 @@ async function validateCoursePackage() {
       if (error) throw new Error("Could not check existing questions: " + error.message);
       (data || []).forEach(item => existingQuestionByKey.set(
         String(item.question_type) + "::" +
-        String(item.question_text || "").trim().toLowerCase().replace(/\\s+/g, " "),
+        String(item.question_text || "").trim().toLowerCase().replace(/\s+/g, " "),
         item
       ));
       if (!data || data.length < 1000) break;
