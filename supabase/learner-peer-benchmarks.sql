@@ -111,7 +111,7 @@ begin
   ),
   cohort as (
     select * from learner_metrics
-    where completed_mocks > 0 or scored_answers >= 10
+    where completed_mocks > 0 or scored_answers >= 10 or study_hours > 0
   ),
   distribution as (
     select count(*)::integer as cohort_size,
@@ -148,7 +148,7 @@ begin
     'active_learners',d.cohort_size,
     'minimum_cohort_size',10,
     'cohort_sufficient',d.cohort_size >= 10,
-    'eligibility_rule','At least one completed mock or 10 scored answers',
+    'eligibility_rule','At least one completed mock, 10 scored answers, or recorded study activity',
     'my_metrics',jsonb_build_object(
       'scored_answers',me.scored_answers,
       'accuracy',me.accuracy,
