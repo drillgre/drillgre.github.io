@@ -12,7 +12,7 @@
   <script defer src="assets/js/learner-peer-benchmarks.js?v=20261128-peer1"></script>
   <script defer src="assets/js/learner-lessons.js?v=20261128-lesson1"></script>
   <script defer src="assets/js/learner-quant-analytics.js?v=20261128-performance-reasons"></script>
-  <script defer src="assets/js/learner-mistake-notebook.js?v=20261128-reason-tags"></script>
+  <script defer src="assets/js/learner-mistake-notebook.js?v=20261128-diagnostics-lightbox"></script>
   <script defer src="assets/js/learner-vocabulary-progress.js?v=20261126-1"></script>
   <script defer src="assets/js/learner-study-plan.js?v=20261126-1"></script>
   <style>
@@ -59,6 +59,7 @@ html{scroll-behavior:smooth}
     .mistake-filter{border:1px solid var(--line);background:#fff;color:var(--muted);padding:8px 11px;border-radius:8px;font-size:11px;font-weight:750;cursor:pointer}
     .mistake-filter.active{background:#edf2ff;border-color:#b8c8f8;color:#244fc1}
     #mistakeSearch{max-width:260px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit;font-size:12px}
+    .mistake-diagnostics{border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}.mistake-diagnostics h3{font-size:15px;margin:0 0 4px}.mistake-diagnostics>p{font-size:11px;color:var(--muted);margin:0 0 12px}.mistake-diagnostic-wrap{overflow-x:auto}.mistake-diagnostic-table{border-collapse:collapse;width:100%;min-width:850px;font-size:11px}.mistake-diagnostic-table th,.mistake-diagnostic-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}.mistake-diagnostic-table thead th{background:#f7f9fd;color:var(--muted);font-weight:800}.mistake-diagnostic-table th:first-child,.mistake-diagnostic-table td:first-child{text-align:left}.mistake-diagnostic-table td span{color:var(--muted);font-size:10px}.mistake-question-link{display:block;text-align:left;border:0;background:none;padding:0;color:var(--ink);font:inherit;font-size:13px;line-height:1.65;margin:12px 0;cursor:pointer}.mistake-question-link:hover{color:var(--blue);text-decoration:underline}.mistake-reason-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mistake-reason-line label{font-size:11px;font-weight:800}.mistake-reason{max-width:280px;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:inherit;font-size:11px}.mistake-reason-status{font-size:10px;color:var(--muted)}.mistake-dialog-meta{font-size:11px;color:var(--muted);margin-bottom:12px}.mistake-dialog-question{font-size:15px;line-height:1.7;white-space:pre-wrap;margin:12px 0 18px}.mistake-dialog-figure{display:block;max-width:100%;height:auto;margin:12px auto;border-radius:8px}.mistake-dialog-body section{margin:14px 0}.mistake-dialog-body h3{font-size:13px;margin:0 0 6px}.mistake-dialog-body pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:12px;background:#f7f9fd;padding:10px;border-radius:8px}.mistake-dialog-body p{font-size:12px;line-height:1.6;white-space:pre-wrap}
     .mistake-card{border:1px solid var(--line);border-radius:12px;padding:16px;margin:10px 0}
     .mistake-card-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
     .mistake-meta{font-size:10px;color:var(--muted)}
@@ -429,7 +430,7 @@ html{scroll-behavior:smooth}
 </section>
     <section class="mistake-notebook" aria-labelledby="mistakeNotebookTitle">
       <div class="mistake-heading">
-        <div><div class="eyebrow">Learn from every attempt</div><h2 id="mistakeNotebookTitle">Mistake Notebook</h2><p class="account-muted">Review questions you missed, write down what you learned, and mark concepts you have mastered.</p></div>
+        <div><div class="eyebrow">Learn from every attempt</div><h2 id="mistakeNotebookTitle">Mistake Notebook</h2><p class="account-muted">Review missed questions, identify recurring error patterns, and track concepts you have mastered.</p></div>
         <div class="mistake-total"><strong id="mistakeTotal">0</strong><span>questions to revisit</span></div>
       </div>
       <div class="mistake-toolbar">
@@ -440,8 +441,10 @@ html{scroll-behavior:smooth}
         </div>
         <input id="mistakeSearch" type="search" placeholder="Search questions or topics" aria-label="Search mistakes">
       </div>
+      <div class="mistake-diagnostics"><h3>Mistake diagnostics</h3><p>Number of mistakes by topic and reason. Percentages are calculated within each topic.</p><div id="mistakeDiagnostics"></div></div>
       <div id="mistakeNotebookStatus" class="analytics-status">Loading your saved mistakes…</div>
       <div id="mistakeNotebookList" class="mistake-list" hidden></div>
+      <dialog id="mistakeQuestionDialog" class="bank-dialog" aria-labelledby="mistakeQuestionDialogTitle"><div class="bank-dialog-shell"><div class="bank-dialog-head"><div><div class="eyebrow">Mistake Notebook</div><h2 id="mistakeQuestionDialogTitle">Question review</h2></div><button id="closeMistakeQuestionDialog" class="bank-dialog-close" type="button" aria-label="Close question">×</button></div><div id="mistakeQuestionDialogBody" class="bank-dialog-body"></div></div></dialog>
     </section>
     <div class="dash-grid" id="dash-history">
       <div class="dash-stat"><strong id="lessonsCompleted">0</strong><span>Lessons completed</span></div>
