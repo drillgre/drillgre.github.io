@@ -399,27 +399,62 @@ async function loadLessons() {
 
   lessonsCache = data || [];
 
+  // Group lessons by their parent module/topic instead of mixing all lessons
+  // into one global list. Keep the existing lesson-level actions unchanged.
+  const lessonGroups = new Map();
+  lessonsCache.forEach(lesson => {
+    const groupId = String(lesson.module_id || "unassigned");
+    if (!lessonGroups.has(groupId)) {
+      lessonGroups.set(groupId, {
+        title: lesson.modules?.title || "Unassigned topic",
+        lessons: []
+      });
+    }
+    lessonGroups.get(groupId).lessons.push(lesson);
+  });
+
+  const sortedGroups = [...lessonGroups.entries()].sort((a, b) =>
+    a[1].title.localeCompare(b[1].title)
+  );
+
   $("lessonList").innerHTML = lessonsCache.length
-    ? lessonsCache.map(l => `
-      <div class="entry">
-        <div>
-          <strong>${esc(l.title)}</strong>
-          <div class="meta">
-            ${esc(l.modules?.title || "Module")}
-            · ${l.published ? "Published" : "Draft"}
-            · order ${l.sort_order}
-            ${l.content?.video_url ? " · YouTube video" : ""}
-          </div>
-        </div>
-        <div class="buttons">
-          <button type="button" data-edit="${l.id}">Edit</button>
-          <button type="button" data-pub="${l.id}">
-            ${l.published ? "Unpublish" : "Publish"}
-          </button>
-          <button type="button" class="del" data-del="${l.id}">Delete</button>
-        </div>
-      </div>
-    `).join("")
+    ? sortedGroups.map(([groupId, group]) => {
+        const publishedCount = group.lessons.filter(lesson => lesson.published).length;
+        const draftCount = group.lessons.length - publishedCount;
+        const lessonCards = group.lessons
+          .slice()
+          .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
+            String(a.title).localeCompare(String(b.title)))
+          .map(l => `
+            <div class="entry">
+              <div>
+                <strong>${esc(l.title)}</strong>
+                <div class="meta">
+                  ${l.published ? "Published" : "Draft"}
+                  · order ${l.sort_order}
+                  ${l.content?.video_url ? " · YouTube video" : ""}
+                </div>
+              </div>
+              <div class="buttons">
+                <button type="button" data-edit="${l.id}">Edit</button>
+                <button type="button" data-pub="${l.id}">
+                  ${l.published ? "Unpublish" : "Publish"}
+                </button>
+                <button type="button" class="del" data-del="${l.id}">Delete</button>
+              </div>
+            </div>
+          `).join("");
+
+        return `
+          <section class="lesson-topic-group" data-topic-group="${esc(groupId)}" style="margin:0 0 26px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:10px;background:#eef3ff;border:1px solid #dbe5ff;border-radius:12px">
+              <strong style="font-size:16px;color:#173b78">${esc(group.title)}</strong>
+              <span class="meta">${group.lessons.length} lessons · ${publishedCount} published · ${draftCount} drafts</span>
+            </div>
+            <div class="lesson-topic-items">${lessonCards}</div>
+          </section>
+        `;
+      }).join("")
     : "<p>No lessons yet. Create your first lesson.</p>";
 
   $("lessonList").querySelectorAll("[data-edit]").forEach(button => {
