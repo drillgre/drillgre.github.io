@@ -13,6 +13,11 @@
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
   }[ch]));
   const pretty = value => String(value || "Unclassified").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
+  const parseChoices = value => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch (_) { return value.split(/\\r?\\n/).filter(Boolean).map((text,index)=>({label:String.fromCharCode(65+index),text})); } }
+    return [];
+  };
   const jsonText = value => {
     if (value == null) return "Not available in the saved record";
     if (typeof value === "string") return value;
@@ -127,7 +132,8 @@
     const q = item.question || {};
     const body = $("mistakeQuestionDialogBody");
     const figure = q.figure_url || item.stimulus_figure_url || "";
-    const options = q.options ? '<section><h3>Answer options</h3><pre>'+safe(jsonText(q.options))+'</pre></section>' : "";
+    const choices = parseChoices(q.options);
+    const options = choices.length ? '<section class="mistake-dialog-options"><h3>Answer options</h3><div>'+choices.map((choice,index)=>'<div class="mistake-dialog-option"><strong>'+safe(choice.label || String.fromCharCode(65+index))+'</strong><span>'+safe(choice.text ?? choice.value ?? choice)'+'</span></div>').join("")+'</div></section>' : "";
     const stimulus = item.stimulus ? '<section><h3>Data / stimulus</h3><p>'+safe(item.stimulus)+'</p></section>' : "";
     body.innerHTML = '<div class="mistake-dialog-meta">'+safe(pretty(q.topic_category || q.topic))+' · '+safe(pretty(q.subtopic))+'</div>' +
       stimulus + (figure ? '<img class="mistake-dialog-figure" src="'+safe(figure)+'" alt="Question figure">' : '') +
@@ -136,6 +142,7 @@
       '<section><h3>Correct answer</h3><pre>'+safe(jsonText(q.correct_answer))+'</pre></section>' +
       (q.explanation ? '<section><h3>Explanation</h3><p>'+safe(q.explanation)+'</p></section>' : '');
     $("mistakeQuestionDialog").showModal();
+    window.DrillGREMath?.render(body);
   }
 
   async function load() {
