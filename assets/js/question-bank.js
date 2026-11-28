@@ -515,6 +515,37 @@
       : "Your answer was incorrect. This question is marked Review. Try again when you are ready.";
   }
 
+  const MISTAKE_REASONS = [
+    ["conceptual_misunderstanding","Conceptual misunderstanding"],
+    ["calculation_error","Calculation error"],
+    ["misread_question","Misreading the question"],
+    ["time_management","Time management"],
+    ["incorrect_strategy","Incorrect strategy"],
+    ["careless_error","Careless error"],
+    ["other","Other"]
+  ];
+
+  function mistakeReasonMarkup(questionId) {
+    return '<div class="bank-mistake-reason" data-mistake-question="' + esc(questionId) + '">' +
+      '<label>Why did you make this mistake?</label>' +
+      '<select class="mistake-reason-select"><option value="">Select a reason</option>' +
+      MISTAKE_REASONS.map(([value,label]) => '<option value="' + value + '">' + label + '</option>').join("") +
+      '</select><button type="button" class="bank-check bank-save-mistake">Save reason</button>' +
+      '<span class="attempt-meta mistake-save-status" aria-live="polite"></span></div>';
+  }
+
+  async function saveMistakeReason(questionId,reason,statusNode,button) {
+    const {data:sessionData} = await db.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (!user) throw new Error("Sign in to save mistake reasons to your learner dashboard.");
+    button.disabled = true;
+    const {error} = await db.from("gre_learner_mistake_notes").upsert({
+      learner_id:user.id, question_id:String(questionId), reason, updated_at:new Date().toISOString()
+    },{onConflict:"learner_id,question_id"});
+    if (error) throw error;
+    statusNode.textContent = "Saved to your learner dashboard.";
+  }
+
   async function checkCurrentAnswer() {
     if (!currentQuestion) return;
     const button = $("checkQuestionBankAnswer");
@@ -553,6 +584,20 @@
       button.textContent = grade.correct ? "Done" : "Try again";
       button.disabled = !!grade.correct;
       $("questionDialogBody").querySelectorAll("input").forEach(input => input.disabled = !!grade.correct);
+      if (!grade.correct) {
+        const oldReason = $("questionDialogBody").querySelector(".bank-mistake-reason");
+        if (oldReason) oldReason.remove();
+        feedback.insertAdjacentHTML("afterend",mistakeReasonMarkup(currentQuestion.id));
+        const reasonBox = $("questionDialogBody").querySelector(".bank-mistake-reason");
+        reasonBox.querySelector(".bank-save-mistake").addEventListener("click",async () => {
+          const select = reasonBox.querySelector(".mistake-reason-select");
+          const statusNode = reasonBox.querySelector(".mistake-save-status");
+          if (!select.value) { statusNode.textContent = "Please select a reason."; return; }
+          const saveButton = reasonBox.querySelector(".bank-save-mistake");
+          try { await saveMistakeReason(currentQuestion.id,select.value,statusNode,saveButton); }
+          catch (saveError) { statusNode.textContent = saveError.message || "Could not save this reason."; saveButton.disabled = false; }
+        });
+      }
     } catch (error) {
       feedback.className = "bank-feedback incorrect";
       feedback.textContent = "We could not check or save this question. " + (error.message || "Please try again.");
