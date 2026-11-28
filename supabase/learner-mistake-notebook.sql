@@ -116,6 +116,7 @@ begin
     'source',m.source,
     'question',m.snapshot,
     'stimulus',s.stimulus_text,
+    'stimulus_figure_url',s.figure_url,
     'note',coalesce(n.note,''),
     'reason',n.reason,
     'status',coalesce(n.status,'review'),
