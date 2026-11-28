@@ -78,7 +78,7 @@
         </div>
         <div class="module-lessons">
           ${module.lessons.map((lesson, lessonIndex) => `
-            <a href="lesson.html?id=${encodeURIComponent(lesson.id)}" data-progress-id="lesson-${esc(lesson.id)}">
+            <a href="lesson.html?slug=${encodeURIComponent(lesson.slug)}" data-progress-id="lesson-${esc(lesson.id)}">
               <span class="num">${String(lessonIndex + 1).padStart(2,"0")}</span>
               <span class="lesson-link-title">${esc(lesson.title)}</span>
               <span class="lesson-progress-check" aria-label="Lesson not completed"></span>
