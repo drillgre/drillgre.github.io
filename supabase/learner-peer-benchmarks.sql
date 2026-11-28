@@ -110,6 +110,10 @@ begin
   ),
   distribution as (
     select count(*)::integer as cohort_size,
+      count(accuracy)::integer as accuracy_n,
+      count(questions_per_minute)::integer as speed_n,
+      count(best_mock_score)::integer as score_n,
+      count(*)::integer as hours_n,
       percentile_cont(0.50) within group(order by accuracy) filter(where accuracy is not null) as accuracy_p50,
       percentile_cont(0.75) within group(order by accuracy) filter(where accuracy is not null) as accuracy_p75,
       percentile_cont(0.50) within group(order by questions_per_minute) filter(where questions_per_minute is not null) as speed_p50,
@@ -148,16 +152,16 @@ begin
       'recorded_study_hours',round(me.study_hours,2)
     ),
     'percentiles',jsonb_build_object(
-      'accuracy',case when d.cohort_size>=10 then round(r.accuracy_percentile,1) end,
-      'speed',case when d.cohort_size>=10 then round(r.speed_percentile,1) end,
-      'best_mock_score',case when d.cohort_size>=10 then round(r.score_percentile,1) end,
-      'study_hours',case when d.cohort_size>=10 then round(r.hours_percentile,1) end
+      'accuracy',case when d.accuracy_n>=10 then round(r.accuracy_percentile,1) end,
+      'speed',case when d.speed_n>=10 then round(r.speed_percentile,1) end,
+      'best_mock_score',case when d.score_n>=10 then round(r.score_percentile,1) end,
+      'study_hours',case when d.hours_n>=10 then round(r.hours_percentile,1) end
     ),
     'benchmarks',jsonb_build_object(
-      'accuracy_p50',round(d.accuracy_p50::numeric,1),'accuracy_p75',round(d.accuracy_p75::numeric,1),
-      'speed_p50',round(d.speed_p50::numeric,2),'speed_p75',round(d.speed_p75::numeric,2),
-      'score_p50',round(d.score_p50::numeric,1),'score_p75',round(d.score_p75::numeric,1),
-      'hours_p50',round(d.hours_p50::numeric,2),'hours_p75',round(d.hours_p75::numeric,2)
+      'accuracy_p50',case when d.accuracy_n>=10 then round(d.accuracy_p50::numeric,1) end,'accuracy_p75',case when d.accuracy_n>=10 then round(d.accuracy_p75::numeric,1) end,
+      'speed_p50',case when d.speed_n>=10 then round(d.speed_p50::numeric,2) end,'speed_p75',case when d.speed_n>=10 then round(d.speed_p75::numeric,2) end,
+      'score_p50',case when d.score_n>=10 then round(d.score_p50::numeric,1) end,'score_p75',case when d.score_n>=10 then round(d.score_p75::numeric,1) end,
+      'hours_p50',case when d.hours_n>=10 then round(d.hours_p50::numeric,2) end,'hours_p75',case when d.hours_n>=10 then round(d.hours_p75::numeric,2) end
     )
   ) into v_result
   from distribution d cross join me cross join ranks r;
