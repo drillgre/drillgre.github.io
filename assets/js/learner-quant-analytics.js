@@ -64,13 +64,13 @@
     subtopicWeak.slice(0,1).forEach(s => items.push({
       title: "Target " + label(s.subtopic),
       body: label(s.topic) + " subtopic accuracy is " + percent(s.accuracy) + " across " + number(s.answered) + " answers. Revisit the method and practise this specific skill.",
-      href: "/quant/quiz.html",
-      action: "Practise Quant topics"
+      href: "/quant/quiz.html?focus=" + encodeURIComponent(t.topic + "::" + s.subtopic),
+      action: "Practise this subtopic"
     }));
     weak.slice(0,2).forEach(t => items.push({
       title: "Prioritise " + label(t.topic),
       body: "Your current accuracy is " + percent(t.accuracy) + " across " + number(t.answered) + " recorded answers. Review the concepts, then complete a focused practice set.",
-      href: "/quant/quiz.html",
+      href: "/quant/quiz.html?topic=" + encodeURIComponent(t.topic),
       action: "Build a focused quiz"
     }));
     if (!weak.length && eligible.length) {
@@ -78,7 +78,7 @@
       if (mid) items.push({
         title: "Strengthen " + label(mid.topic),
         body: "You are at " + percent(mid.accuracy) + ". A short targeted session can help make this performance more consistent.",
-        href: "/quant/quiz.html", action: "Practise this topic"
+        href: "/quant/quiz.html?topic=" + encodeURIComponent(mid.topic), action: "Practise this topic"
       });
     }
     if (strong.length) items.push({
