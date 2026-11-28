@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Dashboard Layout Settings | DrillGRE Admin</title>
+<link rel="stylesheet" href="/assets/css/lms.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/js/database-loader.js"></script>
+<style>
+.layout-wrap{max-width:900px;margin:36px auto;padding:0 18px}.layout-panel{background:#fff;border:1px solid #dfe4ed;border-radius:16px;padding:24px}.layout-list{display:grid;gap:9px;margin:20px 0}.layout-item{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #dfe4ed;border-radius:10px;background:#fbfcff;cursor:grab}.layout-item:active{cursor:grabbing}.layout-item.dragging{opacity:.45}.layout-item.over{border:2px dashed #4169d8}.layout-grip{font-size:20px;color:#71809a}.layout-name{font-weight:750}.layout-help{font-size:13px;color:#64748b;line-height:1.6}.layout-actions{display:flex;gap:9px;flex-wrap:wrap}.layout-actions button,.layout-actions a{border:0;border-radius:8px;padding:11px 15px;background:#315bd6;color:#fff;font-weight:750;text-decoration:none;cursor:pointer}.layout-actions .secondary{background:#edf1f7;color:#27344b}.layout-status{font-size:13px;margin-top:14px;color:#315bd6}#layoutLogin{display:none}
+</style>
+</head>
+<body>
+<main class="layout-wrap">
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px"><a href="/admin.html" style="font-weight:800;text-decoration:none;color:inherit">← Admin workspace</a><a href="/dashboard.html" target="_blank" rel="noopener">Preview learner dashboard ↗</a></div>
+<section id="layoutLoading" class="layout-panel"><h1>Dashboard layout</h1><p>Checking administrator access…</p></section>
+<section id="layoutLogin" class="layout-panel"><h1>Administrator access required</h1><p>Please sign in with your administrator account in the Admin workspace, then reopen this page.</p><a href="/admin.html">Open Admin workspace</a></section>
+<section id="layoutEditor" class="layout-panel" hidden>
+<small style="font-weight:800;color:#315bd6">GLOBAL LEARNER DASHBOARD</small>
+<h1>Arrange dashboard sections</h1>
+<p class="layout-help">Drag the sections into the order you want. This saved arrangement will apply to every learner across devices. Learners cannot change the global order.</p>
+<div id="layoutList" class="layout-list"></div>
+<div class="layout-actions"><button id="saveLayout">Save layout for all learners</button><button id="resetLayout" class="secondary">Reset to default</button><a href="/dashboard.html" target="_blank" rel="noopener" class="secondary">Preview dashboard</a></div>
+<p id="layoutStatus" class="layout-status" role="status" aria-live="polite"></p>
+</section>
+</main>
+<script>
+(() => {
+"use strict";
+const SUPABASE_URL="https://aayzpcfryixauwsytphd.supabase.co";
+const SUPABASE_KEY="sb_publishable_hdrTlMQ0yEIzHYzJMOBDIQ_u0rWfRNz";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const DEFAULT=[
+["study-activity","Study activity"],["mistake-intelligence","Mistake intelligence"],
+["topic-performance","Topic performance"],["question-type-performance","Question-type performance"],
+["practice-priorities","Your next practice priorities"],["weekly-trend","Weekly practice trend"],
+["practice-sources","Practice sources"],["mock-score-progression","Mock score progression"]
+];
+let order=DEFAULT.map(x=>x[0]);
+const names=new Map(DEFAULT);
+const $=id=>document.getElementById(id);
+function render(){
+ $("layoutList").innerHTML=order.map(id=>'<div class="layout-item" draggable="true" data-id="'+id+'"><span class="layout-grip" aria-hidden="true">⠿</span><span class="layout-name">'+names.get(id)+'</span></div>').join("");
+ let dragged=null;
+ $("layoutList").querySelectorAll(".layout-item").forEach(item=>{
+  item.addEventListener("dragstart",e=>{dragged=item;item.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",item.dataset.id)});
+  item.addEventListener("dragover",e=>{if(!dragged||dragged===item)return;e.preventDefault();item.classList.add("over")});
+  item.addEventListener("dragleave",()=>item.classList.remove("over"));
+  item.addEventListener("drop",e=>{e.preventDefault();item.classList.remove("over");if(!dragged||dragged===item)return;const rect=item.getBoundingClientRect();item.parentNode.insertBefore(dragged,e.clientY>rect.top+rect.height/2?item.nextSibling:item);order=[...$("layoutList").querySelectorAll(".layout-item")].map(el=>el.dataset.id)});
+  item.addEventListener("dragend",()=>{dragged=null;$("layoutList").querySelectorAll(".layout-item").forEach(el=>el.classList.remove("dragging","over"));order=[...$("layoutList").querySelectorAll(".layout-item")].map(el=>el.dataset.id)});
+ });
+}
+async function init(){
+ try{
+  const {data:{session}}=await db.auth.getSession();
+  if(!session){$("layoutLoading").hidden=true;$("layoutLogin").style.display="block";return}
+  const {data:profile,error}=await db.from("profiles").select("role").eq("id",session.user.id).maybeSingle();
+  if(error||profile?.role!=="admin"){$("layoutLoading").hidden=true;$("layoutLogin").style.display="block";return}
+  const {data,error:settingsError}=await db.from("gre_dashboard_settings").select("layout").eq("id",1).maybeSingle();
+  if(!settingsError&&Array.isArray(data?.layout)){const valid=data.layout.filter(id=>names.has(id));order=[...valid,...DEFAULT.map(x=>x[0]).filter(id=>!valid.includes(id))]}
+  $("layoutLoading").hidden=true;$("layoutEditor").hidden=false;render();
+ }catch(e){$("layoutLoading").innerHTML="<h1>Unable to load layout settings</h1><p>"+String(e.message||e)+"</p>"}
+}
+$("saveLayout").addEventListener("click",async()=>{
+ const b=$("saveLayout");b.disabled=true;$("layoutStatus").textContent="Saving…";
+ try{const {error}=await db.from("gre_dashboard_settings").upsert({id:1,layout:order,updated_at:new Date().toISOString()},{onConflict:"id"});if(error)throw error;$("layoutStatus").textContent="Saved. All learners will now see this order."}
+ catch(e){$("layoutStatus").textContent="Could not save: "+(e.message||"Please try again.")}
+ finally{b.disabled=false}
+});
+$("resetLayout").addEventListener("click",()=>{order=DEFAULT.map(x=>x[0]);render();$("layoutStatus").textContent="Default order restored in preview. Click Save layout for all learners to publish it."});
+init();
+})();
+</script>
+</body>
+</html>
