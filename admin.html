@@ -682,7 +682,8 @@
       <button type="button" class="x" data-close="importCoursePackageDialog">×</button>
     </div>
     <div class="panel" style="padding:14px;margin:12px 0">
-      <label style="display:block">Course package (.json)
+      <div class="actions" style="justify-content:flex-start;margin-top:0"><button type="button" class="secondary" id="downloadCoursePackageExample">Download sample package</button></div>
+      <label style="display:block;margin-top:12px">Course package (.json)
         <input id="coursePackageFile" type="file" accept=".json,application/json" style="display:block;margin-top:6px">
       </label>
       <p class="field-note">Existing lessons are matched by slug and their content is never overwritten. New lessons and questions are imported as drafts. Duplicate questions are skipped. Review the preview before importing.</p>
