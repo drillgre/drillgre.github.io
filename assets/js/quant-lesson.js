@@ -55,8 +55,8 @@
 
     $("lessonContent").innerHTML = window.DOMPurify
       ? window.DOMPurify.sanitize(html, {
-          USE_PROFILES: { html: true },
-          ADD_ATTR: ["data-type","data-latex","class"]
+          USE_PROFILES: { html: true, svg: true, svgFilters: true },
+          ADD_ATTR: ["data-type","data-latex","class","role","aria-label","viewBox","preserveAspectRatio"]
         })
       : esc(html);
 
