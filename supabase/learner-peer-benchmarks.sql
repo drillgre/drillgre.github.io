@@ -83,6 +83,10 @@ begin
       and completed_at is not null and started_at is not null
     group by learner_id
   ),
+  lesson_rollup as (
+    select learner_id,coalesce(sum(active_seconds),0)::bigint as lesson_seconds
+    from public.gre_lesson_activity group by learner_id
+  ),
   bank_rollup as (
     select learner_id,
       coalesce(sum(greatest(0,least(coalesce(total_time_spent_seconds,0),3600))),0)::bigint as bank_seconds
@@ -96,12 +100,13 @@ begin
       case when ar.avg_seconds > 0 then 60.0/ar.avg_seconds end as questions_per_minute,
       mr.best_mock_score,
       coalesce(mr.completed_mocks,0) as completed_mocks,
-      (coalesce(mr.mock_seconds,0)+coalesce(qr.quiz_seconds,0)+coalesce(br.bank_seconds,0))::numeric/3600 as study_hours
+      (coalesce(mr.mock_seconds,0)+coalesce(qr.quiz_seconds,0)+coalesce(br.bank_seconds,0)+coalesce(lr.lesson_seconds,0))::numeric/3600 as study_hours
     from public.profiles p
     left join answer_rollup ar on ar.learner_id=p.id
     left join mock_rollup mr on mr.learner_id=p.id
     left join quiz_rollup qr on qr.learner_id=p.id
     left join bank_rollup br on br.learner_id=p.id
+    left join lesson_rollup lr on lr.learner_id=p.id
     where p.role='learner'
   ),
   cohort as (
