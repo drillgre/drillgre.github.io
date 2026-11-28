@@ -202,25 +202,41 @@
         return;
       }
       const button = event.target.closest('button[data-action="toggle"]');
-      if (!button) return;
+      if (!button || button.disabled) return;
       const card = button.closest(".mistake-card");
       const questionId = card?.dataset.questionId;
       const item = mistakes.find(x=>x.question_id===questionId);
       if (!item) return;
-      button.disabled = true;
-      const oldText = button.textContent;
-      button.textContent = "Saving…";
+
+      const previousStatus = item.status === "mastered" ? "mastered" : "review";
+      const nextStatus = previousStatus === "mastered" ? "review" : "mastered";
+      item.status = nextStatus;
+      render();
+
+      const updatedCard = $("mistakeNotebookList").querySelector('[data-question-id="' + CSS.escape(questionId) + '"]');
+      const updatedButton = updatedCard?.querySelector('button[data-action="toggle"]');
+      if (updatedButton) {
+        updatedButton.disabled = true;
+        updatedButton.textContent = "Saving…";
+        updatedButton.title = "Your change is being saved";
+      }
+
       try {
-        await saveMistake(questionId,{status:item.status==="mastered"?"review":"mastered"});
-        item.status = item.status==="mastered"?"review":"mastered";
-        render();
+        await saveMistake(questionId,{status:nextStatus});
+        const savedCard = $("mistakeNotebookList").querySelector('[data-question-id="' + CSS.escape(questionId) + '"]');
+        const savedButton = savedCard?.querySelector('button[data-action="toggle"]');
+        if (savedButton) {
+          savedButton.disabled = false;
+          savedButton.textContent = nextStatus === "mastered" ? "Move back to review" : "Mark as mastered";
+          savedButton.title = "Saved";
+        }
       } catch(error) {
-        button.disabled = false;
-        button.textContent = oldText;
+        item.status = previousStatus;
+        render();
         const status = $("mistakeNotebookStatus");
         status.hidden = false;
         status.classList.add("error");
-        status.textContent = "Could not save your change. " + (error.message || "");
+        status.textContent = "Could not save your change. " + (error.message || "Please try again.");
       }
     });
     $("closeMistakeQuestionDialog")?.addEventListener("click",()=>$("mistakeQuestionDialog").close());
