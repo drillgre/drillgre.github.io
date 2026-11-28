@@ -159,6 +159,110 @@
       : "Play your first round to start building your Word Archery record.");
   }
 
+
+  const DEFAULT_DASHBOARD_LAYOUT = [
+    "study-activity", "mistake-intelligence", "topic-performance",
+    "question-type-performance", "practice-priorities", "weekly-trend",
+    "practice-sources", "mock-score-progression"
+  ];
+
+  function dashboardCards() {
+    return Array.from(document.querySelectorAll(".insights-grid > .insight-card[data-layout-id]"));
+  }
+
+  function applyDashboardLayout(layout) {
+    const grid = document.querySelector(".insights-grid");
+    if (!grid) return;
+    const cards = dashboardCards();
+    const byId = new Map(cards.map(card => [card.dataset.layoutId, card]));
+    const ordered = [...(Array.isArray(layout) ? layout : []), ...DEFAULT_DASHBOARD_LAYOUT]
+      .filter((id, index, all) => all.indexOf(id) === index && byId.has(id));
+    ordered.forEach(id => grid.appendChild(byId.get(id)));
+  }
+
+  async function fetchDashboardLayout() {
+    const { data, error } = await db.from("gre_dashboard_settings")
+      .select("layout").eq("id", 1).maybeSingle();
+    if (error) {
+      console.warn("Global dashboard layout could not be loaded; using default order.", error);
+      return DEFAULT_DASHBOARD_LAYOUT;
+    }
+    return Array.isArray(data?.layout) ? data.layout : DEFAULT_DASHBOARD_LAYOUT;
+  }
+
+  async function saveGlobalDashboardLayout(layout) {
+    const { error } = await db.from("gre_dashboard_settings").upsert({
+      id: 1, layout, updated_at: new Date().toISOString()
+    }, { onConflict: "id" });
+    if (error) throw error;
+  }
+
+  function enableDashboardLayoutEditor() {
+    const panel = $("dashboardLayoutAdmin");
+    const status = $("dashboardLayoutStatus");
+    if (!panel) return;
+    panel.hidden = false;
+    let dragged = null;
+    const cards = dashboardCards();
+    cards.forEach(card => {
+      card.draggable = true;
+      card.style.cursor = "grab";
+      card.addEventListener("dragstart", event => {
+        dragged = card;
+        card.classList.add("layout-dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", card.dataset.layoutId);
+      });
+      card.addEventListener("dragover", event => {
+        if (!dragged || dragged === card) return;
+        event.preventDefault();
+        card.classList.add("layout-drop-target");
+      });
+      card.addEventListener("dragleave", () => card.classList.remove("layout-drop-target"));
+      card.addEventListener("drop", event => {
+        event.preventDefault();
+        card.classList.remove("layout-drop-target");
+        if (!dragged || dragged === card) return;
+        const rect = card.getBoundingClientRect();
+        const after = event.clientY > rect.top + rect.height / 2;
+        card.parentNode.insertBefore(dragged, after ? card.nextSibling : card);
+      });
+      card.addEventListener("dragend", () => {
+        cards.forEach(item => item.classList.remove("layout-dragging", "layout-drop-target"));
+        dragged = null;
+      });
+    });
+
+    $("saveDashboardLayout")?.addEventListener("click", async () => {
+      const button = $("saveDashboardLayout");
+      button.disabled = true;
+      status.textContent = "Saving…";
+      try {
+        await saveGlobalDashboardLayout(dashboardCards().map(card => card.dataset.layoutId));
+        status.textContent = "Saved. All learners will see this layout.";
+      } catch (error) {
+        status.textContent = "Could not save: " + (error.message || "Please try again.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $("resetDashboardLayout")?.addEventListener("click", async () => {
+      const button = $("resetDashboardLayout");
+      button.disabled = true;
+      status.textContent = "Restoring default…";
+      try {
+        applyDashboardLayout(DEFAULT_DASHBOARD_LAYOUT);
+        await saveGlobalDashboardLayout(DEFAULT_DASHBOARD_LAYOUT);
+        status.textContent = "Default layout restored for all learners.";
+      } catch (error) {
+        status.textContent = "Could not reset: " + (error.message || "Please try again.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
   async function loadDashboard() {
     const { data:sessionData, error:sessionError } = await db.auth.getSession();
     const session = sessionData?.session;
@@ -174,10 +278,16 @@
       .maybeSingle();
 
     if (accessProfile?.role === "admin") {
-      window.location.replace("/admin.html");
+      $("dashboardContent").hidden = false;
+      $("quantAnalytics").hidden = false;
+      $("analyticsStatus").hidden = true;
+      applyDashboardLayout(await fetchDashboardLayout());
+      enableDashboardLayoutEditor();
+      setStatus("");
       return;
     }
 
+    applyDashboardLayout(await fetchDashboardLayout());
     setStatus("Loading your learner profile, learning progress, and assessment history…");
 
     // Attach guest attempts from this browser to the newly signed-in learner.
