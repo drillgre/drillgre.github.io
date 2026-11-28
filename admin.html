@@ -253,6 +253,24 @@
   </main>
 
 
+  <dialog id="topicRenameDialog" class="admin-dialog">
+    <form id="topicRenameForm">
+      <div class="dialoghead">
+        <h2>Rename topic</h2>
+        <button type="button" class="x" id="topicRenameClose">×</button>
+      </div>
+      <label>
+        Topic name
+        <input id="topicRenameInput" type="text" maxlength="120" required placeholder="Enter topic name">
+      </label>
+      <p id="topicRenameMsg" class="msg" aria-live="polite"></p>
+      <div class="actions">
+        <button type="button" class="secondary" id="topicRenameCancel">Cancel</button>
+        <button type="submit" id="topicRenameSave">Save topic name</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- ======================================================
        LESSON DIALOG
        ====================================================== -->
