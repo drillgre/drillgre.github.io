@@ -2258,6 +2258,289 @@ $("downloadQuestionExample").addEventListener("click", downloadQuestionCsvExampl
 $("validateQuestionImport").addEventListener("click", validateQuestionImport);
 $("runQuestionImport").addEventListener("click", runQuestionImport);
 
+
+
+// ============================================================
+// Unified course-package importer
+// One JSON file creates lessons and links their practice questions.
+// Existing lessons are matched by slug and are never overwritten.
+// ============================================================
+
+let coursePackagePlan = null;
+let coursePackageName = "";
+
+function coursePackageSlug(value) {
+  return String(value || "").trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function coursePackageHtml(content) {
+  if (typeof content === "string") return content;
+  if (content && typeof content.html === "string") return content.html;
+  if (content && typeof content.markdown === "string") return legacyMarkdownToHtml(content.markdown);
+  return "";
+}
+
+async function readCoursePackage(file) {
+  if (!file || !file.name.toLowerCase().endsWith(".json")) {
+    throw new Error("Choose a course-package .json file.");
+  }
+  if (file.size > 10 * 1024 * 1024) throw new Error("The package must be 10 MB or smaller.");
+  const parsed = JSON.parse(await file.text());
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("The package root must be a JSON object.");
+  }
+  return parsed;
+}
+
+async function validateCoursePackage() {
+  const file = $("coursePackageFile").files[0];
+  if (!file) {
+    message("coursePackageStatus", "Choose a course-package JSON file first.");
+    return;
+  }
+  $("validateCoursePackage").disabled = true;
+  $("runCoursePackage").disabled = true;
+  message("coursePackageStatus", "Reading package and checking lessons and questions…");
+
+  try {
+    const pkg = await readCoursePackage(file);
+    if (![1, "1"].includes(pkg.schema_version)) throw new Error("Unsupported schema_version. Use schema_version: 1.");
+    if (!pkg.module || typeof pkg.module !== "object") throw new Error("The package must include a module object.");
+    const moduleTitle = importText(pkg.module.title);
+    const moduleSlug = coursePackageSlug(pkg.module.slug || moduleTitle);
+    if (!moduleTitle || !moduleSlug) throw new Error("Module title and slug are required.");
+    if (!Array.isArray(pkg.lessons) || !pkg.lessons.length) throw new Error("Add at least one lesson to the lessons array.");
+
+    const { data: moduleRows, error: moduleError } = await db.from("modules")
+      .select("id,title,slug").eq("slug", moduleSlug).limit(1);
+    if (moduleError) throw new Error("Could not check the module: " + moduleError.message);
+    const existingModule = moduleRows?.[0] || null;
+
+    const { data: lessonRows, error: lessonError } = await db.from("lessons")
+      .select("id,title,slug,module_id").limit(5000);
+    if (lessonError) throw new Error("Could not check existing lessons: " + lessonError.message);
+    const lessonsBySlug = new Map((lessonRows || []).map(item => [item.slug, item]));
+
+    const { data: questionRows, error: questionError } = await db.from("questions")
+      .select("question_type,question_text").limit(10000);
+    if (questionError) throw new Error("Could not check existing questions: " + questionError.message);
+    const existingQuestionKeys = new Set((questionRows || []).map(item =>
+      String(item.question_type) + "::" +
+      String(item.question_text || "").trim().toLowerCase().replace(/\s+/g, " ")
+    ));
+
+    const planLessons = [];
+    const packageLessonSlugs = new Set();
+    const packageQuestionKeys = new Set();
+    let questionCount = 0;
+    let invalidCount = 0;
+    let duplicateCount = 0;
+
+    for (let i = 0; i < pkg.lessons.length; i++) {
+      const source = pkg.lessons[i] || {};
+      const title = importText(source.title);
+      const lessonSlug = coursePackageSlug(source.slug || title);
+      const htmlContent = coursePackageHtml(source.content);
+      const plainText = htmlContent.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
+      const errors = [];
+      if (!title) errors.push("Lesson title is required.");
+      if (!lessonSlug) errors.push("Lesson slug is required.");
+      if (packageLessonSlugs.has(lessonSlug)) errors.push("Duplicate lesson slug within this package.");
+      packageLessonSlugs.add(lessonSlug);
+      if (!plainText) errors.push("Lesson content is empty.");
+      const videoInput = importText(source.video_url || source.content?.video_url);
+      const videoUrl = videoInput ? getYouTubeEmbedUrl(videoInput) : null;
+      if (videoInput && !videoUrl) errors.push("Invalid YouTube video URL.");
+
+      const existingLesson = lessonsBySlug.get(lessonSlug) || null;
+      if (existingLesson && existingModule && existingLesson.module_id !== existingModule.id) {
+        errors.push("This lesson slug already exists under a different module.");
+      }
+      if (existingLesson && !existingModule) {
+        errors.push("This lesson already exists, but its module could not be matched.");
+      }
+
+      const rawQuestions = Array.isArray(source.questions) ? source.questions : [];
+      if (!Array.isArray(source.questions)) errors.push("Each lesson must contain a questions array.");
+      const parsedQuestions = rawQuestions.map((raw, qIndex) => {
+        const parsed = importQuestionRecord({
+          ...raw,
+          lesson_id: existingLesson?.id || "pending",
+          published: false
+        }, (i + 1) * 1000 + qIndex + 1);
+        parsed.record.published = false;
+        parsed.record.lesson_id = existingLesson?.id || null;
+        const key = String(parsed.record.question_type) + "::" +
+          String(parsed.record.question_text || "").trim().toLowerCase().replace(/\s+/g, " ");
+        if (!parsed.errors.length) {
+          if (existingQuestionKeys.has(key) || packageQuestionKeys.has(key)) {
+            parsed.duplicate = true;
+            duplicateCount++;
+          }
+          packageQuestionKeys.add(key);
+        }
+        questionCount++;
+        if (parsed.errors.length) invalidCount++;
+        return parsed;
+      });
+
+      if (errors.length) invalidCount++;
+      planLessons.push({
+        title, slug: lessonSlug,
+        sort_order: Number.isInteger(Number(source.sort_order)) ? Number(source.sort_order) : i + 1,
+        html: htmlContent, video_url: videoUrl,
+        existingLesson, errors, questions: parsedQuestions
+      });
+    }
+
+    coursePackagePlan = {
+      module: { title: moduleTitle, slug: moduleSlug, existingModule },
+      lessons: planLessons,
+      validQuestions: planLessons.reduce((n, lesson) =>
+        n + lesson.questions.filter(q => !q.errors.length && !q.duplicate).length, 0),
+      questionCount
+    };
+    coursePackageName = file.name;
+    renderCoursePackagePreview();
+    const newLessons = planLessons.filter(x => !x.existingLesson).length;
+    const reusedLessons = planLessons.length - newLessons;
+    const invalidQuestions = planLessons.reduce((n, l) => n + l.questions.filter(q => q.errors.length).length, 0);
+    message("coursePackageStatus",
+      "Validated " + planLessons.length + " lessons (" + newLessons + " new, " + reusedLessons +
+      " existing) and " + questionCount + " questions. " + coursePackagePlan.validQuestions +
+      " new questions are ready; " + duplicateCount + " duplicates and " + invalidQuestions +
+      " invalid questions will be skipped.", true);
+    $("runCoursePackage").disabled = newLessons === 0 && coursePackagePlan.validQuestions === 0;
+  } catch (error) {
+    coursePackagePlan = null;
+    $("coursePackageSummary").hidden = true;
+    $("coursePackagePreview").innerHTML = "";
+    message("coursePackageStatus", error.message || "Could not validate this package.");
+  } finally {
+    $("validateCoursePackage").disabled = false;
+  }
+}
+
+function renderCoursePackagePreview() {
+  const plan = coursePackagePlan;
+  if (!plan) return;
+  const newLessons = plan.lessons.filter(x => !x.existingLesson).length;
+  const rows = plan.lessons.map(lesson => {
+    const valid = lesson.questions.filter(q => !q.errors.length && !q.duplicate).length;
+    const duplicates = lesson.questions.filter(q => q.duplicate).length;
+    const invalid = lesson.questions.filter(q => q.errors.length).length;
+    return "<tr style='border-top:1px solid #e2e8f0'>" +
+      "<td style='padding:8px;vertical-align:top'>" + esc(lesson.title) +
+      "<div class='field-note'>" + (lesson.existingLesson ? "Existing lesson, questions will be added" : "New lesson draft") +
+      (lesson.errors.length ? " · " + esc(lesson.errors.join(" ")) : "") + "</div></td>" +
+      "<td style='padding:8px;vertical-align:top'>" + lesson.questions.length + "</td>" +
+      "<td style='padding:8px;vertical-align:top'>" + valid + "</td>" +
+      "<td style='padding:8px;vertical-align:top'>" + duplicates + "</td>" +
+      "<td style='padding:8px;vertical-align:top'>" + invalid + "</td></tr>";
+  }).join("");
+  $("coursePackageSummary").hidden = false;
+  $("coursePackageSummary").innerHTML =
+    "<div class='panel' style='padding:12px;margin:12px 0'><strong>" + esc(plan.module.title) +
+    "</strong><div class='field-note'>" + newLessons + " new lessons · " +
+    (plan.lessons.length - newLessons) + " existing lessons · " +
+    plan.questionCount + " total questions · " + plan.validQuestions + " new questions ready</div></div>";
+  $("coursePackagePreview").innerHTML =
+    "<div style='overflow:auto'><table style='width:100%;border-collapse:collapse;font-size:13px'>" +
+    "<thead><tr><th style='text-align:left;padding:8px'>Lesson</th><th>Questions</th><th>Ready</th><th>Duplicates</th><th>Invalid</th></tr></thead>" +
+    "<tbody>" + rows + "</tbody></table></div>";
+}
+
+async function runCoursePackageImport() {
+  const plan = coursePackagePlan;
+  if (!plan) return;
+  const ready = plan.validQuestions;
+  const newLessons = plan.lessons.filter(x => !x.existingLesson).length;
+  if (!newLessons && !ready) return;
+  if (!confirm("Import " + newLessons + " new lesson(s) and " + ready +
+      " new question(s)? Existing lesson content will not be changed. All imported content will remain unpublished drafts.")) return;
+
+  $("runCoursePackage").disabled = true;
+  $("validateCoursePackage").disabled = true;
+  let moduleId = plan.module.existingModule?.id || null;
+  let lessonsCreated = 0;
+  let questionsCreated = 0;
+  const failures = [];
+
+  try {
+    if (!moduleId) {
+      const { data, error } = await db.from("modules").insert({
+        title: plan.module.title, slug: plan.module.slug,
+        sort_order: 0, published: false
+      }).select("id").single();
+      if (error) throw new Error("Module creation failed: " + error.message);
+      moduleId = data.id;
+    }
+
+    for (let i = 0; i < plan.lessons.length; i++) {
+      const lesson = plan.lessons[i];
+      let lessonId = lesson.existingLesson?.id || null;
+      if (!lessonId) {
+        $("runCoursePackage").textContent = "Creating lesson " + (i + 1) + " of " + plan.lessons.length + "…";
+        const { data, error } = await db.from("lessons").insert({
+          module_id: moduleId,
+          title: lesson.title,
+          slug: lesson.slug,
+          sort_order: lesson.sort_order,
+          published: false,
+          content: { html: lesson.html, video_url: lesson.video_url },
+          updated_at: new Date().toISOString()
+        }).select("id").single();
+        if (error) {
+          failures.push(lesson.title + ": lesson creation failed: " + error.message);
+          continue;
+        }
+        lessonId = data.id;
+        lessonsCreated++;
+      }
+
+      const questions = lesson.questions.filter(q => !q.errors.length && !q.duplicate);
+      for (let qIndex = 0; qIndex < questions.length; qIndex++) {
+        const item = questions[qIndex];
+        $("runCoursePackage").textContent = "Importing questions " + (questionsCreated + 1) + "…";
+        const record = { ...item.record, lesson_id: lessonId, published: false };
+        const { error } = await db.from("questions").insert(record);
+        if (error) failures.push(lesson.title + " question " + item.rowNumber + ": " + error.message);
+        else questionsCreated++;
+      }
+    }
+
+    await Promise.all([loadLessons(), loadLessonOptions(), loadQuestions()]);
+    message("coursePackageStatus",
+      "Import finished: " + lessonsCreated + " lessons and " + questionsCreated +
+      " questions added as drafts. " + failures.length + " errors." +
+      (failures.length ? " First issue: " + failures[0] : ""), failures.length === 0);
+    $("runCoursePackage").textContent = "Import completed";
+  } catch (error) {
+    message("coursePackageStatus", error.message || "Import failed. Some earlier records may already have been created.");
+    $("runCoursePackage").textContent = "Retry import";
+  } finally {
+    $("validateCoursePackage").disabled = false;
+    $("runCoursePackage").disabled = true;
+    if (failures.length) console.error("Course package import issues:", failures);
+  }
+}
+
+$("importCoursePackage").addEventListener("click", () => {
+  coursePackagePlan = null;
+  coursePackageName = "";
+  $("coursePackageFile").value = "";
+  $("coursePackageSummary").hidden = true;
+  $("coursePackagePreview").innerHTML = "";
+  $("runCoursePackage").disabled = true;
+  $("runCoursePackage").textContent = "Import course package";
+  message("coursePackageStatus", "");
+  $("importCoursePackageDialog").showModal();
+});
+$("validateCoursePackage").addEventListener("click", validateCoursePackage);
+$("runCoursePackage").addEventListener("click", runCoursePackageImport);
+
+
 // ============================================================
 // Vocab Mountain management
 // ============================================================
