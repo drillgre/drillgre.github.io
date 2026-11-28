@@ -773,27 +773,50 @@ async function setSelectedLessonsPublished(published) {
     published ? "Lessons published" : "Lessons unpublished");
 }
 
+let renamingModuleId = null;
+
 async function renameModule(moduleId) {
   const moduleLessons = lessonsCache.filter(item => String(item.module_id) === String(moduleId));
   const currentTitle = moduleLessons[0]?.modules?.title || "";
   if (!currentTitle) return;
-  const nextTitle = window.prompt("Enter the new topic name:", currentTitle);
-  if (nextTitle === null) return;
-  const title = nextTitle.trim();
+  renamingModuleId = moduleId;
+  $("topicRenameInput").value = currentTitle;
+  $("topicRenameMsg").textContent = "";
+  $("topicRenameDialog").showModal();
+  $("topicRenameInput").focus();
+  $("topicRenameInput").select();
+}
+
+$("topicRenameClose").addEventListener("click", () => $("topicRenameDialog").close());
+$("topicRenameCancel").addEventListener("click", () => $("topicRenameDialog").close());
+$("topicRenameForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const title = $("topicRenameInput").value.trim();
   if (!title) {
-    showAdminNotice("Topic name cannot be empty.", "Invalid topic name");
+    message("topicRenameMsg", "Topic name cannot be empty.");
     return;
   }
-  if (title === currentTitle) return;
-  const { error } = await db.from("modules").update({ title }).eq("id", moduleId);
+  if (!renamingModuleId) return;
+  const currentTitle = lessonsCache.find(item => String(item.module_id) === String(renamingModuleId))?.modules?.title || "";
+  if (title === currentTitle) {
+    $("topicRenameDialog").close();
+    return;
+  }
+  $("topicRenameSave").disabled = true;
+  $("topicRenameSave").textContent = "Saving…";
+  const { error } = await db.from("modules").update({ title }).eq("id", renamingModuleId);
+  $("topicRenameSave").disabled = false;
+  $("topicRenameSave").textContent = "Save topic name";
   if (error) {
-    showAdminNotice("Could not rename this topic: " + error.message, "Topic rename failed");
+    message("topicRenameMsg", "Could not rename this topic: " + error.message);
     return;
   }
+  $("topicRenameDialog").close();
+  renamingModuleId = null;
   await loadLessons();
   await loadLessonOptions();
   showAdminNotice("The topic has been renamed to “" + title + "”. All lessons under this topic now use the updated name.", "Topic renamed");
-}
+});
 
 async function deleteSelectedLessons() {
   const selectedIds = [...$("lessonList").querySelectorAll("[data-lesson-select]:checked")]
