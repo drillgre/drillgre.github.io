@@ -353,6 +353,7 @@
     // DrillGRE administrator may explicitly open draft lessons from Admin.
     let { data: lesson, error } = await lookupLesson(false);
     const wantsAdminView = params.get("admin") === "1";
+    let isAdminView = false;
     if ((!lesson || error) && wantsAdminView) {
       const { data: authData } = await db.auth.getUser();
       const currentUser = authData?.user;
@@ -363,6 +364,7 @@
           .eq("id", currentUser.id)
           .maybeSingle();
         if (profile?.role === "admin") {
+          isAdminView = true;
           const adminResult = await lookupLesson(true);
           lesson = adminResult.data;
           error = adminResult.error;
@@ -385,12 +387,13 @@
     }
 
     const [{data:siblings,error:siblingError},{data:questions,error:questionError}] = await Promise.all([
-      db.from("lessons").select("id,title,slug,sort_order").eq("module_id",lesson.module_id).eq("published",true).order("sort_order"),
+      db.from("lessons").select("id,title,slug,sort_order").eq("module_id",lesson.module_id).order("sort_order")
+        .then(result => isAdminView ? result : { ...result, data: (result.data || []).filter(item => item.published !== false) }),
       db.from("questions")
         .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,options,figure_url,question_usage")
         .eq("lesson_id",lesson.id)
-        .eq("published",true)
         .in("question_usage",["practice","both"])
+        .then(result => isAdminView ? result : { ...result, data: (result.data || []).filter(item => item.published !== false) })
         .order("created_at")
     ]);
 
