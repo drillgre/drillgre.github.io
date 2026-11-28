@@ -808,10 +808,34 @@
     if (!sessionData?.session?.user) {
       $("bankCompletedSummary").hidden = true;
       $("openBankDiagnostics").hidden = true;
-      $("bankAuthGateMessage").textContent = publicQuestionCount === null
-        ? "Sign in or create a free account to browse questions, check answers, and save your progress."
-        : "There are " + publicQuestionCount.toLocaleString() + " published practice questions. Sign in or create a free account to browse them, check your answers, and save your progress.";
-      $("bankAuthGate").hidden = false;
+      $("bankAuthGate").hidden = true;
+      $("bankWorkspace").hidden = false;
+      $("bankStatus").hidden = false;
+      $("bankStatus").textContent = "Guest access: loading a random sample of published questions. Sign in to save progress, bookmarks, and mistake reasons.";
+      ["bankSearch","bankCategory","bankSubtopic","bankType","bankDifficulty","bankSavedFilter"].forEach(id => {
+        $(id).addEventListener(id === "bankSearch" ? "input" : "change",() => {
+          if (id === "bankCategory") updateSubtopicFilter();
+          applyFilters();
+        });
+      });
+      try {
+        const {data:guestRows,error:guestError} = await db.rpc("get_guest_question_bank");
+        if (guestError) throw guestError;
+        allQuestions = Array.isArray(guestRows) ? guestRows : [];
+        if (!allQuestions.length) {
+          $("bankStatus").textContent = "Guest Question Bank access is currently disabled or no published practice questions are available. Create a free account to continue practising.";
+          $("bankResultCount").textContent = "No guest questions available";
+          return;
+        }
+        await fetchStimuli(allQuestions);
+        populateFilters();
+        applyFilters();
+        $("bankTotal").textContent = allQuestions.length.toLocaleString();
+        $("bankStatus").textContent = "You are viewing " + allQuestions.length + " randomly selected questions. Sign in to save your progress and use learner analytics.";
+      } catch (guestError) {
+        $("bankStatus").classList.add("error");
+        $("bankStatus").textContent = "Guest questions could not be loaded. Please sign in or try again later. " + (guestError.message || "");
+      }
       return;
     }
 
