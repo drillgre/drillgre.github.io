@@ -18,6 +18,7 @@
     if (typeof value === "string") { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch (_) { return value.split(/\\r?\\n/).filter(Boolean).map((text,index)=>({label:String.fromCharCode(65+index),text})); } }
     return [];
   };
+  const mathText = value => String(value ?? "").replace(/\\\\/g, "\\");
   const jsonText = value => {
     if (value == null) return "Not available in the saved record";
     if (typeof value === "string") return value;
@@ -133,16 +134,20 @@
     const body = $("mistakeQuestionDialogBody");
     const figure = q.figure_url || item.stimulus_figure_url || "";
     const choices = parseChoices(q.options);
-    const options = choices.length ? '<section class="mistake-dialog-options"><h3>Answer options</h3><div>'+choices.map((choice,index)=>'<div class="mistake-dialog-option"><strong>'+safe(choice.label || String.fromCharCode(65+index))+'</strong><span>'+safe(choice.text ?? choice.value ?? choice)+'</span></div>').join("")+'</div></section>' : "";
-    const stimulus = item.stimulus ? '<section><h3>Data / stimulus</h3><p>'+safe(item.stimulus)+'</p></section>' : "";
+    const options = choices.length ? '<section class="mistake-dialog-options"><h3>Answer options</h3><div>'+choices.map((choice,index)=>'<div class="mistake-dialog-option"><strong>'+safe(choice.label || String.fromCharCode(65+index))+'</strong><span>'+safe(mathText(choice.text ?? choice.value ?? choice))+'</span></div>').join("")+'</div></section>' : "";
+    const stimulus = item.stimulus ? '<section><h3>Data / stimulus</h3><p>'+safe(mathText(item.stimulus))+'</p></section>' : "";
     body.innerHTML = '<div class="mistake-dialog-meta">'+safe(pretty(q.topic_category || q.topic))+' · '+safe(pretty(q.subtopic))+'</div>' +
       stimulus + (figure ? '<img class="mistake-dialog-figure" src="'+safe(figure)+'" alt="Question figure">' : '') +
-      '<div class="mistake-dialog-question">'+safe(q.question_text || "Question text unavailable.")+'</div>' +
+      '<div class="mistake-dialog-question">'+safe(mathText(q.question_text || "Question text unavailable."))+'</div>' +
       options +
-      '<section><h3>Correct answer</h3><pre>'+safe(jsonText(q.correct_answer))+'</pre></section>' +
-      (q.explanation ? '<section><h3>Explanation</h3><p>'+safe(q.explanation)+'</p></section>' : '');
+      '<section><h3>Correct answer</h3><pre>'+safe(mathText(jsonText(q.correct_answer)))+'</pre></section>' +
+      (q.explanation ? '<section><h3>Explanation</h3><p>'+safe(mathText(q.explanation))+'</p></section>' : '');
     $("mistakeQuestionDialog").showModal();
-    window.DrillGREMath?.render(body);
+    if (window.DrillGREMath?.render) {
+      window.DrillGREMath.render(body);
+    } else if (window.renderMathInElement) {
+      window.renderMathInElement(body,{delimiters:[{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:true}],throwOnError:false,strict:"ignore"});
+    }
   }
 
   async function load() {
