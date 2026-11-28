@@ -2737,15 +2737,23 @@ async function runCoursePackageImport() {
   const plan = coursePackagePlan;
   if (!plan) return;
   const ready = plan.validQuestions;
+  const updateMode = $("coursePackageMode")?.value === "update";
   const newLessons = plan.lessons.filter(x => !x.existingLesson).length;
-  if (!newLessons && !ready) return;
-  if (!await showAdminConfirm({ title: "Import course package", message: "Import " + newLessons + " new lessons, " + (plan.stimuli || []).length + " shared figures/data sets and " + ready + " new questions? Existing lesson content will not be changed. All imported content will remain unpublished drafts.", confirmText: "Import package" })) return;
+  const lessonsToUpdate = updateMode ? plan.lessons.filter(x => x.existingLesson).length : 0;
+  const questionsToUpdate = updateMode ? (plan.updateableQuestions || 0) : 0;
+  if (!newLessons && !ready && !lessonsToUpdate && !questionsToUpdate) return;
+  const confirmation = updateMode
+    ? "Create " + newLessons + " new lessons, update " + lessonsToUpdate + " existing lessons, add " + ready + " new questions and update " + questionsToUpdate + " matching questions? Updated content will remain unpublished drafts. Unmatched existing questions will not be deleted."
+    : "Import " + newLessons + " new lessons, " + (plan.stimuli || []).length + " shared figures/data sets and " + ready + " new questions? Existing lesson content and duplicate questions will be left unchanged. All imported content will remain unpublished drafts.";
+  if (!await showAdminConfirm({ title: updateMode ? "Update course package" : "Import course package", message: confirmation, confirmText: updateMode ? "Update package" : "Import package" })) return;
 
   $("runCoursePackage").disabled = true;
   $("validateCoursePackage").disabled = true;
   let moduleId = plan.module.existingModule?.id || null;
   let lessonsCreated = 0;
+  let lessonsUpdated = 0;
   let questionsCreated = 0;
+  let questionsUpdated = 0;
   const failures = [];
 
   try {
@@ -2770,6 +2778,11 @@ async function runCoursePackageImport() {
         }).select("id").single();
         if (error) throw new Error("Could not create shared stimulus " + stimulus.title + ": " + error.message);
         stimulusId = data.id;
+      } else if (updateMode) {
+        const { error } = await db.from("question_stimuli").update({
+          stimulus_text: stimulus.stimulus_text, figure_url: stimulus.figure_url
+        }).eq("id", stimulusId);
+        if (error) throw new Error("Could not update shared stimulus " + stimulus.title + ": " + error.message);
       }
       stimulusIdByKey.set(stimulus.key, stimulusId);
     }
@@ -2777,6 +2790,18 @@ async function runCoursePackageImport() {
     for (let i = 0; i < plan.lessons.length; i++) {
       const lesson = plan.lessons[i];
       let lessonId = lesson.existingLesson?.id || null;
+      if (lessonId && updateMode) {
+        const { error } = await db.from("lessons").update({
+          title: lesson.title, sort_order: lesson.sort_order, published: false,
+          content: { html: lesson.html, video_url: lesson.video_url },
+          updated_at: new Date().toISOString()
+        }).eq("id", lessonId);
+        if (error) {
+          failures.push(lesson.title + ": lesson update failed: " + error.message);
+          continue;
+        }
+        lessonsUpdated++;
+      }
       if (!lessonId) {
         $("runCoursePackage").textContent = "Creating lesson " + (i + 1) + " of " + plan.lessons.length + "…";
         const { data, error } = await db.from("lessons").insert({
@@ -2796,7 +2821,8 @@ async function runCoursePackageImport() {
         lessonsCreated++;
       }
 
-      const questions = lesson.questions.filter(q => !q.errors.length && !q.duplicate);
+      const questions = lesson.questions.filter(q => !q.errors.length &&
+        (!q.duplicate || (updateMode && q.existingQuestion)));
       for (let qIndex = 0; qIndex < questions.length; qIndex++) {
         const item = questions[qIndex];
         $("runCoursePackage").textContent = "Importing questions " + (questionsCreated + 1) + "…";
@@ -2806,16 +2832,23 @@ async function runCoursePackageImport() {
           stimulus_id: item.stimulusKey ? (stimulusIdByKey.get(item.stimulusKey) || null) : null,
           published: false
         };
-        const { error } = await db.from("questions").insert(record);
-        if (error) failures.push(lesson.title + " question " + item.rowNumber + ": " + error.message);
-        else questionsCreated++;
+        if (item.duplicate && updateMode && item.existingQuestion) {
+          const { error } = await db.from("questions").update(record).eq("id", item.existingQuestion.id);
+          if (error) failures.push(lesson.title + " question " + item.rowNumber + " update: " + error.message);
+          else questionsUpdated++;
+        } else {
+          const { error } = await db.from("questions").insert(record);
+          if (error) failures.push(lesson.title + " question " + item.rowNumber + ": " + error.message);
+          else questionsCreated++;
+        }
       }
     }
 
     await Promise.all([loadLessons(), loadLessonOptions(), loadQuestions()]);
     message("coursePackageStatus",
-      "Import finished: " + lessonsCreated + " lessons and " + questionsCreated +
-      " questions added as drafts. " + failures.length + " errors." +
+      (updateMode ? "Update finished: " : "Import finished: ") + lessonsCreated + " lessons created, " +
+      lessonsUpdated + " lessons updated, " + questionsCreated + " questions added and " +
+      questionsUpdated + " questions updated as drafts. " + failures.length + " errors." +
       (failures.length ? " First issue: " + failures[0] : ""), failures.length === 0);
     $("runCoursePackage").textContent = "Import completed";
   } catch (error) {
@@ -2832,6 +2865,7 @@ $("importCoursePackage").addEventListener("click", () => {
   coursePackagePlan = null;
   coursePackageName = "";
   $("coursePackageFile").value = "";
+  if ($("coursePackageMode")) $("coursePackageMode").value = "add";
   $("coursePackageSummary").hidden = true;
   $("coursePackagePreview").innerHTML = "";
   $("runCoursePackage").disabled = true;
