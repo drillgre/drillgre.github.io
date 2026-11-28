@@ -86,7 +86,7 @@
     subtopicWeak.slice(0,1).forEach(s => items.push({
       title: "Target " + label(s.subtopic),
       body: label(s.topic) + " subtopic accuracy is " + percent(s.accuracy) + " across " + number(s.answered) + " answers. Revisit the method and practise this specific skill.",
-      href: "/quant/quiz.html?focus=" + encodeURIComponent(t.topic + "::" + s.subtopic),
+      href: "/quant/quiz.html?focus=" + encodeURIComponent(s.topic + "::" + s.subtopic),
       action: "Practise this subtopic"
     }));
     weak.slice(0,2).forEach(t => items.push({
