@@ -19,6 +19,16 @@
     try { return JSON.stringify(value, null, 2); } catch (_) { return String(value); }
   };
   const dateText = value => value ? new Date(value).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "Date unavailable";
+  const REASONS = [
+    ["conceptual_misunderstanding","Conceptual misunderstanding"],
+    ["calculation_error","Calculation error"],
+    ["misread_question","Misreading the question"],
+    ["time_management","Time management"],
+    ["incorrect_strategy","Incorrect strategy"],
+    ["careless_error","Careless error"],
+    ["other","Other"]
+  ];
+  const reasonLabel = value => REASONS.find(([key])=>key===value)?.[1] || "Not classified";
 
   function filteredMistakes() {
     const query = ($("mistakeSearch")?.value || "").trim().toLowerCase();
@@ -32,11 +42,40 @@
     });
   }
 
+  function renderDiagnostics() {
+    const host = $("mistakeDiagnostics");
+    const topics = new Map();
+    mistakes.forEach(item => {
+      const q = item.question || {};
+      const topic = pretty(q.topic_category || q.topic || "Unclassified");
+      if (!topics.has(topic)) topics.set(topic,{total:0,reasons:{}});
+      const row = topics.get(topic);
+      const reason = item.reason || "unclassified";
+      row.total++;
+      row.reasons[reason] = (row.reasons[reason] || 0) + 1;
+    });
+    const columns = [...REASONS,["unclassified","Not classified"]];
+    host.innerHTML = !mistakes.length
+      ? '<div class="mistake-empty">Diagnostics will appear after you record missed questions.</div>'
+      : '<div class="mistake-diagnostic-wrap"><table class="mistake-diagnostic-table"><thead><tr><th>Topic</th><th>Total</th>' +
+        columns.map(([,label])=>'<th>'+safe(label)+'</th>').join('') +
+        '</tr></thead><tbody>' +
+        [...topics.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([topic,row]) =>
+          '<tr><th>'+safe(topic)+'</th><td><strong>'+row.total+'</strong></td>' +
+          columns.map(([key]) => {
+            const count = row.reasons[key] || 0;
+            const pct = row.total ? (count/row.total*100) : 0;
+            return '<td>'+(count ? count+' <span>('+pct.toFixed(1)+'%)</span>' : '0 <span>(0%)</span>')+'</td>';
+          }).join('')+'</tr>'
+        ).join('')+'</tbody></table></div>';
+  }
+
   function render() {
     const host = $("mistakeNotebookList");
     const rows = filteredMistakes();
     const openCount = mistakes.filter(x => x.status !== "mastered").length;
     $("mistakeTotal").textContent = openCount.toLocaleString();
+    renderDiagnostics();
     host.hidden = false;
     if (!rows.length) {
       host.innerHTML = '<div class="mistake-empty">' +
@@ -48,47 +87,55 @@
       const q = item.question || {};
       const topic = pretty(q.topic_category || q.topic);
       const subtopic = pretty(q.subtopic);
-      const options = q.options ? '<div class="mistake-answer"><strong>Options</strong>\n' + safe(jsonText(q.options)) + '</div>' : "";
-      const answer = '<div class="mistake-answer"><strong>Correct answer</strong>\n' + safe(jsonText(q.correct_answer)) + '</div>';
-      const explanation = q.explanation ? '<div class="mistake-answer"><strong>Explanation</strong>\n' + safe(q.explanation) + '</div>' : "";
       const status = item.status === "mastered" ? "mastered" : "review";
       const action = status === "mastered" ? "Move back to review" : "Mark as mastered";
       return '<article class="mistake-card" data-question-id="' + safe(item.question_id) + '">' +
         '<div class="mistake-card-top"><div class="mistake-meta">' + safe(topic) + ' · ' + safe(subtopic) + ' · ' + safe(item.source) + ' · ' + safe(dateText(item.occurred_at)) + '</div><span class="mistake-status ' + status + '">' + (status === "mastered" ? "Mastered" : "To review") + '</span></div>' +
-        (item.stimulus ? '<div class="mistake-stimulus">' + safe(item.stimulus) + '</div>' : '') +
-        '<div class="mistake-question">' + safe(q.question_text || "Question text is unavailable in this saved record.") + '</div>' +
-        '<details class="mistake-details"><summary>Reveal correct answer and explanation</summary>' + options + answer + explanation + '</details>' +
-        '<label class="mistake-note-label" for="mistake-reason-' + safe(item.question_id) + '">Why did you miss this question?</label>' +
+        '<button type="button" class="mistake-question-link" data-action="open-question">' + safe(q.question_text || "Question text is unavailable in this saved record.") + '</button>' +
+        '<div class="mistake-reason-line"><label for="mistake-reason-' + safe(item.question_id) + '">Reason</label>' +
         '<select class="mistake-reason" id="mistake-reason-' + safe(item.question_id) + '">' +
           '<option value="">Select a reason</option>' +
-          [['conceptual_misunderstanding','Conceptual misunderstanding'],['calculation_error','Calculation error'],['misread_question','Misreading the question'],['time_management','Time management'],['incorrect_strategy','Incorrect strategy'],['careless_error','Careless error'],['other','Other']].map(([value,label]) => '<option value="' + value + '"' + (item.reason === value ? ' selected' : '') + '>' + label + '</option>').join('') +
-        '</select>' +
-        '<label class="mistake-note-label" for="mistake-note-' + safe(item.question_id) + '">My notes</label>' +
-        '<textarea class="mistake-note" id="mistake-note-' + safe(item.question_id) + '" placeholder="What went wrong? Which concept or method should you remember?">' + safe(item.note || "") + '</textarea>' +
-        '<div class="mistake-actions"><button type="button" class="mistake-save" data-action="save">Save note</button><button type="button" class="mistake-resolve ' + (status === "mastered" ? "reopen" : "") + '" data-action="toggle">' + action + '</button></div>' +
+          REASONS.map(([value,label]) => '<option value="' + value + '"' + (item.reason === value ? ' selected' : '') + '>' + label + '</option>').join('') +
+        '</select><span class="mistake-reason-status" aria-live="polite"></span></div>' +
+        '<div class="mistake-actions"><button type="button" class="mistake-resolve ' + (status === "mastered" ? "reopen" : "") + '" data-action="toggle">' + action + '</button></div>' +
         '</article>';
     }).join("");
   }
 
   async function saveMistake(questionId, patch) {
-    const card = [...document.querySelectorAll(".mistake-card")].find(el => el.dataset.questionId === questionId);
     const current = mistakes.find(item => item.question_id === questionId);
     if (!current) return;
+    const session = (await db.auth.getSession()).data.session;
+    if (!session?.user) throw new Error("Sign in to save your mistake reason.");
     const payload = {
-      learner_id: (await db.auth.getSession()).data.session.user.id,
+      learner_id: session.user.id,
       question_id: questionId,
-      note: patch.note ?? current.note ?? "",
-      reason: patch.reason ?? current.reason ?? null,
+      note: "",
+      reason: patch.reason !== undefined ? patch.reason : current.reason,
       status: patch.status ?? current.status ?? "review",
       updated_at: new Date().toISOString()
     };
     const { error } = await db.from("gre_learner_mistake_notes").upsert(payload,{onConflict:"learner_id,question_id"});
     if (error) throw error;
-    current.note = payload.note;
+    current.note = "";
     current.reason = payload.reason;
     current.status = payload.status;
     current.updated_at = payload.updated_at;
-    render();
+  }
+
+  function openQuestion(item) {
+    const q = item.question || {};
+    const body = $("mistakeQuestionDialogBody");
+    const figure = q.figure_url || item.stimulus_figure_url || "";
+    const options = q.options ? '<section><h3>Answer options</h3><pre>'+safe(jsonText(q.options))+'</pre></section>' : "";
+    const stimulus = item.stimulus ? '<section><h3>Data / stimulus</h3><p>'+safe(item.stimulus)+'</p></section>' : "";
+    body.innerHTML = '<div class="mistake-dialog-meta">'+safe(pretty(q.topic_category || q.topic))+' · '+safe(pretty(q.subtopic))+'</div>' +
+      stimulus + (figure ? '<img class="mistake-dialog-figure" src="'+safe(figure)+'" alt="Question figure">' : '') +
+      '<div class="mistake-dialog-question">'+safe(q.question_text || "Question text unavailable.")+'</div>' +
+      options +
+      '<section><h3>Correct answer</h3><pre>'+safe(jsonText(q.correct_answer))+'</pre></section>' +
+      (q.explanation ? '<section><h3>Explanation</h3><p>'+safe(q.explanation)+'</p></section>' : '');
+    $("mistakeQuestionDialog").showModal();
   }
 
   async function load() {
@@ -116,8 +163,33 @@
         render();
       });
     });
+    $("mistakeNotebookList")?.addEventListener("change",async event => {
+      const select = event.target.closest(".mistake-reason");
+      if (!select) return;
+      const card = select.closest(".mistake-card");
+      const questionId = card?.dataset.questionId;
+      const item = mistakes.find(x=>x.question_id===questionId);
+      if (!item) return;
+      const status = card.querySelector(".mistake-reason-status");
+      status.textContent = "Saving…";
+      select.disabled = true;
+      try {
+        await saveMistake(questionId,{reason:select.value || null});
+        status.textContent = "Saved";
+      } catch(error) {
+        status.textContent = error.message || "Could not save";
+        select.value = item.reason || "";
+      } finally { select.disabled = false; }
+    });
     $("mistakeNotebookList")?.addEventListener("click",async event => {
-      const button = event.target.closest("button[data-action]");
+      const questionButton = event.target.closest('button[data-action="open-question"]');
+      if (questionButton) {
+        const card = questionButton.closest(".mistake-card");
+        const item = mistakes.find(x=>x.question_id===card?.dataset.questionId);
+        if (item) openQuestion(item);
+        return;
+      }
+      const button = event.target.closest('button[data-action="toggle"]');
       if (!button) return;
       const card = button.closest(".mistake-card");
       const questionId = card?.dataset.questionId;
@@ -127,18 +199,9 @@
       const oldText = button.textContent;
       button.textContent = "Saving…";
       try {
-        if (button.dataset.action === "save") {
-          const note = card.querySelector(".mistake-note").value;
-          const reason = card.querySelector(".mistake-reason").value || null;
-          await saveMistake(questionId,{note,reason});
-          const status = $("mistakeNotebookStatus");
-          status.hidden = false;
-          status.classList.remove("error");
-          status.textContent = "Your note has been saved.";
-          window.setTimeout(()=>{status.hidden=true;},2200);
-        } else {
-          await saveMistake(questionId,{status:item.status==="mastered"?"review":"mastered"});
-        }
+        await saveMistake(questionId,{status:item.status==="mastered"?"review":"mastered"});
+        item.status = item.status==="mastered"?"review":"mastered";
+        render();
       } catch(error) {
         button.disabled = false;
         button.textContent = oldText;
@@ -147,6 +210,10 @@
         status.classList.add("error");
         status.textContent = "Could not save your change. " + (error.message || "");
       }
+    });
+    $("closeMistakeQuestionDialog")?.addEventListener("click",()=>$("mistakeQuestionDialog").close());
+    $("mistakeQuestionDialog")?.addEventListener("click",event=>{
+      if(event.target===$("mistakeQuestionDialog")) $("mistakeQuestionDialog").close();
     });
     load();
   });
