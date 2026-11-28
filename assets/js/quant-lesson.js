@@ -330,6 +330,14 @@
     lessonQuery = lessonSlug ? lessonQuery.eq("slug",lessonSlug) : lessonQuery.eq("id",legacyId);
     const {data:lesson,error} = await lessonQuery.single();
 
+    // Convert legacy UUID links to the readable slug URL after resolving the lesson.
+    if (legacyId && lesson?.slug) {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("id");
+      cleanUrl.searchParams.set("slug", lesson.slug);
+      window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+    }
+
     if (error || !lesson) {
       status.className = "load-error";
       status.textContent = "This lesson could not be loaded. It may be unpublished, unavailable, or public read access has not been configured in Supabase. " + (error?.message || "");
