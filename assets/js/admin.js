@@ -2317,18 +2317,30 @@ async function validateCoursePackage() {
     if (moduleError) throw new Error("Could not check the module: " + moduleError.message);
     const existingModule = moduleRows?.[0] || null;
 
-    const { data: lessonRows, error: lessonError } = await db.from("lessons")
-      .select("id,title,slug,module_id").limit(5000);
-    if (lessonError) throw new Error("Could not check existing lessons: " + lessonError.message);
-    const lessonsBySlug = new Map((lessonRows || []).map(item => [item.slug, item]));
+    const lessonsBySlug = new Map();
+    let lessonOffset = 0;
+    while (true) {
+      const { data, error } = await db.from("lessons")
+        .select("id,title,slug,module_id").range(lessonOffset, lessonOffset + 999);
+      if (error) throw new Error("Could not check existing lessons: " + error.message);
+      (data || []).forEach(item => lessonsBySlug.set(item.slug, item));
+      if (!data || data.length < 1000) break;
+      lessonOffset += 1000;
+    }
 
-    const { data: questionRows, error: questionError } = await db.from("questions")
-      .select("question_type,question_text").limit(10000);
-    if (questionError) throw new Error("Could not check existing questions: " + questionError.message);
-    const existingQuestionKeys = new Set((questionRows || []).map(item =>
-      String(item.question_type) + "::" +
-      String(item.question_text || "").trim().toLowerCase().replace(/\s+/g, " ")
-    ));
+    const existingQuestionKeys = new Set();
+    let questionOffset = 0;
+    while (true) {
+      const { data, error } = await db.from("questions")
+        .select("question_type,question_text").range(questionOffset, questionOffset + 999);
+      if (error) throw new Error("Could not check existing questions: " + error.message);
+      (data || []).forEach(item => existingQuestionKeys.add(
+        String(item.question_type) + "::" +
+        String(item.question_text || "").trim().toLowerCase().replace(/\s+/g, " ")
+      ));
+      if (!data || data.length < 1000) break;
+      questionOffset += 1000;
+    }
 
     const planLessons = [];
     const packageLessonSlugs = new Set();
