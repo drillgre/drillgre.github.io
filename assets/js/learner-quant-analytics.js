@@ -51,6 +51,28 @@
     }).join("");
   }
 
+  function renderQuestionTypes(rows) {
+    const host = $("questionTypePerformance");
+    if (!host) return;
+    if (!rows?.length) {
+      host.innerHTML = empty("Question-type performance will appear as you complete practice.");
+      return;
+    }
+    const names = {
+      quantitative_comparison:"Quantitative Comparison",
+      multiple_choice_single:"Single answer",
+      multiple_choice_multiple:"Multiple answer",
+      numeric_entry:"Numeric entry",
+      data_interpretation:"Data Interpretation",
+      unclassified:"Unclassified"
+    };
+    host.innerHTML = rows.map(row => {
+      const accuracy = Number(row.accuracy || 0);
+      const name = names[row.question_type] || label(row.question_type);
+      return '<article class="topic-row"><div class="topic-row-head"><strong>' + safe(name) + '</strong><span>' + percent(row.accuracy) + ' · ' + number(row.answered) + ' answers</span></div><div class="topic-meter"><span style="width:' + Math.max(0,Math.min(100,accuracy)) + '%"></span></div></article>';
+    }).join("");
+  }
+
   function renderRecommendations(topics) {
     const host = $("practiceRecommendations");
     const eligible = topics.filter(t => Number(t.answered) >= 5);
@@ -308,6 +330,7 @@
     $("qaFirstCount").textContent = number(data.question_bank_first_attempts) + " Question Bank first attempts";
     $("qaTopics").textContent = number(topics.length);
     renderTopics(topics);
+    renderQuestionTypes(data.question_type_accuracy || []);
     renderDifficulty(data.difficulty_accuracy || []);
     renderMastery(topics);
     renderTargetScore(data.mock_scores || [], sessionData.session.user.id);
