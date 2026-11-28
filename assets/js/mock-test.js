@@ -572,6 +572,33 @@
     return `<ul>${options.map((option,index)=>`<li><b>${esc(option.label || String.fromCharCode(65+index))}.</b> ${esc(option.text ?? "")}</li>`).join("")}</ul>`;
   }
 
+  const MISTAKE_REASONS = [
+    ["conceptual_misunderstanding","Conceptual misunderstanding"],
+    ["calculation_error","Calculation error"],
+    ["misread_question","Misreading the question"],
+    ["time_management","Time management"],
+    ["incorrect_strategy","Incorrect strategy"],
+    ["careless_error","Careless error"],
+    ["other","Other"]
+  ];
+  function mistakeReasonMarkup(questionId) {
+    return '<div class="mock-mistake-reason" data-mistake-question="' + esc(questionId) + '">' +
+      '<label>Why did you miss this question?</label><select class="mistake-reason-select"><option value="">Select a reason</option>' +
+      MISTAKE_REASONS.map(([value,label]) => '<option value="' + value + '">' + label + '</option>').join("") +
+      '</select><button type="button" class="mock-reason-save">Save reason</button><span class="mistake-save-status" aria-live="polite"></span></div>';
+  }
+  async function saveMistakeReason(questionId,reason,statusNode,button) {
+    const {data:sessionData} = await db.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (!user) throw new Error("Sign in to save mistake reasons to your learner dashboard.");
+    button.disabled = true;
+    const {error} = await db.from("gre_learner_mistake_notes").upsert({
+      learner_id:user.id,question_id:String(questionId),reason,updated_at:new Date().toISOString()
+    },{onConflict:"learner_id,question_id"});
+    if (error) throw error;
+    statusNode.textContent = "Saved to your learner dashboard.";
+  }
+
   function renderReview(items) {
     const seenStimuli = new Set();
     $("reviewList").innerHTML=(items||[]).map((item,index)=>{
@@ -599,8 +626,20 @@
           ${reviewOptionMarkup(q)}
           <div class="review-answer"><b>Your answer:</b> ${esc(answerDisplay(item))}<br><b>Correct answer:</b> ${esc(correctAnswerText(item))}</div>
           ${explanation}
+          ${!item.is_correct ? mistakeReasonMarkup(q.id) : ""}
         </article>`;
     }).join("");
+
+    $("reviewList").querySelectorAll(".mock-mistake-reason").forEach(box => {
+      const button = box.querySelector(".mock-reason-save");
+      button.addEventListener("click",async () => {
+        const reason = box.querySelector(".mistake-reason-select").value;
+        const statusNode = box.querySelector(".mistake-save-status");
+        if (!reason) { statusNode.textContent = "Please select a reason."; return; }
+        try { await saveMistakeReason(box.dataset.mistakeQuestion,reason,statusNode,button); }
+        catch (error) { statusNode.textContent = error.message || "Could not save this reason."; button.disabled = false; }
+      });
+    });
   }
 
   function videoEmbed(raw) {
