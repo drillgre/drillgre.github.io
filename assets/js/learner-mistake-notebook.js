@@ -110,7 +110,7 @@
     const payload = {
       learner_id: session.user.id,
       question_id: questionId,
-      note: "",
+      note: current.note || "",
       reason: patch.reason !== undefined ? patch.reason : current.reason,
       status: patch.status ?? current.status ?? "review",
       updated_at: new Date().toISOString()
