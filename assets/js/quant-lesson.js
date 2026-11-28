@@ -93,6 +93,21 @@
     });
   }
 
+  function renderMathIn(root) {
+    if (!root || !window.renderMathInElement) return;
+    const displayMathDelimiter = String.fromCharCode(36, 36);
+    window.renderMathInElement(root, {
+      delimiters: [
+        { left: displayMathDelimiter, right: displayMathDelimiter, display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true }
+      ],
+      throwOnError: false,
+      ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+    });
+  }
+
   function parseOptions(raw) {
     if (Array.isArray(raw)) {
       return raw.map((item,index) => typeof item === "string"
@@ -257,6 +272,9 @@
         </article>`;
     }).join("");
 
+    // Render LaTeX in question stems, answer choices, and shared stimuli.
+    renderMathIn(host);
+
     ordered.forEach(question => {
       const card = host.querySelector(`[data-question-card="${CSS.escape(String(question.id))}"]`);
       const button = card.querySelector("[data-check-answer]");
@@ -306,6 +324,7 @@
           `<strong>${correct ? "Correct!" : "Not quite."}</strong>` +
           `<div>Correct answer: ${esc(answerLabel(grade?.correct_answer))}</div>` +
           explanationMarkup(grade);
+        renderMathIn(feedback);
       });
     });
   }
