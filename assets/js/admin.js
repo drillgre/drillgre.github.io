@@ -2583,6 +2583,22 @@ async function validateCoursePackage() {
     }
 
     const planLessons = [];
+    const packageStimuli = Array.isArray(pkg.stimuli) ? pkg.stimuli : [];
+    const stimulusKeys = new Set();
+    const planStimuli = packageStimuli.map(item => {
+      const key = importText(item?.key);
+      const title = importText(item?.title);
+      const stimulusText = importText(item?.stimulus_text);
+      const figureUrl = importText(item?.figure_url);
+      if (!key || stimulusKeys.has(key)) throw new Error("Each package stimulus needs a unique key.");
+      stimulusKeys.add(key);
+      if (!title || (!stimulusText && !figureUrl)) throw new Error("Each package stimulus needs a title and text or figure.");
+      if (figureUrl) {
+        try { const parsed = new URL(figureUrl); if (!["http:", "https:"].includes(parsed.protocol)) throw new Error(); }
+        catch { throw new Error("Stimulus figure_url must be a valid http or https URL."); }
+      }
+      return { key, title, stimulus_text: stimulusText || null, figure_url: figureUrl || null };
+    });
     const packageLessonSlugs = new Set();
     const packageQuestionKeys = new Set();
     let questionCount = 0;
@@ -2623,6 +2639,12 @@ async function validateCoursePackage() {
         }, (i + 1) * 1000 + qIndex + 1);
         parsed.record.published = false;
         parsed.record.lesson_id = existingLesson?.id || null;
+        const stimulusKey = importText(raw?.stimulus_key);
+        if (stimulusKey && !stimulusKeys.has(stimulusKey)) parsed.errors.push("Unknown stimulus_key: " + stimulusKey);
+        if (stimulusKey && (parsed.record.topic_category !== "data_analysis" || parsed.record.subtopic !== "data_interpretation")) {
+          parsed.errors.push("stimulus_key can only be used with Data Analysis / Data Interpretation questions.");
+        }
+        parsed.stimulusKey = stimulusKey || null;
         const key = String(parsed.record.question_type) + "::" +
           String(parsed.record.question_text || "").trim().toLowerCase().replace(/\s+/g, " ");
         if (!parsed.errors.length) {
@@ -2648,6 +2670,7 @@ async function validateCoursePackage() {
 
     coursePackagePlan = {
       module: { title: moduleTitle, slug: moduleSlug, existingModule },
+      stimuli: planStimuli,
       lessons: planLessons,
       validQuestions: planLessons.reduce((n, lesson) =>
         n + lesson.questions.filter(q => !q.errors.length && !q.duplicate).length, 0),
@@ -2709,7 +2732,7 @@ async function runCoursePackageImport() {
   const ready = plan.validQuestions;
   const newLessons = plan.lessons.filter(x => !x.existingLesson).length;
   if (!newLessons && !ready) return;
-  if (!await showAdminConfirm({ title: "Import course package", message: "Import " + newLessons + " new lessons and " + ready + " new questions? Existing lesson content will not be changed. All imported content will remain unpublished drafts.", confirmText: "Import package" })) return;
+  if (!await showAdminConfirm({ title: "Import course package", message: "Import " + newLessons + " new lessons, " + (plan.stimuli || []).length + " shared figures/data sets and " + ready + " new questions? Existing lesson content will not be changed. All imported content will remain unpublished drafts.", confirmText: "Import package" })) return;
 
   $("runCoursePackage").disabled = true;
   $("validateCoursePackage").disabled = true;
@@ -2726,6 +2749,22 @@ async function runCoursePackageImport() {
       }).select("id").single();
       if (error) throw new Error("Module creation failed: " + error.message);
       moduleId = data.id;
+    }
+
+    const stimulusIdByKey = new Map();
+    for (const stimulus of plan.stimuli || []) {
+      const { data: existingStimuli, error: stimulusLookupError } = await db.from("question_stimuli")
+        .select("id,title,stimulus_text,figure_url").eq("title", stimulus.title).limit(1);
+      if (stimulusLookupError) throw new Error("Could not check shared stimuli: " + stimulusLookupError.message);
+      let stimulusId = existingStimuli?.[0]?.id || null;
+      if (!stimulusId) {
+        const { data, error } = await db.from("question_stimuli").insert({
+          title: stimulus.title, stimulus_text: stimulus.stimulus_text, figure_url: stimulus.figure_url
+        }).select("id").single();
+        if (error) throw new Error("Could not create shared stimulus " + stimulus.title + ": " + error.message);
+        stimulusId = data.id;
+      }
+      stimulusIdByKey.set(stimulus.key, stimulusId);
     }
 
     for (let i = 0; i < plan.lessons.length; i++) {
@@ -2754,7 +2793,12 @@ async function runCoursePackageImport() {
       for (let qIndex = 0; qIndex < questions.length; qIndex++) {
         const item = questions[qIndex];
         $("runCoursePackage").textContent = "Importing questions " + (questionsCreated + 1) + "…";
-        const record = { ...item.record, lesson_id: lessonId, published: false };
+        const record = {
+          ...item.record,
+          lesson_id: lessonId,
+          stimulus_id: item.stimulusKey ? (stimulusIdByKey.get(item.stimulusKey) || null) : null,
+          published: false
+        };
         const { error } = await db.from("questions").insert(record);
         if (error) failures.push(lesson.title + " question " + item.rowNumber + ": " + error.message);
         else questionsCreated++;
