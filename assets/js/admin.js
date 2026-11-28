@@ -2568,15 +2568,16 @@ async function validateCoursePackage() {
       lessonOffset += 1000;
     }
 
-    const existingQuestionKeys = new Set();
+    const existingQuestionByKey = new Map();
     let questionOffset = 0;
     while (true) {
       const { data, error } = await db.from("questions")
-        .select("question_type,question_text").range(questionOffset, questionOffset + 999);
+        .select("id,question_type,question_text").range(questionOffset, questionOffset + 999);
       if (error) throw new Error("Could not check existing questions: " + error.message);
-      (data || []).forEach(item => existingQuestionKeys.add(
+      (data || []).forEach(item => existingQuestionByKey.set(
         String(item.question_type) + "::" +
-        String(item.question_text || "").trim().toLowerCase().replace(/\s+/g, " ")
+        String(item.question_text || "").trim().toLowerCase().replace(/\\s+/g, " "),
+        item
       ));
       if (!data || data.length < 1000) break;
       questionOffset += 1000;
@@ -2648,8 +2649,10 @@ async function validateCoursePackage() {
         const key = String(parsed.record.question_type) + "::" +
           String(parsed.record.question_text || "").trim().toLowerCase().replace(/\s+/g, " ");
         if (!parsed.errors.length) {
-          if (existingQuestionKeys.has(key) || packageQuestionKeys.has(key)) {
+          const existingQuestion = existingQuestionByKey.get(key) || null;
+          if (existingQuestion || packageQuestionKeys.has(key)) {
             parsed.duplicate = true;
+            parsed.existingQuestion = existingQuestion;
             duplicateCount++;
           }
           packageQuestionKeys.add(key);
@@ -2674,6 +2677,8 @@ async function validateCoursePackage() {
       lessons: planLessons,
       validQuestions: planLessons.reduce((n, lesson) =>
         n + lesson.questions.filter(q => !q.errors.length && !q.duplicate).length, 0),
+      updateableQuestions: planLessons.reduce((n, lesson) =>
+        n + lesson.questions.filter(q => !q.errors.length && q.duplicate && q.existingQuestion).length, 0),
       questionCount
     };
     coursePackageName = file.name;
@@ -2686,7 +2691,9 @@ async function validateCoursePackage() {
       " existing) and " + questionCount + " questions. " + coursePackagePlan.validQuestions +
       " new questions are ready; " + duplicateCount + " duplicates and " + invalidQuestions +
       " invalid questions will be skipped.", true);
-    $("runCoursePackage").disabled = newLessons === 0 && coursePackagePlan.validQuestions === 0;
+    const updateMode = $("coursePackageMode")?.value === "update";
+    $("runCoursePackage").disabled = newLessons === 0 && coursePackagePlan.validQuestions === 0 &&
+      (!updateMode || coursePackagePlan.updateableQuestions === 0);
   } catch (error) {
     coursePackagePlan = null;
     $("coursePackageSummary").hidden = true;
