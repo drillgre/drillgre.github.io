@@ -2549,6 +2549,51 @@ $("importCoursePackage").addEventListener("click", () => {
   message("coursePackageStatus", "");
   $("importCoursePackageDialog").showModal();
 });
+function downloadCoursePackageExample() {
+  const sample = {
+    schema_version: 1,
+    module: { title: "GRE Quantitative Reasoning: Sample Module", slug: "gre-sample-module" },
+    lessons: [{
+      title: "Sample Lesson: Integer Properties",
+      slug: "sample-integer-properties",
+      sort_order: 1,
+      content: {
+        html: "<h2>Learning objectives</h2><p>Explain the key concept here. Use $x^2$ for inline mathematics and $x^2+y^2=z^2$ for displayed mathematics.</p><h2>Worked example</h2><p>Show a step-by-step solution.</p>",
+        video_url: null
+      },
+      questions: [{
+        topic: "Integer properties",
+        topic_category: "arithmetic",
+        subtopic: "number_properties",
+        question_type: "multiple_choice_single",
+        difficulty: 2,
+        question_usage: "practice",
+        question_text: "Which of the following integers is even?",
+        options: [
+          { label: "A", text: "7" },
+          { label: "B", text: "11" },
+          { label: "C", text: "14" },
+          { label: "D", text: "19" }
+        ],
+        correct_answer: "C",
+        explanation: "An even integer is divisible by 2. Since 14 = 2 × 7, the correct answer is C.",
+        explanation_type: "text"
+      }]
+    }]
+  };
+  const blob = new Blob([JSON.stringify(sample, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "drillgre-course-package-example.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+$("downloadCoursePackageExample").addEventListener("click", downloadCoursePackageExample);
+
 $("validateCoursePackage").addEventListener("click", validateCoursePackage);
 $("runCoursePackage").addEventListener("click", runCoursePackageImport);
 
