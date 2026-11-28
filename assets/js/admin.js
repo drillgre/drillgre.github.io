@@ -462,7 +462,16 @@ async function loadLessons() {
   );
 
   $("lessonList").innerHTML = lessonsCache.length
-    ? sortedGroups.map(([groupId, group]) => {
+    ? `
+      <div class="panel" style="padding:12px 14px;margin:0 0 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;margin:0">
+          <input type="checkbox" id="selectAllLessons" style="width:17px;height:17px">
+          Select all lessons
+        </label>
+        <span id="selectedLessonCount" class="meta">0 selected</span>
+        <button type="button" class="del" id="bulkDeleteLessons" disabled>Delete selected</button>
+      </div>
+      ` + sortedGroups.map(([groupId, group]) => {
         const publishedCount = group.lessons.filter(lesson => lesson.published).length;
         const draftCount = group.lessons.length - publishedCount;
         const lessonCards = group.lessons
@@ -471,14 +480,17 @@ async function loadLessons() {
             String(a.title).localeCompare(String(b.title)))
           .map(l => `
             <div class="entry">
-              <div>
-                <strong>${esc(l.title)}</strong>
+              <label style="display:flex;align-items:center;gap:10px;min-width:0;margin:0">
+                <input type="checkbox" class="lesson-select" data-lesson-select="${esc(l.id)}" aria-label="Select ${esc(l.title)}" style="width:17px;height:17px;flex:0 0 auto">
+                <span style="min-width:0">
+                  <strong>${esc(l.title)}</strong>
                 <div class="meta">
                   ${l.published ? "Published" : "Draft"}
                   · order ${l.sort_order}
                   ${l.content?.video_url ? " · YouTube video" : ""}
                 </div>
-              </div>
+                </span>
+              </label>
               <div class="buttons">
                 <button type="button" data-edit="${l.id}">Edit</button>
                 <button type="button" data-pub="${l.id}">
@@ -500,6 +512,25 @@ async function loadLessons() {
         `;
       }).join("")
     : "<p>No lessons yet. Create your first lesson.</p>";
+
+  const lessonSelectBoxes = [...$("lessonList").querySelectorAll("[data-lesson-select]")];
+  const selectAllLessons = $("selectAllLessons");
+  const bulkDeleteLessons = $("bulkDeleteLessons");
+  const selectedLessonCount = $("selectedLessonCount");
+  const refreshLessonSelection = () => {
+    const selected = lessonSelectBoxes.filter(box => box.checked).length;
+    selectedLessonCount.textContent = selected + " selected";
+    bulkDeleteLessons.disabled = selected === 0;
+    selectAllLessons.checked = selected > 0 && selected === lessonSelectBoxes.length;
+    selectAllLessons.indeterminate = selected > 0 && selected < lessonSelectBoxes.length;
+  };
+  lessonSelectBoxes.forEach(box => box.addEventListener("change", refreshLessonSelection));
+  selectAllLessons.addEventListener("change", () => {
+    lessonSelectBoxes.forEach(box => { box.checked = selectAllLessons.checked; });
+    refreshLessonSelection();
+  });
+  bulkDeleteLessons.addEventListener("click", deleteSelectedLessons);
+  refreshLessonSelection();
 
   $("lessonList").querySelectorAll("[data-edit]").forEach(button => {
     button.onclick = () => editLesson(button.dataset.edit);
@@ -696,6 +727,39 @@ async function toggleLesson(id) {
 
   if (result.error) showAdminNotice(result.error.message);
   else await loadLessons();
+}
+
+async function deleteSelectedLessons() {
+  const selectedIds = [...$("lessonList").querySelectorAll("[data-lesson-select]:checked")]
+    .map(box => box.dataset.lessonSelect);
+  if (!selectedIds.length) return;
+  if (!await showAdminConfirm({
+    title: "Delete selected lessons",
+    message: "Permanently delete " + selectedIds.length + " selected lesson(s)? This action cannot be undone.",
+    confirmText: "Delete lessons"
+  })) return;
+
+  const button = $("bulkDeleteLessons");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  const failures = [];
+  let deleted = 0;
+  for (const id of selectedIds) {
+    const lesson = lessonsCache.find(item => String(item.id) === String(id));
+    const result = await db.from("lessons").delete().eq("id", id);
+    if (result.error) failures.push((lesson?.title || id) + ": " + result.error.message);
+    else deleted++;
+  }
+  await Promise.all([loadLessons(), loadLessonOptions()]);
+  if (failures.length) {
+    showAdminNotice(
+      deleted + " lesson(s) deleted. " + failures.length + " could not be deleted:\n" +
+      failures.join("\n"),
+      "Bulk deletion partially completed"
+    );
+  } else {
+    showAdminNotice(deleted + " lesson(s) deleted successfully.", "Lessons deleted");
+  }
 }
 
 async function deleteLesson(id) {
