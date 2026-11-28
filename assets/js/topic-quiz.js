@@ -139,6 +139,24 @@
     $("quizTopicGroups").querySelectorAll("[data-quiz-subtopic]").forEach(input =>
       input.addEventListener("change",updateQuizAvailability)
     );
+    // Preselect a weak topic or subtopic when arriving from a learner recommendation.
+    const params = new URLSearchParams(window.location.search);
+    const focus = params.get("focus");
+    const topic = params.get("topic");
+    if (focus) {
+      const [category,subtopic] = focus.split("::");
+      const target = [...$("quizTopicGroups").querySelectorAll("[data-quiz-subtopic]")]
+        .find(input => input.dataset.category === category && input.dataset.quizSubtopic === subtopic);
+      if (target) target.checked = true;
+    } else if (topic) {
+      const categoryToggle = [...$("quizTopicGroups").querySelectorAll("[data-category-toggle]")]
+        .find(input => input.dataset.categoryToggle === topic);
+      if (categoryToggle) {
+        categoryToggle.checked = true;
+        $("quizTopicGroups").querySelectorAll('[data-category="' + CSS.escape(topic) + '"]')
+          .forEach(input => input.checked = true);
+      }
+    }
     updateQuizAvailability();
   }
 
