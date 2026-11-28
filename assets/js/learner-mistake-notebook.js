@@ -142,11 +142,8 @@
       '<section><h3>Correct answer</h3><div class="mistake-dialog-answer">'+safe(jsonText(q.correct_answer))+'</div></section>' +
       (q.explanation ? '<section><h3>Explanation</h3><p>'+safe(q.explanation)+'</p></section>' : '');
     $("mistakeQuestionDialog").showModal();
-    if (window.DrillGREMath?.render) {
-      window.DrillGREMath.render(body);
-    } else if (window.renderMathInElement) {
-      window.renderMathInElement(body,{delimiters:[{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:true}],throwOnError:false,strict:"ignore"});
-    }
+    // The shared math-renderer observes this inserted content. Avoid a
+    // second render pass so fractions remain identical to the Question Bank.
   }
 
   async function load() {
