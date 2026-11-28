@@ -58,6 +58,11 @@
         (item.stimulus ? '<div class="mistake-stimulus">' + safe(item.stimulus) + '</div>' : '') +
         '<div class="mistake-question">' + safe(q.question_text || "Question text is unavailable in this saved record.") + '</div>' +
         '<details class="mistake-details"><summary>Reveal correct answer and explanation</summary>' + options + answer + explanation + '</details>' +
+        '<label class="mistake-note-label" for="mistake-reason-' + safe(item.question_id) + '">Why did you miss this question?</label>' +
+        '<select class="mistake-reason" id="mistake-reason-' + safe(item.question_id) + '">' +
+          '<option value="">Select a reason</option>' +
+          [['conceptual_misunderstanding','Conceptual misunderstanding'],['calculation_error','Calculation error'],['misread_question','Misreading the question'],['time_management','Time management'],['incorrect_strategy','Incorrect strategy'],['careless_error','Careless error'],['other','Other']].map(([value,label]) => '<option value="' + value + '"' + (item.reason === value ? ' selected' : '') + '>' + label + '</option>').join('') +
+        '</select>' +
         '<label class="mistake-note-label" for="mistake-note-' + safe(item.question_id) + '">My notes</label>' +
         '<textarea class="mistake-note" id="mistake-note-' + safe(item.question_id) + '" placeholder="What went wrong? Which concept or method should you remember?">' + safe(item.note || "") + '</textarea>' +
         '<div class="mistake-actions"><button type="button" class="mistake-save" data-action="save">Save note</button><button type="button" class="mistake-resolve ' + (status === "mastered" ? "reopen" : "") + '" data-action="toggle">' + action + '</button></div>' +
@@ -73,12 +78,14 @@
       learner_id: (await db.auth.getSession()).data.session.user.id,
       question_id: questionId,
       note: patch.note ?? current.note ?? "",
+      reason: patch.reason ?? current.reason ?? null,
       status: patch.status ?? current.status ?? "review",
       updated_at: new Date().toISOString()
     };
     const { error } = await db.from("gre_learner_mistake_notes").upsert(payload,{onConflict:"learner_id,question_id"});
     if (error) throw error;
     current.note = payload.note;
+    current.reason = payload.reason;
     current.status = payload.status;
     current.updated_at = payload.updated_at;
     render();
@@ -122,7 +129,8 @@
       try {
         if (button.dataset.action === "save") {
           const note = card.querySelector(".mistake-note").value;
-          await saveMistake(questionId,{note});
+          const reason = card.querySelector(".mistake-reason").value || null;
+          await saveMistake(questionId,{note,reason});
           const status = $("mistakeNotebookStatus");
           status.hidden = false;
           status.classList.remove("error");
