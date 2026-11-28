@@ -2861,6 +2861,16 @@ async function runCoursePackageImport() {
   }
 }
 
+$("coursePackageMode")?.addEventListener("change", () => {
+  if (!coursePackagePlan) return;
+  const updateMode = $("coursePackageMode").value === "update";
+  const newLessons = coursePackagePlan.lessons.filter(item => !item.existingLesson).length;
+  const canRun = newLessons > 0 || coursePackagePlan.validQuestions > 0 ||
+    (updateMode && (coursePackagePlan.lessons.some(item => item.existingLesson) ||
+      coursePackagePlan.updateableQuestions > 0));
+  $("runCoursePackage").disabled = !canRun;
+  $("runCoursePackage").textContent = updateMode ? "Update course package" : "Import course package";
+});
 $("importCoursePackage").addEventListener("click", () => {
   coursePackagePlan = null;
   coursePackageName = "";
