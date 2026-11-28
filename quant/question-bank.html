@@ -12,7 +12,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
   <script defer src="/assets/js/math-renderer.js?v=20261127-math"></script>
   <script defer src="/assets/js/site-nav.js?v=20261127-brand"></script>
-  <script defer src="/assets/js/question-bank.js?v=20261127-likes"></script>
+  <script defer src="/assets/js/question-bank.js?v=20261128-lightbox-navigation"></script>
   <script defer src="/assets/js/question-bank-timer.js?v=20261127-likes"></script>
   <style>
     .bank-hero{display:flex;justify-content:space-between;align-items:center;gap:24px}
@@ -103,6 +103,11 @@
     .bank-modal-stimulus{background:#f2f5ff;border:1px solid #d0d9fa;border-radius:12px;padding:16px;margin:12px 0}
     .bank-modal-stimulus h3{font-size:15px;margin:4px 0 8px;color:#17233c}
     .bank-modal-stimulus p{white-space:pre-line;font-size:13px;line-height:1.7;color:#344158;margin:0}
+    .bank-modal-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 4px;padding-top:16px;border-top:1px solid var(--line)}
+    .bank-modal-navigation span{color:var(--muted);font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
+    .bank-modal-nav-button{border:1px solid #d4dce9;border-radius:9px;background:#fff;color:#344158;padding:10px 15px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+    .bank-modal-nav-button.primary{border-color:var(--blue);background:var(--blue);color:#fff}
+    .bank-modal-nav-button:disabled{opacity:.4;cursor:not-allowed}
     .bank-card:focus-within{border-color:#9db5ff}
     @media(max-width:650px){.bank-card{grid-template-columns:1fr}.bank-card-figure{max-height:180px}.bank-dialog-head{padding:14px}.bank-dialog-body{padding:16px}}
     .bank-status{padding:13px 15px;margin:14px 0;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-size:13px;line-height:1.6}
