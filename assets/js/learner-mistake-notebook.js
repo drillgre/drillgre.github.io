@@ -140,7 +140,7 @@
       stimulus + (figure ? '<img class="mistake-dialog-figure" src="'+safe(figure)+'" alt="Question figure">' : '') +
       '<div class="mistake-dialog-question">'+safe(mathText(q.question_text || "Question text unavailable."))+'</div>' +
       options +
-      '<section><h3>Correct answer</h3><pre>'+safe(mathText(jsonText(q.correct_answer)))+'</pre></section>' +
+      '<section><h3>Correct answer</h3><div class="mistake-dialog-answer">'+safe(mathText(jsonText(q.correct_answer)))+'</div></section>' +
       (q.explanation ? '<section><h3>Explanation</h3><p>'+safe(mathText(q.explanation))+'</p></section>' : '');
     $("mistakeQuestionDialog").showModal();
     if (window.DrillGREMath?.render) {
