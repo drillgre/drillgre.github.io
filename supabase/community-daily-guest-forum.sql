@@ -67,7 +67,7 @@ begin
  select to_jsonb(x) into v from (
    select q.id,q.topic,q.topic_category,q.subtopic,q.question_type,q.difficulty,q.question_text,q.options,q.figure_url,q.stimulus_id
    from public.questions q
-   where q.published=true and q.question_usage in ('practice','both')
+   where q.published=true and q.question_usage in ('practice','both') and q.question_type='multiple_choice_single'
    order by md5(q.id::text || to_char((now() at time zone 'Asia/Kathmandu')::date,'YYYY-MM-DD'))
    limit 1
  ) x;
