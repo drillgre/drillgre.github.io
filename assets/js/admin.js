@@ -100,13 +100,18 @@ const esc = s =>
     "'": "&#39;"
   }[c]));
 
-function showAdminConfirm({ title = "Confirm action", message = "Are you sure you want to continue?", confirmText = "Confirm" } = {}) {
+function showAdminDialog({ title = "Information", message = "", confirmText = "Okay", showCancel = false } = {}) {
   const dialog = $("adminConfirmDialog");
-  if (!dialog) return Promise.resolve(window.confirm(message));
+  if (!dialog) {
+    if (showCancel) return Promise.resolve(window.confirm(message));
+    window.alert(message);
+    return Promise.resolve(true);
+  }
   $("adminConfirmTitle").textContent = title;
   $("adminConfirmMessage").textContent = message;
   $("adminConfirmAccept").textContent = confirmText;
-
+  $("adminConfirmCancel").hidden = !showCancel;
+  $("adminConfirmClose").hidden = !showCancel;
   return new Promise(resolve => {
     let settled = false;
     const finish = value => {
@@ -124,7 +129,6 @@ function showAdminConfirm({ title = "Confirm action", message = "Are you sure yo
     const cancel = () => finish(false);
     const onCancel = event => { event.preventDefault(); finish(false); };
     const onClose = () => finish(false);
-
     $("adminConfirmAccept").addEventListener("click", accept);
     $("adminConfirmCancel").addEventListener("click", cancel);
     $("adminConfirmClose").addEventListener("click", cancel);
@@ -132,6 +136,12 @@ function showAdminConfirm({ title = "Confirm action", message = "Are you sure yo
     dialog.addEventListener("close", onClose);
     dialog.showModal();
   });
+}
+function showAdminConfirm({ title = "Confirm action", message = "Are you sure you want to continue?", confirmText = "Confirm" } = {}) {
+  return showAdminDialog({ title, message, confirmText, showCancel: true });
+}
+function showAdminNotice(message, title = "Notice") {
+  return showAdminDialog({ title, message: String(message ?? ""), confirmText: "Okay", showCancel: false });
 }
 
 const FIGURE_EXTENSIONS = Object.freeze({
@@ -554,7 +564,7 @@ async function editLesson(id) {
     .single();
 
   if (error) {
-    alert(error.message);
+    showAdminNotice(error.message);
     return;
   }
 
@@ -684,19 +694,19 @@ async function toggleLesson(id) {
     })
     .eq("id", id);
 
-  if (result.error) alert(result.error.message);
+  if (result.error) showAdminNotice(result.error.message);
   else await loadLessons();
 }
 
 async function deleteLesson(id) {
-  if (!confirm("Delete this lesson?")) return;
+  if (!await showAdminConfirm({ title: "Delete lesson", message: "Are you sure you want to delete this lesson? This action cannot be undone.", confirmText: "Delete" })) return;
 
   const result = await db
     .from("lessons")
     .delete()
     .eq("id", id);
 
-  if (result.error) alert(result.error.message);
+  if (result.error) showAdminNotice(result.error.message);
   else {
     await loadLessons();
     await loadLessonOptions();
@@ -1380,7 +1390,7 @@ $("publishSelectedQuestions").addEventListener("click", async () => {
   button.disabled = true;
   button.textContent = "Updating…";
   const current = await db.from("questions").select("id,published").in("id", ids);
-  if (current.error) { alert("Could not read selected question statuses: " + current.error.message); updateQuestionBulkControls(); return; }
+  if (current.error) { showAdminNotice("Could not read selected question statuses: " + current.error.message); updateQuestionBulkControls(); return; }
   const publishIds = (current.data || []).filter(row => !row.published).map(row => row.id);
   const unpublishIds = (current.data || []).filter(row => row.published).map(row => row.id);
   const timestamp = new Date().toISOString();
@@ -1388,9 +1398,9 @@ $("publishSelectedQuestions").addEventListener("click", async () => {
     publishIds.length ? db.from("questions").update({ published: true, updated_at: timestamp }).in("id", publishIds) : Promise.resolve({ error: null }),
     unpublishIds.length ? db.from("questions").update({ published: false, updated_at: timestamp }).in("id", unpublishIds) : Promise.resolve({ error: null })
   ]);
-  if (results.some(result => result.error)) { alert("Could not update all selected questions: " + results.filter(result => result.error).map(result => result.error.message).join("; ")); updateQuestionBulkControls(); return; }
+  if (results.some(result => result.error)) { showAdminNotice("Could not update all selected questions: " + results.filter(result => result.error).map(result => result.error.message).join("; ")); updateQuestionBulkControls(); return; }
   selectedQuestionIds.clear();
-  alert((current.data || []).length + " question(s) had their publication status toggled.");
+  showAdminNotice((current.data || []).length + " question(s) had their publication status toggled.");
   await loadQuestions();
 });
 
@@ -1407,7 +1417,7 @@ $("publishCategoryQuestions").addEventListener("click", async () => {
   button.disabled = true;
   button.textContent = "Updating…";
   const current = await db.from("questions").select("id,published").eq("topic_category", category);
-  if (current.error) { alert("Could not read category question statuses: " + current.error.message); updateQuestionBulkControls(); return; }
+  if (current.error) { showAdminNotice("Could not read category question statuses: " + current.error.message); updateQuestionBulkControls(); return; }
   const publishIds = (current.data || []).filter(row => !row.published).map(row => row.id);
   const unpublishIds = (current.data || []).filter(row => row.published).map(row => row.id);
   const timestamp = new Date().toISOString();
@@ -1415,15 +1425,15 @@ $("publishCategoryQuestions").addEventListener("click", async () => {
     publishIds.length ? db.from("questions").update({ published: true, updated_at: timestamp }).in("id", publishIds) : Promise.resolve({ error: null }),
     unpublishIds.length ? db.from("questions").update({ published: false, updated_at: timestamp }).in("id", unpublishIds) : Promise.resolve({ error: null })
   ]);
-  if (results.some(result => result.error)) { alert("Could not update all category questions: " + results.filter(result => result.error).map(result => result.error.message).join("; ")); updateQuestionBulkControls(); return; }
+  if (results.some(result => result.error)) { showAdminNotice("Could not update all category questions: " + results.filter(result => result.error).map(result => result.error.message).join("; ")); updateQuestionBulkControls(); return; }
   selectedQuestionIds.clear();
-  alert((current.data || []).length + " question(s) in " + label + " had their publication status toggled.");
+  showAdminNotice((current.data || []).length + " question(s) in " + label + " had their publication status toggled.");
   await loadQuestions();
 });
 $("deleteSelectedQuestions").addEventListener("click", async () => {
   const ids = [...selectedQuestionIds];
   if (!ids.length) return;
-  if (!confirm("Permanently delete " + ids.length + " selected question(s)? This cannot be undone.")) return;
+  if (!await showAdminConfirm({ title: "Delete selected questions", message: "Permanently delete " + ids.length + " selected questions? This action cannot be undone.", confirmText: "Delete questions" })) return;
 
   const button = $("deleteSelectedQuestions");
   button.disabled = true;
@@ -1432,7 +1442,7 @@ $("deleteSelectedQuestions").addEventListener("click", async () => {
   button.textContent = "Delete selected";
 
   if (result.error) {
-    alert("Could not delete selected questions: " + result.error.message);
+    showAdminNotice("Could not delete selected questions: " + result.error.message);
     updateQuestionBulkControls();
     return;
   }
@@ -1445,7 +1455,7 @@ $("deleteCategoryQuestions").addEventListener("click", async () => {
   const category = $("categoryFilter").value;
   if (!category) return;
   const label = categoryLabels[category] || category.replaceAll("_", " ");
-  if (!confirm("Permanently delete EVERY question in " + label + "? This includes published and draft questions and cannot be undone.")) return;
+  if (!await showAdminConfirm({ title: "Delete topic questions", message: "Permanently delete every question in " + label + "? This includes published and draft questions. This action cannot be undone.", confirmText: "Delete all questions" })) return;
 
   const button = $("deleteCategoryQuestions");
   button.disabled = true;
@@ -1454,7 +1464,7 @@ $("deleteCategoryQuestions").addEventListener("click", async () => {
   button.textContent = "Delete all in category";
 
   if (result.error) {
-    alert("Could not delete category questions: " + result.error.message);
+    showAdminNotice("Could not delete category questions: " + result.error.message);
     updateQuestionBulkControls();
     return;
   }
@@ -1485,7 +1495,7 @@ async function editQuestion(id) {
   });
 
   if (error || !data) {
-    alert(error?.message || "Question details could not be loaded.");
+    showAdminNotice(error?.message || "Question details could not be loaded.");
     return;
   }
 
@@ -1758,14 +1768,14 @@ async function toggleQuestion(id, published) {
     .eq("id", id);
 
   if (result.error) {
-    alert(result.error.message);
+    showAdminNotice(result.error.message);
   } else {
     await loadQuestions();
   }
 }
 
 async function deleteQuestion(id) {
-  if (!confirm("Delete this question?")) return;
+  if (!await showAdminConfirm({ title: "Delete question", message: "Are you sure you want to delete this question? This action cannot be undone.", confirmText: "Delete" })) return;
 
   const result = await db
     .from("questions")
@@ -1773,7 +1783,7 @@ async function deleteQuestion(id) {
     .eq("id", id);
 
   if (result.error) {
-    alert(result.error.message);
+    showAdminNotice(result.error.message);
   } else {
     await Promise.all([loadQuestions(), loadStimulusGroups()]);
   }
@@ -2287,7 +2297,7 @@ async function validateQuestionImport() {
 async function runQuestionImport() {
   const rows = questionImportRows.filter(item => !item.errors.length && !item.duplicate && !item.imported);
   if (!rows.length) return;
-  if (!confirm("Import " + rows.length + " questions from " + questionImportFileName + "? Existing and invalid rows will be skipped.")) return;
+  if (!await showAdminConfirm({ title: "Import questions", message: "Import " + rows.length + " questions from " + questionImportFileName + "? Existing and invalid rows will be skipped.", confirmText: "Import questions" })) return;
 
   $("runQuestionImport").disabled = true;
   $("validateQuestionImport").disabled = true;
@@ -2546,8 +2556,7 @@ async function runCoursePackageImport() {
   const ready = plan.validQuestions;
   const newLessons = plan.lessons.filter(x => !x.existingLesson).length;
   if (!newLessons && !ready) return;
-  if (!confirm("Import " + newLessons + " new lesson(s) and " + ready +
-      " new question(s)? Existing lesson content will not be changed. All imported content will remain unpublished drafts.")) return;
+  if (!await showAdminConfirm({ title: "Import course package", message: "Import " + newLessons + " new lessons and " + ready + " new questions? Existing lesson content will not be changed. All imported content will remain unpublished drafts.", confirmText: "Import package" })) return;
 
   $("runCoursePackage").disabled = true;
   $("validateCoursePackage").disabled = true;
@@ -2893,7 +2902,7 @@ async function toggleVocabPublished(id,published) {
 
 async function deleteVocabWord(id) {
   const item = vocabCache.find(row=>String(row.id)===String(id));
-  if (!item || !confirm('Delete "' + item.word + '" from Vocab Mountain?')) return;
+  if (!item || !await showAdminConfirm({ title: "Delete vocabulary word", message: 'Delete "' + item.word + '" from Vocab Mountain? This action cannot be undone.', confirmText: "Delete word" })) return;
   const {error} = await db.from("vocab_words").delete().eq("id",id);
   if (error) {
     message("vocabStatus","Could not delete this word. " + error.message);
@@ -2990,7 +2999,7 @@ async function validateVocabImport() {
 async function runVocabImport() {
   const rows = vocabImportRows.filter(item=>!item.errors.length&&!item.duplicate&&!item.imported);
   if (!rows.length) return;
-  if (!confirm("Import " + rows.length + " new vocabulary words from " + vocabImportFileName + "? Existing words will be skipped.")) return;
+  if (!await showAdminConfirm({ title: "Import vocabulary", message: "Import " + rows.length + " new vocabulary words from " + vocabImportFileName + "? Existing words will be skipped.", confirmText: "Import words" })) return;
   $("runVocabImport").disabled = true;
   $("validateVocabImport").disabled = true;
   let imported = 0;
