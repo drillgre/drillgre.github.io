@@ -415,6 +415,37 @@
         }
       }
     }
+    // Count only visible, recently active reading time. Each server update is capped at 45 seconds.
+    if (learnerSignedIn) {
+      let lastInteraction = Date.now();
+      let lastSent = Date.now();
+      const markActive = () => { lastInteraction = Date.now(); };
+      ["pointerdown","keydown","scroll","touchstart"].forEach(type =>
+        document.addEventListener(type,markActive,{passive:true})
+      );
+      const sendActivity = async () => {
+        const now = Date.now();
+        const elapsed = Math.floor((now-lastSent)/1000);
+        const recentlyActive = now-lastInteraction <= 90000;
+        if (document.visibilityState === "visible" && recentlyActive && elapsed >= 20) {
+          lastSent = now;
+          const {error:activityError}=await db.rpc("record_gre_lesson_activity",{
+            p_lesson_id:lesson.id,
+            p_elapsed_seconds:Math.min(elapsed,45)
+          });
+          if(activityError) console.warn("Lesson activity was not saved:",activityError.message);
+        } else {
+          lastSent=now;
+        }
+      };
+      const activityTimer=window.setInterval(sendActivity,30000);
+      document.addEventListener("visibilitychange",()=>{
+        if(document.visibilityState==="hidden") sendActivity();
+        else { lastInteraction=Date.now(); lastSent=Date.now(); }
+      });
+      window.addEventListener("pagehide",sendActivity);
+    }
+
     const syncCompletion = () => {
       const done = window.DrillGREProgress?.isDone(progressKey) || false;
       completeButton.textContent = done ? "✓ Lesson completed" : "Mark lesson complete";
