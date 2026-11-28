@@ -311,21 +311,24 @@
   }
 
   async function loadLesson() {
-    const id = new URLSearchParams(location.search).get("id");
+    const params = new URLSearchParams(location.search);
+    const lessonSlug = params.get("slug");
+    const legacyId = params.get("id");
     const status = $("pageStatus");
 
-    if (!id) {
+    if (!lessonSlug && !legacyId) {
       status.className = "load-error";
       status.textContent = "This lesson link is incomplete. Return to Quant Academy and select a lesson.";
       return;
     }
 
-    const {data:lesson,error} = await db
+    let lessonQuery = db
       .from("lessons")
       .select("id,title,slug,module_id,sort_order,published,content,modules(id,title,slug)")
-      .eq("id",id)
-      .eq("published",true)
-      .single();
+      .eq("published",true);
+    // Use readable lesson slugs for new links. Keep UUID support for older bookmarks.
+    lessonQuery = lessonSlug ? lessonQuery.eq("slug",lessonSlug) : lessonQuery.eq("id",legacyId);
+    const {data:lesson,error} = await lessonQuery.single();
 
     if (error || !lesson) {
       status.className = "load-error";
@@ -370,7 +373,7 @@
     $("lessonNumber").textContent = String((siblings || []).findIndex(x=>String(x.id)===String(lesson.id))+1 || 1).padStart(2,"0");
     $("sideTitle").textContent = moduleTitle;
     $("sideLessons").innerHTML = (siblings || []).map((item,index) => `
-      <a class="side-link ${String(item.id)===String(lesson.id)?"active":""}" href="lesson.html?id=${encodeURIComponent(item.id)}">
+      <a class="side-link ${String(item.id)===String(lesson.id)?"active":""}" href="lesson.html?slug=${encodeURIComponent(item.slug)}">
         <span class="side-num">${String(index+1).padStart(2,"0")}</span>
         ${esc(item.title)}
         <span class="check">${window.DrillGREProgress?.isDone("lesson-"+item.id)?"✓":""}</span>
