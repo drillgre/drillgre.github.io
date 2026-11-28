@@ -264,6 +264,17 @@
   }
 
   async function loadDashboard() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("admin_preview") === "1") {
+      $("dashboardContent").hidden = false;
+      $("quantAnalytics").hidden = false;
+      $("analyticsStatus").hidden = true;
+      $("dashboardLayoutAdmin").hidden = true;
+      applyDashboardLayout(await fetchDashboardLayout());
+      $("learnerName").textContent = "Preview";
+      $("learnerEmail").textContent = "Administrator preview · learner data is not loaded";
+      return;
+    }
     const { data:sessionData, error:sessionError } = await db.auth.getSession();
     const session = sessionData?.session;
     if (sessionError || !session) {
