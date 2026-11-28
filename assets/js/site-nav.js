@@ -66,6 +66,8 @@
           <a href="/quant/question-bank.html">Question Bank</a>
           <a href="/quant/quiz.html">Topic Quizzes</a>
           <a href="/quant/mock.html">Mock Tests</a>
+          <a href="/community.html">Daily Challenge</a>
+          <a href="/community.html#forum">Discussion Forum</a>
         </div>
         <div class="drillgre-footer-column">
           <h3>More</h3>
@@ -99,6 +101,8 @@
       if (before) links.insertBefore(link, before);
       else links.appendChild(link);
     };
+    ensureNavLink("/community.html", "Daily Challenge", "/pricing.html");
+    ensureNavLink("/community.html#forum", "Forum", "/contact.html");
     ensureNavLink("/pricing.html", "Pricing", "/contact.html");
     ensureNavLink("/contact.html", "Contact Us");
   }
