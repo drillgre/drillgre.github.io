@@ -536,7 +536,7 @@ async function loadLessons() {
   $("lessonList").querySelectorAll("[data-view]").forEach(button => {
     button.onclick = () => {
       const lesson = lessonsCache.find(item => String(item.id) === String(button.dataset.view));
-      if (lesson) window.open("/quant/lesson.html?slug=" + encodeURIComponent(lesson.slug), "_blank", "noopener");
+      if (lesson) window.open("/quant/lesson.html?slug=" + encodeURIComponent(lesson.slug) + "&admin=1", "_blank", "noopener");
     };
   });
   $("lessonList").querySelectorAll("[data-edit]").forEach(button => {
