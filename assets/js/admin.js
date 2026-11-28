@@ -469,6 +469,8 @@ async function loadLessons() {
           Select all lessons
         </label>
         <span id="selectedLessonCount" class="meta">0 selected</span>
+        <button type="button" id="bulkPublishLessons" disabled>Publish selected</button>
+        <button type="button" class="secondary" id="bulkUnpublishLessons" disabled>Unpublish selected</button>
         <button type="button" class="del" id="bulkDeleteLessons" disabled>Delete selected</button>
       </div>
       ` + sortedGroups.map(([groupId, group]) => {
@@ -505,7 +507,10 @@ async function loadLessons() {
         return `
           <section class="lesson-topic-group" data-topic-group="${esc(groupId)}" style="margin:0 0 26px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:10px;background:#eef3ff;border:1px solid #dbe5ff;border-radius:12px">
-              <strong style="font-size:16px;color:#173b78">${esc(group.title)}</strong>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <strong style="font-size:16px;color:#173b78">${esc(group.title)}</strong>
+                ${groupId !== "unassigned" ? `<button type="button" class="secondary" data-rename-module="${esc(groupId)}">Rename topic</button>` : ""}
+              </div>
               <span class="meta">${group.lessons.length} lessons · ${publishedCount} published · ${draftCount} drafts</span>
             </div>
             <div class="lesson-topic-items">${lessonCards}</div>
@@ -522,6 +527,8 @@ async function loadLessons() {
     const selected = lessonSelectBoxes.filter(box => box.checked).length;
     selectedLessonCount.textContent = selected + " selected";
     bulkDeleteLessons.disabled = selected === 0;
+    $("bulkPublishLessons").disabled = selected === 0;
+    $("bulkUnpublishLessons").disabled = selected === 0;
     selectAllLessons.checked = selected > 0 && selected === lessonSelectBoxes.length;
     selectAllLessons.indeterminate = selected > 0 && selected < lessonSelectBoxes.length;
   };
@@ -531,6 +538,11 @@ async function loadLessons() {
     refreshLessonSelection();
   });
   bulkDeleteLessons.addEventListener("click", deleteSelectedLessons);
+  $("bulkPublishLessons").addEventListener("click", () => setSelectedLessonsPublished(true));
+  $("bulkUnpublishLessons").addEventListener("click", () => setSelectedLessonsPublished(false));
+  $("lessonList").querySelectorAll("[data-rename-module]").forEach(button => {
+    button.onclick = () => renameModule(button.dataset.renameModule);
+  });
   refreshLessonSelection();
 
   $("lessonList").querySelectorAll("[data-view]").forEach(button => {
@@ -734,6 +746,53 @@ async function toggleLesson(id) {
 
   if (result.error) showAdminNotice(result.error.message);
   else await loadLessons();
+}
+
+async function setSelectedLessonsPublished(published) {
+  const selectedIds = [...$("lessonList").querySelectorAll("[data-lesson-select]:checked")]
+    .map(box => box.dataset.lessonSelect);
+  if (!selectedIds.length) return;
+  const action = published ? "publish" : "unpublish";
+  if (!await showAdminConfirm({
+    title: (published ? "Publish" : "Unpublish") + " selected lessons",
+    message: "Are you sure you want to " + action + " " + selectedIds.length + " selected lesson(s)?",
+    confirmText: published ? "Publish lessons" : "Unpublish lessons"
+  })) return;
+
+  $("bulkPublishLessons").disabled = true;
+  $("bulkUnpublishLessons").disabled = true;
+  const { error } = await db.from("lessons")
+    .update({ published, updated_at: new Date().toISOString() })
+    .in("id", selectedIds);
+  if (error) {
+    showAdminNotice("Could not " + action + " the selected lessons: " + error.message, "Update failed");
+    return;
+  }
+  await loadLessons();
+  showAdminNotice(selectedIds.length + " lesson(s) " + (published ? "published" : "unpublished") + " successfully.",
+    published ? "Lessons published" : "Lessons unpublished");
+}
+
+async function renameModule(moduleId) {
+  const moduleLessons = lessonsCache.filter(item => String(item.module_id) === String(moduleId));
+  const currentTitle = moduleLessons[0]?.modules?.title || "";
+  if (!currentTitle) return;
+  const nextTitle = window.prompt("Enter the new topic name:", currentTitle);
+  if (nextTitle === null) return;
+  const title = nextTitle.trim();
+  if (!title) {
+    showAdminNotice("Topic name cannot be empty.", "Invalid topic name");
+    return;
+  }
+  if (title === currentTitle) return;
+  const { error } = await db.from("modules").update({ title }).eq("id", moduleId);
+  if (error) {
+    showAdminNotice("Could not rename this topic: " + error.message, "Topic rename failed");
+    return;
+  }
+  await loadLessons();
+  await loadLessonOptions();
+  showAdminNotice("The topic has been renamed to “" + title + "”. All lessons under this topic now use the updated name.", "Topic renamed");
 }
 
 async function deleteSelectedLessons() {
