@@ -22,6 +22,7 @@ begin
     select
       coalesce(q.topic_category, 'other') as topic,
       coalesce(q.subtopic, 'unclassified') as subtopic,
+      coalesce(q.question_type, 'unclassified') as question_type,
       coalesce(q.difficulty, p.difficulty) as difficulty,
       coalesce(p.last_attempt_correct, p.status = 'done') as is_correct,
       p.completed_at as occurred_at,
@@ -41,6 +42,7 @@ begin
     select
       coalesce(aq.question_snapshot->>'topic_category','other'),
       coalesce(aq.question_snapshot->>'subtopic','unclassified'),
+      coalesce(aq.question_snapshot->>'question_type','unclassified'),
       nullif(aq.question_snapshot->>'difficulty','')::integer,
       a.is_correct,
       coalesce(a.updated_at, qa.completed_at),
@@ -65,6 +67,7 @@ begin
     select
       coalesce(mq.question_snapshot->>'topic_category','other'),
       coalesce(mq.question_snapshot->>'subtopic','unclassified'),
+      coalesce(mq.question_snapshot->>'question_type','unclassified'),
       nullif(mq.question_snapshot->>'difficulty','')::integer,
       ans.is_correct,
       coalesce(ma.completed_at, ma.created_at),
@@ -79,6 +82,12 @@ begin
       on ans.attempt_id = mq.attempt_id and ans.question_id = mq.question_id
     where ma.learner_id = v_user_id
       and ma.status = 'completed'
+  ),
+  question_type_accuracy as (
+    select question_type,count(*)::integer as answered,
+      count(*) filter(where is_correct)::integer as correct,
+      round(100.0*count(*) filter(where is_correct)/nullif(count(*),0),1) as accuracy
+    from events group by question_type order by question_type
   ),
   difficulty_accuracy as (
     select difficulty,count(*)::integer as answered,
@@ -206,6 +215,7 @@ begin
       ) order by m.wrong_answers desc,m.accuracy asc) from mistake_areas m),'[]'::jsonb)
     ),
     'topics',coalesce((select jsonb_agg(to_jsonb(t) order by t.topic) from topics t),'[]'::jsonb),
+    'question_type_accuracy',coalesce((select jsonb_agg(to_jsonb(qt) order by qt.question_type) from question_type_accuracy qt),'[]'::jsonb),
     'difficulty_accuracy',coalesce((select jsonb_agg(to_jsonb(d) order by d.difficulty) from difficulty_accuracy d),'[]'::jsonb),
     'speed_accuracy',coalesce((select jsonb_agg(to_jsonb(s) order by s.difficulty) from speed_accuracy s),'[]'::jsonb),
     'speed_summary',(select to_jsonb(ss) from speed_summary ss),
