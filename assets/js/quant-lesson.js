@@ -349,28 +349,23 @@
       return query.maybeSingle();
     };
 
-    // Public visitors can only read published lessons. An authenticated
-    // DrillGRE administrator may explicitly open draft lessons from Admin.
-    let { data: lesson, error } = await lookupLesson(false);
+    // Resolve administrator access before loading lesson content. This also
+    // allows admins to see draft questions attached to an otherwise published lesson.
     const wantsAdminView = params.get("admin") === "1";
     let isAdminView = false;
-    if ((!lesson || error) && wantsAdminView) {
-      const { data: authData } = await db.auth.getUser();
+    if (wantsAdminView) {
+      const { data: authData, error: authError } = await db.auth.getUser();
       const currentUser = authData?.user;
-      if (currentUser) {
-        const { data: profile } = await db
+      if (!authError && currentUser) {
+        const { data: profile, error: profileError } = await db
           .from("profiles")
           .select("role")
           .eq("id", currentUser.id)
           .maybeSingle();
-        if (profile?.role === "admin") {
-          isAdminView = true;
-          const adminResult = await lookupLesson(true);
-          lesson = adminResult.data;
-          error = adminResult.error;
-        }
+        isAdminView = !profileError && profile?.role === "admin";
       }
     }
+    let { data: lesson, error } = await lookupLesson(isAdminView);
 
     // Convert legacy UUID links to the readable slug URL after resolving the lesson.
     if (legacyId && lesson?.slug) {
@@ -386,16 +381,23 @@
       return;
     }
 
-    const [{data:siblings,error:siblingError},{data:questions,error:questionError}] = await Promise.all([
-      db.from("lessons").select("id,title,slug,sort_order,published").eq("module_id",lesson.module_id).order("sort_order")
-        .then(result => isAdminView ? result : { ...result, data: (result.data || []).filter(item => item.published !== false) }),
-      db.from("questions")
-        .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,options,figure_url,question_usage,published")
-        .eq("lesson_id",lesson.id)
-        .in("question_usage",["practice","both"])
-        .then(result => isAdminView ? result : { ...result, data: (result.data || []).filter(item => item.published !== false) })
-        .order("created_at")
-    ]);
+    let siblingQuery = db.from("lessons")
+      .select("id,title,slug,sort_order,published")
+      .eq("module_id",lesson.module_id)
+      .order("sort_order");
+    if (!isAdminView) siblingQuery = siblingQuery.eq("published", true);
+
+    let questionQuery = db.from("questions")
+      .select("id,topic,topic_category,subtopic,stimulus_id,question_type,difficulty,question_text,options,figure_url,question_usage,published")
+      .eq("lesson_id",lesson.id)
+      .in("question_usage",["practice","both"])
+      .order("created_at");
+    if (!isAdminView) questionQuery = questionQuery.eq("published", true);
+
+    const [
+      {data:siblings,error:siblingError},
+      {data:questions,error:questionError}
+    ] = await Promise.all([siblingQuery, questionQuery]);
 
     let stimulusError = null;
     let displayQuestions = questions || [];
@@ -424,7 +426,7 @@
     $("lessonNumber").textContent = String((siblings || []).findIndex(x=>String(x.id)===String(lesson.id))+1 || 1).padStart(2,"0");
     $("sideTitle").textContent = moduleTitle;
     $("sideLessons").innerHTML = (siblings || []).map((item,index) => `
-      <a class="side-link ${String(item.id)===String(lesson.id)?"active":""}" href="lesson.html?slug=${encodeURIComponent(item.slug)}">
+      <a class="side-link ${String(item.id)===String(lesson.id)?"active":""}" href="lesson.html?slug=${encodeURIComponent(item.slug)}${isAdminView ? "&admin=1" : ""}">
         <span class="side-num">${String(index+1).padStart(2,"0")}</span>
         ${esc(item.title)}
         <span class="check">${window.DrillGREProgress?.isDone("lesson-"+item.id)?"✓":""}</span>
